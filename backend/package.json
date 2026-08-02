@@ -1,0 +1,27 @@
+{
+  "name": "shreeja-backend",
+  "version": "1.0.0",
+  "description": "Shreeja Finance Platform — Express.js backend (CKR Technologies)",
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "nodemon server.js",
+    "lint": "eslint src/ --ext .js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "multer": "^2.2.0",
+    "node-cron": "^3.0.3",
+    "nodemon": "^3.1.14",
+    "uuid": "^11.1.1",
+    "zod": "^3.24.4"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1"
+  }
+}

@@ -1,0 +1,13 @@
+-- =====================================================================
+-- 0007_rls.sql — Shreeja Finance Platform
+-- RLS: NOT USED.
+--
+-- Access control is enforced exclusively at the Express middleware layer:
+--   authenticate → resolve role → role gate (AUTH-MATRIX.md) → zod validate → domain service
+--
+-- Supabase RLS is intentionally disabled on all tables.
+-- The backend uses the service-role key exclusively (server-to-server).
+-- No client SDK calls hit Supabase directly — all reads/writes go through Express.
+--
+-- This file intentionally contains no CREATE POLICY statements.
+-- =====================================================================
