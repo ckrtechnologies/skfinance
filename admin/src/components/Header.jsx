@@ -3,13 +3,14 @@ import { useSelector } from 'react-redux';
 import GlobalDatePicker from './GlobalDatePicker';
 import styles from './Header.module.css';
 
-const Header = () => {
+const Header = ({ title, subtitle }) => {
   const { profile } = useSelector((state) => state.auth);
 
   return (
     <header className={styles.header}>
       <div className={styles.leftSection}>
-        {/* Placeholder for future left-side items like breadcrumbs or page title */}
+        {title && <h1 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#0f172a', margin: 0, lineHeight: 1.2 }}>{title}</h1>}
+        {subtitle && <p style={{ fontSize: '0.875rem', color: '#64748b', margin: '0.25rem 0 0 0', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>{subtitle}</p>}
       </div>
 
       <div className={styles.rightSection}>

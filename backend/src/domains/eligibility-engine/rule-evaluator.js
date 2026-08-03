@@ -42,10 +42,66 @@ function evaluateTrigger(trigger, context) {
     return context[party]?.[field] === expected;
   }
 
+  // Not equals parsing
+  const neqMatch = trigger.match(/^(\w+)\.(\w+)\s*!=\s*'([^']+)'$/);
+  if (neqMatch) {
+    const [, party, field, expected] = neqMatch;
+    return context[party]?.[field] !== expected;
+  }
+
   // Add new trigger patterns here as new lender rules are added
   console.warn(`[rule-evaluator] Unknown trigger expression: "${trigger}" — evaluates to false`);
   return false;
 }
+
+/**
+ * Helper to safely extract a nested value from the context.
+ * e.g., getNestedValue(context, 'applicant.custom_fields.turnover')
+ */
+function getNestedValue(obj, path) {
+  return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+}
+
+/**
+ * Evaluates the must_satisfy constraint against the profile context.
+ * Supported operators: >=, <=, >, <, ==, !=
+ * e.g., "applicant.custom_fields.turnover >= 5000000"
+ */
+function evaluateConstraint(constraint, context) {
+  const match = constraint.match(/^([\w.]+)\s*(>=|<=|>|<|==|!=)\s*(.+)$/);
+  if (!match) return false;
+
+  const [, path, operator, rawValue] = match;
+  const actualValue = getNestedValue(context, path);
+  
+  // Safely parse rawValue as a number if possible, or strip quotes if it's a string
+  let expectedValue = rawValue;
+  if (!isNaN(rawValue)) {
+    expectedValue = Number(rawValue);
+  } else if (rawValue.startsWith("'") && rawValue.endsWith("'")) {
+    expectedValue = rawValue.slice(1, -1);
+  } else if (rawValue === 'true') {
+    expectedValue = true;
+  } else if (rawValue === 'false') {
+    expectedValue = false;
+  }
+
+  // Use Number() on actualValue for numeric comparisons
+  if (['>=', '<=', '>', '<'].includes(operator)) {
+    const numActual = Number(actualValue);
+    if (isNaN(numActual)) return false; // cannot compare numerically
+    if (operator === '>=') return numActual >= expectedValue;
+    if (operator === '<=') return numActual <= expectedValue;
+    if (operator === '>') return numActual > expectedValue;
+    if (operator === '<') return numActual < expectedValue;
+  }
+
+  if (operator === '==') return actualValue === expectedValue;
+  if (operator === '!=') return actualValue !== expectedValue;
+
+  return false;
+}
+
 
 /**
  * evaluateConditionalRules — runs all conditional_rules against the profile.
@@ -53,22 +109,32 @@ function evaluateTrigger(trigger, context) {
  *
  * @param {object[]} conditionalRules
  * @param {object} context  { applicant, co_applicant? }
- * @returns {{ additionalRequires: string[], guarantorDocs: string[], excludedDocs: string[] }}
+ * @returns {{ additionalRequires: string[], guarantorDocs: string[], excludedDocs: string[], failedValidation: object[] }}
  */
 function evaluateConditionalRules(conditionalRules, context) {
   const additionalRequires = [];
   const guarantorDocs = [];
   const excludedDocs = [];
+  const failedValidation = [];
 
   for (const rule of conditionalRules ?? []) {
     if (evaluateTrigger(rule.trigger, context)) {
       additionalRequires.push(...(rule.requires ?? []));
       guarantorDocs.push(...(rule.guarantor_docs ?? []));
       excludedDocs.push(...(rule.excluded_docs ?? []));
+      
+      if (rule.must_satisfy) {
+        if (!evaluateConstraint(rule.must_satisfy, context)) {
+          failedValidation.push({
+            rule: rule.must_satisfy,
+            detail: rule.error_message || 'Application failed a conditional constraint.',
+          });
+        }
+      }
     }
   }
 
-  return { additionalRequires, guarantorDocs, excludedDocs };
+  return { additionalRequires, guarantorDocs, excludedDocs, failedValidation };
 }
 
 /**
@@ -204,6 +270,7 @@ function evaluateMissingDocuments(policyDocs, uploadedDocTypes, excludedDocs, ex
 
 module.exports = {
   evaluateHardRules,
+  evaluateConstraint,
   evaluateConditionalRules,
   evaluateOwnershipProofRules,
   evaluateMissingDocuments,

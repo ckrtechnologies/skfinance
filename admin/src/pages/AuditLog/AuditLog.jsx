@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import apiClient from '../../api/client';
 import styles from '../Financials/Financials.module.css'; // Reusing table layout CSS
 
 const AuditLog = () => {
+  const { setPageMeta } = useOutletContext();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -21,15 +23,12 @@ const AuditLog = () => {
     fetchLogs();
   }, []);
 
+  useEffect(() => {
+    setPageMeta({ title: 'Audit Log', subtitle: 'Track all platform activity and changes' });
+  }, [setPageMeta]);
+
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>Audit Log</h1>
-          <p className={styles.subtitle}>Immutable ledger of critical system actions</p>
-        </div>
-      </div>
-
       <div className={styles.tableCard}>
         <div className={styles.controls}>
           <input 

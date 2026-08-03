@@ -21,6 +21,11 @@ async function updateLender(id, payload) {
   return repo.update(id, payload);
 }
 
+async function removeLender(id) {
+  await getLender(id); // throws NOT_FOUND if missing
+  return repo.remove(id);
+}
+
 async function listPolicies(lenderId, opts) {
   return repo.findPolicies(lenderId, opts);
 }
@@ -32,6 +37,11 @@ async function getPolicy(policyId) {
 }
 
 async function createPolicy(payload) {
+  // auto-increment version for the specific lender & product
+  const existing = await repo.findPolicies(payload.lender_id);
+  const sameProduct = existing.filter(p => p.product_type === payload.product_type);
+  const nextVersion = sameProduct.length > 0 ? Math.max(...sameProduct.map(p => p.version)) + 1 : 1;
+  payload.version = nextVersion;
   return repo.createPolicy(payload);
 }
 
@@ -54,6 +64,6 @@ async function publishPolicy(policyId, adminProfileId, auditRepo) {
 }
 
 module.exports = {
-  listLenders, getLender, createLender, updateLender,
+  listLenders, getLender, createLender, updateLender, removeLender,
   listPolicies, getPolicy, createPolicy, updatePolicy, publishPolicy,
 };

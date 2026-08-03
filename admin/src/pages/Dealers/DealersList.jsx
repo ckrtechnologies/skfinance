@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import apiClient from '../../api/client';
 import StatusPill from '../../components/StatusPill';
 import styles from '../Lenders/LendersList.module.css'; // Reusing table styles
 
 const DealersList = () => {
+  const { setPageMeta } = useOutletContext();
   const [dealers, setDealers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -27,6 +28,10 @@ const DealersList = () => {
     fetchDealers();
   }, []);
 
+  useEffect(() => {
+    setPageMeta({ title: 'Dealer Management', subtitle: 'Manage all dealership partners and their profiles' });
+  }, [setPageMeta]);
+
   const handleAddDealer = async (e) => {
     e.preventDefault();
     try {
@@ -42,11 +47,7 @@ const DealersList = () => {
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>Dealers</h1>
-          <p className={styles.subtitle}>Manage dealership partners</p>
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
         <button 
           onClick={() => setShowModal(true)}
           style={{

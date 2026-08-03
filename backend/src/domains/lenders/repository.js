@@ -29,6 +29,33 @@ async function update(id, payload) {
   return data;
 }
 
+async function remove(id) {
+  // 1. Get all policies for this lender
+  const { data: policies } = await supabase.from('lender_policies').select('id').eq('lender_id', id);
+  const policyIds = policies?.map(p => p.id) || [];
+  
+  // 2. Delete eligibility evaluations referencing these policies
+  if (policyIds.length > 0) {
+    await supabase.from('eligibility_evaluations').delete().in('lender_policy_id', policyIds);
+  }
+  
+  // 3. Delete policies (policy_documents will cascade)
+  await supabase.from('lender_policies').delete().eq('lender_id', id);
+  
+  // 4. Finally delete the lender
+  const { error } = await supabase.from('lenders').delete().eq('id', id);
+  if (error) {
+    if (error.code === '23503') {
+      const err = new Error('Cannot delete this lender because it has active loan applications associated with it. Please deactivate the lender instead.');
+      err.code = 'CONFLICT';
+      err.status = 409;
+      throw err;
+    }
+    throw error;
+  }
+  return true;
+}
+
 // ─── Policies ─────────────────────────────────────────────────────────
 
 async function findPolicies(lenderId, { status } = {}) {
@@ -144,7 +171,7 @@ async function publishPolicy(policyId) {
 }
 
 module.exports = {
-  findAll, findById, create, update,
+  findAll, findById, create, update, remove,
   findPolicies, findPolicyById, findActivePolicies,
   createPolicy, updateDraftPolicy, publishPolicy,
 };

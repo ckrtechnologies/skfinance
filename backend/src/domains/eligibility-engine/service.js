@@ -28,8 +28,13 @@ async function evaluate(input, { stage, loanApplicationId } = {}) {
     applicant: {
       address_type: input.address_type,
       customer_type: input.customer_type,
+      cibil_score: input.cibil_score,
+      custom_fields: input.custom_fields || {},
     },
     co_applicant: input.co_applicant_relation ? { relation: input.co_applicant_relation } : undefined,
+    loan: {
+      requested_amount: input.requested_amount,
+    }
   };
 
   const results = [];
@@ -39,8 +44,21 @@ async function evaluate(input, { stage, loanApplicationId } = {}) {
     const failedRules = evaluator.evaluateHardRules(policy, input);
 
     // 5. Evaluate conditional rules (always, even in pre_check, to surface requirements early)
-    const { additionalRequires, guarantorDocs, excludedDocs } =
+    const { additionalRequires, guarantorDocs, excludedDocs, failedValidation } =
       evaluator.evaluateConditionalRules(policy.conditional_rules, context);
+      
+    if (failedValidation && failedValidation.length > 0) {
+      failedRules.push(...failedValidation);
+    }
+      
+    // 5b. Evaluate ownership proof rules based on address type
+    const ownershipDocs = evaluator.evaluateOwnershipProofRules(
+      policy.ownership_proof_rules, 
+      input.address_type
+    );
+    if (ownershipDocs.length > 0) {
+      additionalRequires.push(...ownershipDocs);
+    }
 
     // 6. Document completeness (full stage only)
     let missingItems = [];

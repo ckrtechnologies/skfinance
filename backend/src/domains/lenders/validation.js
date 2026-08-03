@@ -25,6 +25,20 @@ const policyDocSchema = z.object({
   notes: z.string().optional(),
 });
 
+const ownershipProofRuleSchema = z.object({
+  if_address_type: z.enum(['owned', 'rental']),
+  required_docs: z.array(z.string()).default([]),
+});
+
+const conditionalRuleSchema = z.object({
+  trigger: z.string(),
+  requires: z.array(z.string()).default([]),
+  guarantor_docs: z.array(z.string()).default([]),
+  excluded_docs: z.array(z.string()).default([]),
+  must_satisfy: z.string().optional(),
+  error_message: z.string().optional(),
+});
+
 const policySchema = z.object({
   lender_id: z.string().uuid(),
   product_type: z.enum(['new_car', 'used_car', 'commercial_vehicle']),
@@ -42,8 +56,8 @@ const policySchema = z.object({
   customer_types: z.array(z.enum(['salaried', 'self_employed', 'agriculture'])).default([]),
   co_applicant_required: z.boolean().default(false),
   co_applicant_relations: z.array(z.string()).default([]),
-  ownership_proof_rules: z.array(z.any()).default([]),
-  conditional_rules: z.array(z.any()).default([]),
+  ownership_proof_rules: z.array(ownershipProofRuleSchema).default([]),
+  conditional_rules: z.array(conditionalRuleSchema).default([]),
   reference_doc_url: z.string().optional().nullable(),
   notes: z.string().optional(),
   policy_documents: z.array(policyDocSchema).default([]),

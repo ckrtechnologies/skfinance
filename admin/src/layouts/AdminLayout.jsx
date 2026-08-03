@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import Sidebar from '../components/Sidebar';
@@ -7,6 +7,7 @@ import styles from './AdminLayout.module.css';
 
 const AdminLayout = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
+  const [pageMeta, setPageMeta] = useState({ title: '', subtitle: '' });
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -16,9 +17,9 @@ const AdminLayout = () => {
     <div className={styles.layout}>
       <Sidebar />
       <div className={styles.mainContent}>
-        <Header />
+        <Header title={pageMeta.title} subtitle={pageMeta.subtitle} />
         <main className={styles.pageContainer}>
-          <Outlet />
+          <Outlet context={{ setPageMeta }} />
         </main>
       </div>
     </div>

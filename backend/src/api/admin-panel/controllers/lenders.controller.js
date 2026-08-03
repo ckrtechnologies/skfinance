@@ -33,4 +33,33 @@ async function updateLender(req, res, next) {
   }
 }
 
-module.exports = { listLenders, createLender, updateLender };
+/** DELETE /admin/lenders/:id */
+async function removeLender(req, res, next) {
+  try {
+    await lenderService.removeLender(req.params.id);
+    return ok(res, { deleted: true });
+  } catch (err) {
+    if (err.code === 'NOT_FOUND') return fail(res, 'NOT_FOUND', err.message, 404);
+    if (err.code === 'CONFLICT') return fail(res, 'CONFLICT', err.message, 409);
+    next(err);
+  }
+}
+
+/** GET /admin/lenders/:id */
+async function getLender(req, res, next) {
+  try {
+    const lender = await lenderService.getLender(req.params.id);
+    return ok(res, { lender });
+  } catch (err) {
+    if (err.code === 'NOT_FOUND') return fail(res, 'NOT_FOUND', err.message, 404);
+    next(err);
+  }
+}
+
+module.exports = {
+  listLenders,
+  createLender,
+  updateLender,
+  getLender,
+  removeLender
+};

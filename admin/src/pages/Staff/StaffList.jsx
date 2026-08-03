@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import apiClient from '../../api/client';
 import StatusPill from '../../components/StatusPill';
 import styles from '../Lenders/LendersList.module.css';
 
 const StaffList = () => {
+  const { setPageMeta } = useOutletContext();
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -25,6 +27,10 @@ const StaffList = () => {
     fetchStaff();
   }, []);
 
+  useEffect(() => {
+    setPageMeta({ title: 'Staff Management', subtitle: 'Manage internal platform users and roles' });
+  }, [setPageMeta]);
+
   const handleAddStaff = async (e) => {
     e.preventDefault();
     try {
@@ -41,10 +47,7 @@ const StaffList = () => {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>Staff Members</h1>
-          <p className={styles.subtitle}>Manage internal employees and roles</p>
-        </div>
+        <div />
         <button 
           onClick={() => setShowModal(true)}
           style={{

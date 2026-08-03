@@ -1,10 +1,16 @@
 import React, { useEffect, useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import apiClient from '../../api/client';
 import styles from './Settings.module.css';
 
 const Settings = () => {
+  const { setPageMeta } = useOutletContext();
   const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setPageMeta({ title: 'System Settings', subtitle: 'Configure global platform parameters' });
+  }, [setPageMeta]);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -44,13 +50,6 @@ const Settings = () => {
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>System Settings</h1>
-          <p className={styles.subtitle}>Configure global platform parameters</p>
-        </div>
-      </div>
-
       <div className={styles.card}>
         <form onSubmit={handleSave}>
           <div className={styles.formGroup}>

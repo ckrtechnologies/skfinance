@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { FileText, IndianRupee, ShieldAlert, Users, Briefcase } from 'lucide-react';
 import { 
@@ -15,6 +15,7 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { setPageMeta } = useOutletContext();
   const dateRange = useSelector((state) => state.filters.dateRange);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,6 +37,10 @@ const Dashboard = () => {
     fetchDashboard();
   }, [dateRange]);
 
+  useEffect(() => {
+    setPageMeta({ title: 'Dashboard Overview', subtitle: 'Platform performance metrics' });
+  }, [setPageMeta]);
+
   const trendData = data?.trendData || [];
   const portfolioData = data?.portfolioData || [];
 
@@ -43,12 +48,6 @@ const Dashboard = () => {
 
   return (
     <div className={styles.dashboard}>
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>Dashboard Overview</h1>
-          <p className={styles.subtitle}>Platform performance metrics</p>
-        </div>
-      </div>
 
       <div className={styles.grid}>
         <div className={`${styles.card} ${styles.cardSuccess} ${styles.clickable}`} onClick={() => navigate('/loans')}>

@@ -1,15 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import apiClient from '../../api/client';
 import StatusPill from '../../components/StatusPill';
 import styles from './LoansList.module.css';
 
 const LoansList = () => {
+  const { setPageMeta } = useOutletContext();
   const dateRange = useSelector((state) => state.filters.dateRange);
   const [loans, setLoans] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setPageMeta({ title: 'Loan Files', subtitle: 'Manage and review loan applications' });
+  }, [setPageMeta]);
 
   useEffect(() => {
     const fetchLoans = async () => {
@@ -27,7 +32,7 @@ const LoansList = () => {
       }
     };
     fetchLoans();
-  }, []);
+  }, [dateRange]);
 
   const formatCurrency = (val) => {
     if (!val) return '—';
@@ -41,13 +46,6 @@ const LoansList = () => {
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>Loan Files</h1>
-          <p className={styles.subtitle}>Manage all applications across the network</p>
-        </div>
-      </div>
-
       <div className={styles.tableCard}>
         <div className={styles.controls}>
           <input 

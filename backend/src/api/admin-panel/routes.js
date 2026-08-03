@@ -23,7 +23,9 @@ router.get('/dashboard', dashCtrl.dashboard);
 // Lenders
 router.get('/lenders', lendCtrl.listLenders);
 router.post('/lenders', lendCtrl.createLender);
+router.get('/lenders/:id', lendCtrl.getLender);
 router.patch('/lenders/:id', lendCtrl.updateLender);
+router.delete('/lenders/:id', lendCtrl.removeLender);
 router.get('/lenders/:id/policies', polCtrl.listPolicies);
 router.post('/lenders/:id/policies', polCtrl.createPolicy);
 
