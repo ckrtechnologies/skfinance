@@ -1,55 +1,96 @@
 'use client';
 
-import { useGetLendersQuery, useUpdateLenderMutation, useGetLenderRulesQuery } from '@/store/api/adminApi';
+import { useGetLendersQuery, useUpdateLenderMutation, useCreateLenderMutation, useDeleteLenderMutation } from '@/store/api/adminApi';
 import { StatusBadge } from '@/components/ui/Primitives';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useDispatch } from 'react-redux';
+import { setHeaderInfo } from '@/store/slices/uiSlice';
+import Link from 'next/link';
+import ExportButtons from '@/components/ui/ExportButtons';
 
 export default function LendersPage() {
+  const dispatch = useDispatch();
+  useEffect(() => {
+    dispatch(setHeaderInfo({ title: 'Lenders', breadcrumbs: ['Operations', 'Lenders'] }));
+  }, [dispatch]);
   const { data, isLoading } = useGetLendersQuery();
   const [updateLender, { isLoading: updating }] = useUpdateLenderMutation();
-  const [rulesModal, setRulesModal] = useState(null); // lender code or null
+  const [deleteLender] = useDeleteLenderMutation();
+  
+  const [isCreateModalOpen, setCreateModalOpen] = useState(false);
+  const [lenderToEdit, setLenderToEdit] = useState(null);
 
   const lenders = data?.data || [];
 
+  const exportColumns = [
+    { header: 'S.No', accessor: (_, i) => i + 1 },
+    { header: 'Lender', accessor: 'name' },
+    { header: 'Code', accessor: 'code' },
+    { header: 'Type', accessor: 'lender_type' },
+    { header: 'Priority', accessor: 'priority' },
+    { header: 'Status', accessor: (l) => l.is_active ? 'Active' : 'Inactive' },
+  ];
+
   async function handleToggle(lender) {
-    await updateLender({ id: lender.id, is_active: !lender.is_active });
+    try {
+      await updateLender({ id: lender.id, is_active: !lender.is_active }).unwrap();
+    } catch (err) {
+      alert(`Failed to update status: ${err.data?.error?.message || err.message}`);
+    }
   }
+
   async function handlePriorityChange(lender, value) {
     const p = parseInt(value, 10);
-    if (!isNaN(p)) await updateLender({ id: lender.id, priority: p });
+    if (!isNaN(p)) {
+      try {
+        await updateLender({ id: lender.id, priority: p }).unwrap();
+      } catch (err) {
+        alert(`Failed to update priority: ${err.data?.error?.message || err.message}`);
+      }
+    }
+  }
+
+  async function handleDelete(lender) {
+    if (confirm(`Are you sure you want to delete ${lender.name}?`)) {
+      try {
+        await deleteLender(lender.id).unwrap();
+      } catch (err) {
+        alert(`Failed to delete lender: ${err.data?.error?.message || err.message}`);
+      }
+    }
   }
 
   return (
     <>
-      <div className="page-header">
-        <h1 className="page-title">Lenders</h1>
-        <p className="page-desc">Manage lender activation and priority. Credit rules are read-only — defined in backend code.</p>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <ExportButtons data={lenders} columns={exportColumns} filename="lenders_list" title="NBFCs / Lenders" />
+        <button className="btn btn-primary" onClick={() => setCreateModalOpen(true)}>+ Create NBFC</button>
       </div>
-
-      {rulesModal && <RulesModal code={rulesModal} onClose={() => setRulesModal(null)} />}
 
       <div className="table-wrapper">
         <table className="data-table">
           <thead>
             <tr>
+              <th>S.No</th>
               <th>Lender</th>
               <th>Code</th>
               <th>Type</th>
               <th>Priority</th>
               <th>Status</th>
-              <th>Rules</th>
               <th>Active</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               Array.from({ length: 6 }, (_, i) => (
-                <tr key={i}>{[160, 100, 60, 60, 80, 60, 40].map((w, j) => (
+                <tr key={i}>{[160, 100, 60, 60, 80, 40, 100].map((w, j) => (
                   <td key={j}><div className="skeleton" style={{ height: 12, width: w }} /></td>
                 ))}</tr>
               ))
-            ) : lenders.map((lender) => (
+            ) : lenders.map((lender, idx) => (
               <tr key={lender.id} style={{ cursor: 'default' }}>
+                <td style={{ color: 'var(--color-text-3)' }}>{idx + 1}</td>
                 <td style={{ fontWeight: 600 }}>{lender.name}</td>
                 <td><span className="font-mono">{lender.code}</span></td>
                 <td style={{ textTransform: 'uppercase', fontSize: 11, letterSpacing: '0.06em', color: 'var(--color-text-3)' }}>{lender.lender_type}</td>
@@ -65,15 +106,6 @@ export default function LendersPage() {
                 </td>
                 <td><StatusBadge status={lender.is_active ? 'active' : 'inactive'} /></td>
                 <td>
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => setRulesModal(lender.code)}
-                    id={`rules-${lender.code}`}
-                  >
-                    View Rules
-                  </button>
-                </td>
-                <td>
                   <label className="toggle">
                     <input
                       type="checkbox"
@@ -85,84 +117,123 @@ export default function LendersPage() {
                     <span className="toggle-track" />
                   </label>
                 </td>
+                <td>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setLenderToEdit(lender)}>Edit</button>
+                    <Link href={`/rules/${lender.id}`} className="btn btn-ghost btn-sm">Rules</Link>
+                    <button className="btn btn-ghost btn-sm" style={{ color: 'var(--color-rose)' }} onClick={() => handleDelete(lender)}>Delete</button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      <div style={{ marginTop: 16, padding: '12px 16px', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: 12, color: 'var(--color-text-3)' }}>
-        ℹ️ Only <strong>is_active</strong> and <strong>priority</strong> can be changed here. Credit rules are hardcoded in backend modules (<code>domains/lenders/&lt;code&gt;/</code>) — deploy a new backend version to update rules.
-      </div>
+      {isCreateModalOpen && <CreateLenderModal onClose={() => setCreateModalOpen(false)} />}
+      {lenderToEdit && <EditLenderModal lender={lenderToEdit} onClose={() => setLenderToEdit(null)} />}
     </>
   );
 }
 
-function RulesModal({ code, onClose }) {
-  const { data, isLoading } = useGetLenderRulesQuery(code);
-  const rules = data?.data;
+function CreateLenderModal({ onClose }) {
+  const [createLender, { isLoading }] = useCreateLenderMutation();
+  const [formData, setFormData] = useState({ name: '', code: '', lender_type: 'nbfc', priority: 99 });
+  const [error, setError] = useState(null);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError(null);
+    try {
+      await createLender(formData).unwrap();
+      onClose();
+    } catch (err) {
+      setError(err.data?.error?.message || err.message || 'Failed to create lender');
+    }
+  }
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }} onClick={onClose}>
-      <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: 32, maxWidth: 640, width: '90%', maxHeight: '80vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: 32, width: 400 }} onClick={e => e.stopPropagation()}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 24 }}>Create New NBFC</h2>
+        
+        {error && <div style={{ padding: 12, background: 'var(--color-rose-bg)', color: 'var(--color-rose)', fontSize: 13, borderRadius: 8, marginBottom: 16 }}>{error}</div>}
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
-            <h2 style={{ fontSize: 18, fontWeight: 700 }}>{rules?.lenderName || code} — Rules Reference</h2>
-            {rules && <span className="font-mono" style={{ fontSize: 11, color: 'var(--color-text-3)' }}>v{rules.rulesVersion}</span>}
+            <label className="label">Lender Name</label>
+            <input required className="input w-full" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g. SK Finance" />
           </div>
-          <button className="btn btn-ghost btn-icon" onClick={onClose}>✕</button>
-        </div>
-        {isLoading ? (
-          <div className="skeleton" style={{ height: 200 }} />
-        ) : rules ? (
-          <ProductRulesList rules={rules} />
-        ) : (
-          <p style={{ color: 'var(--color-rose)', fontSize: 13 }}>No rules module registered for this lender. Check backend registry.js.</p>
-        )}
+          <div>
+            <label className="label">Lender Code</label>
+            <input required className="input w-full font-mono" value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})} placeholder="e.g. sk-finance" />
+          </div>
+          <div>
+            <label className="label">Type</label>
+            <select className="input w-full" value={formData.lender_type} onChange={e => setFormData({...formData, lender_type: e.target.value})}>
+              <option value="nbfc">NBFC</option>
+              <option value="bank">Bank</option>
+            </select>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 8 }}>
+            <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={isLoading}>{isLoading ? 'Saving...' : 'Create Lender'}</button>
+          </div>
+        </form>
       </div>
     </div>
   );
 }
 
-function ProductRulesList({ rules }) {
+function EditLenderModal({ lender, onClose }) {
+  const [updateLender, { isLoading }] = useUpdateLenderMutation();
+  const [formData, setFormData] = useState({ 
+    name: lender.name, 
+    code: lender.code, 
+    lender_type: lender.lender_type 
+  });
+  const [error, setError] = useState(null);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError(null);
+    try {
+      await updateLender({ id: lender.id, ...formData }).unwrap();
+      onClose();
+    } catch (err) {
+      setError(err.data?.error?.message || err.message || 'Failed to update lender');
+    }
+  }
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {Object.entries(rules.products || {}).map(([product, r]) => (
-        <div key={product}>
-          <div style={{ fontSize: 13, fontWeight: 700, textTransform: 'capitalize', color: 'var(--color-primary)', marginBottom: 12 }}>
-            {product.replace(/_/g, ' ')}
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }} onClick={onClose}>
+      <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: 32, width: 400 }} onClick={e => e.stopPropagation()}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 24 }}>Edit NBFC</h2>
+        
+        {error && <div style={{ padding: 12, background: 'var(--color-rose-bg)', color: 'var(--color-rose)', fontSize: 13, borderRadius: 8, marginBottom: 16 }}>{error}</div>}
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <label className="label">Lender Name</label>
+            <input required className="input w-full" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g. SK Finance" />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            {[
-              ['Loan Range', `₹${r.loanRange?.min?.toLocaleString('en-IN')} – ₹${r.loanRange?.max?.toLocaleString('en-IN')}`],
-              ['LTV Range', `${r.ltvRange?.min}% – ${r.ltvRange?.max}%`],
-              ['Age Range', `${r.ageRange?.min} – ${r.ageRange?.max} years`],
-              ['Min CIBIL', r.minCibil],
-              ['NTC Accepted', r.cibilNegativeAccepted ? '✓ Yes' : '✗ No'],
-              ['Customer Types', r.customerTypes?.join(', ')],
-              ['Co-applicant Required', r.coApplicantRequired ? '✓ Required' : 'Optional'],
-            ].map(([label, value]) => (
-              <div key={label} style={{ padding: '10px 12px', background: 'var(--color-surface-3)', borderRadius: 8 }}>
-                <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--color-text-3)', marginBottom: 4 }}>{label}</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>{String(value)}</div>
-              </div>
-            ))}
+          <div>
+            <label className="label">Code (Unique)</label>
+            <input required className="input w-full" value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})} placeholder="e.g. SKF" style={{ textTransform: 'uppercase' }} />
           </div>
-        </div>
-      ))}
-      {rules.guarantorConditions && (
-        <div style={{ padding: '12px 16px', background: 'var(--color-amber-bg)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 8, fontSize: 12, color: 'var(--color-amber)' }}>
-          <strong>Guarantor:</strong> {rules.guarantorConditions}
-        </div>
-      )}
-      {rules.conditionalRules?.length > 0 && (
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: 'var(--color-text-2)' }}>Conditional Rules</div>
-          {rules.conditionalRules.map((r, i) => (
-            <div key={i} style={{ padding: '8px 12px', background: 'var(--color-surface-3)', borderRadius: 6, fontSize: 12, color: 'var(--color-text-2)', marginBottom: 6 }}>• {r}</div>
-          ))}
-        </div>
-      )}
+          <div>
+            <label className="label">Lender Type</label>
+            <select className="input w-full" value={formData.lender_type} onChange={e => setFormData({...formData, lender_type: e.target.value})}>
+              <option value="nbfc">NBFC</option>
+              <option value="bank">Bank</option>
+            </select>
+          </div>
+          <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+            <button type="button" className="btn btn-secondary flex-1" onClick={onClose} disabled={isLoading}>Cancel</button>
+            <button type="submit" className="btn btn-primary flex-1" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Changes'}</button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

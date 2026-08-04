@@ -7,7 +7,7 @@ const { supabase } = require('../../config/database');
 async function getActiveLenders() {
   const { data, error } = await supabase
     .from('lenders')
-    .select('id, code, name, priority')
+    .select('id, code, name, priority, rules')
     .eq('is_active', true)
     .order('priority', { ascending: true });
 

@@ -1,12 +1,6 @@
 'use strict';
 const { supabase } = require('../../config/database');
 
-/**
- * lenders-admin — the ONLY DB-backed lender logic.
- * Handles exactly two fields: is_active and priority.
- * Never touches anything resembling rule content.
- */
-
 async function listLenders() {
   const { data, error } = await supabase
     .from('lenders')
@@ -17,19 +11,28 @@ async function listLenders() {
   return data;
 }
 
-async function updateLender(id, patch) {
-  // Guard: only allow is_active and priority to be changed
-  const allowed = {};
-  if (patch.is_active !== undefined) allowed.is_active = patch.is_active;
-  if (patch.priority  !== undefined) allowed.priority  = patch.priority;
-
-  if (Object.keys(allowed).length === 0) {
-    throw Object.assign(new Error('VALIDATION_ERROR: Only is_active and priority fields are updatable'), { statusCode: 400, code: 'VALIDATION_ERROR' });
-  }
-
+async function createLender(lenderData) {
   const { data, error } = await supabase
     .from('lenders')
-    .update(allowed)
+    .insert({
+      name: lenderData.name,
+      code: lenderData.code,
+      lender_type: lenderData.lender_type || 'nbfc',
+      priority: lenderData.priority || 99,
+      is_active: true,
+      rules: {} // Initialize empty rules
+    })
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return data;
+}
+
+async function updateLender(id, patch) {
+  const { data, error } = await supabase
+    .from('lenders')
+    .update(patch)
     .eq('id', id)
     .select()
     .single();
@@ -39,4 +42,22 @@ async function updateLender(id, patch) {
   return data;
 }
 
-module.exports = { listLenders, updateLender };
+async function deleteLender(id) {
+  // Try to delete. If it violates FK (like having loan applications), it will throw an error
+  const { data, error } = await supabase
+    .from('lenders')
+    .delete()
+    .eq('id', id)
+    .select()
+    .single();
+  
+  if (error) {
+    if (error.code === '23503') {
+      throw Object.assign(new Error('Cannot delete lender because it has associated loan applications.'), { statusCode: 409, code: 'FOREIGN_KEY_VIOLATION' });
+    }
+    throw error;
+  }
+  return data;
+}
+
+module.exports = { listLenders, createLender, updateLender, deleteLender };

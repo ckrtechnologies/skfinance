@@ -370,18 +370,6 @@ CREATE TABLE settings (
 CREATE TRIGGER set_updated_at_settings
   BEFORE UPDATE ON settings FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
 
--- audit_log — APPEND-ONLY system-wide audit trail
-CREATE TABLE audit_log (
-  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  actor_profile_id UUID REFERENCES profiles(id) ON DELETE SET NULL,  -- null for job runs
-  action           TEXT NOT NULL,
-  entity           TEXT NOT NULL,   -- table/domain name e.g. 'loan_applications'
-  entity_id        UUID,
-  detail           JSONB NOT NULL DEFAULT '{}',
-  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
-  -- No updated_at — append-only
-);
-
 
 -- ─────────────────────────────────────────────────────────────────────
 -- SECTION 8 — INDEXES
@@ -422,9 +410,6 @@ CREATE INDEX idx_withdrawal_requests_pending ON withdrawal_requests(created_at) 
 CREATE INDEX idx_notifications_profile_unread ON notifications(profile_id, created_at DESC) WHERE read_at IS NULL;
 CREATE INDEX idx_notifications_profile_all    ON notifications(profile_id, created_at DESC);
 
--- audit_log
-CREATE INDEX idx_audit_log_entity ON audit_log(entity, entity_id);
-CREATE INDEX idx_audit_log_actor  ON audit_log(actor_profile_id, created_at DESC);
 
 
 -- ─────────────────────────────────────────────────────────────────────

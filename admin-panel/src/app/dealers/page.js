@@ -2,15 +2,33 @@
 
 import { useGetDealersQuery, useCreateDealerMutation } from '@/store/api/adminApi';
 import { StatusBadge, LoadingRows, EmptyState } from '@/components/ui/Primitives';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useDispatch } from 'react-redux';
+import { setHeaderInfo } from '@/store/slices/uiSlice';
+import ExportButtons from '@/components/ui/ExportButtons';
 
 export default function DealersPage() {
+  const dispatch = useDispatch();
+  useEffect(() => {
+    dispatch(setHeaderInfo({ title: 'Dealers', breadcrumbs: ['Operations', 'Dealers'] }));
+  }, [dispatch]);
   const { data, isLoading, refetch } = useGetDealersQuery();
   const [createDealer, { isLoading: creating }] = useCreateDealerMutation();
   const [showModal, setShowModal] = useState(false);
   const [newDealer, setNewDealer] = useState({ business_name: '', email: '', phone: '', pan_number: '', gst_number: '' });
   
   const dealers = data?.data || [];
+
+  const exportColumns = [
+    { header: 'S.No', accessor: (_, i) => i + 1 },
+    { header: 'Business Name', accessor: 'business_name' },
+    { header: 'Phone', accessor: 'phone' },
+    { header: 'Email', accessor: 'email' },
+    { header: 'PAN', accessor: 'pan_number' },
+    { header: 'GST', accessor: 'gst_number' },
+    { header: 'Status', accessor: (d) => d.is_active ? 'Active' : 'Inactive' },
+    { header: 'Joined On', accessor: (d) => new Date(d.created_at).toLocaleDateString() },
+  ];
 
   async function handleCreate(e) {
     e.preventDefault();
@@ -23,10 +41,7 @@ export default function DealersPage() {
   return (
     <>
       <div className="page-header flex items-center justify-between">
-        <div>
-          <h1 className="page-title">Dealers</h1>
-          <p className="page-desc">Manage automotive dealers onboarded to the platform</p>
-        </div>
+        <ExportButtons data={dealers} columns={exportColumns} filename="dealers_list" title="Dealers" />
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Onboard Dealer</button>
       </div>
 
@@ -34,6 +49,7 @@ export default function DealersPage() {
         <table className="data-table">
           <thead>
             <tr>
+              <th>S.No</th>
               <th>Business Name</th>
               <th>Phone</th>
               <th>Email</th>
@@ -45,8 +61,9 @@ export default function DealersPage() {
           <tbody>
             {isLoading ? <LoadingRows cols={6} /> : dealers.length === 0 ? (
               <EmptyState title="No dealers" description="No dealers have been onboarded yet." />
-            ) : dealers.map((dealer) => (
+            ) : dealers.map((dealer, idx) => (
               <tr key={dealer.id}>
+                <td style={{ color: 'var(--color-text-3)' }}>{idx + 1}</td>
                 <td style={{ fontWeight: 600 }}>{dealer.business_name}</td>
                 <td><span className="font-mono">{dealer.phone || '—'}</span></td>
                 <td>{dealer.email || '—'}</td>

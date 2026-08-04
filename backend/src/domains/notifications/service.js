@@ -18,9 +18,4 @@ async function markRead(notificationId, profileId) {
   return data;
 }
 
-async function logAudit({ actorProfileId, action, entity, entityId, detail }) {
-  const { error } = await supabase.from('audit_log').insert({ actor_profile_id: actorProfileId, action, entity, entity_id: entityId, detail: detail || {} });
-  if (error) console.error('[audit_log] Failed to write audit log:', error.message);
-}
-
-module.exports = { createNotification, listNotifications, markRead, logAudit };
+module.exports = { createNotification, listNotifications, markRead };

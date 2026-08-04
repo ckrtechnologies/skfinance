@@ -1,11 +1,19 @@
 'use client';
 
 import { useGetWithdrawalsQuery, useProcessWithdrawalMutation } from '@/store/api/adminApi';
+import { setHeaderInfo } from '@/store/slices/uiSlice';
+import { useDispatch } from 'react-redux';
 import { StatusBadge, LoadingRows, EmptyState, AmountCell } from '@/components/ui/Primitives';
-import { useState, Suspense } from 'react';
+import ExportButtons from '@/components/ui/ExportButtons';
+import { useState, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 function WithdrawalsPageContent() {
+  const dispatch = useDispatch();
+  useEffect(() => {
+    dispatch(setHeaderInfo({ title: 'Withdrawal Requests', breadcrumbs: ['Finance', 'Withdrawals'] }));
+  }, [dispatch]);
+
   const searchParams = useSearchParams();
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
   const [modal, setModal] = useState(null);
@@ -13,6 +21,17 @@ function WithdrawalsPageContent() {
   const { data, isLoading, refetch } = useGetWithdrawalsQuery({ status: statusFilter || undefined });
   const [processWithdrawal, { isLoading: processing }] = useProcessWithdrawalMutation();
   const withdrawals = data?.data || [];
+
+  const exportColumns = [
+    { header: 'S.No', accessor: (_, i) => i + 1 },
+    { header: 'Dealer', accessor: (w) => w.dealers?.business_name || '—' },
+    { header: 'Amount Requested', accessor: 'amount' },
+    { header: 'Status', accessor: 'status' },
+    { header: 'Requested On', accessor: (w) => new Date(w.created_at).toLocaleDateString() },
+    { header: 'Processed On', accessor: (w) => w.processed_at ? new Date(w.processed_at).toLocaleDateString() : '—' },
+    { header: 'Payout UTR', accessor: (w) => w.payout_utr || '—' },
+    { header: 'Rejection Reason', accessor: (w) => w.rejection_reason || '—' },
+  ];
 
   async function handleProcess(wr, approved) {
     const body = approved
@@ -25,26 +44,23 @@ function WithdrawalsPageContent() {
 
   return (
     <>
-      <div className="page-header flex items-center justify-between">
-        <div>
-          <h1 className="page-title">Withdrawal Requests</h1>
-          <p className="page-desc">Dealer payout requests</p>
-        </div>
-      </div>
-
-      {/* Filter */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+      {/* Filter and Export */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 10 }}>
         {['', 'requested', 'processed', 'rejected'].map(s => (
           <button key={s} className={`date-preset-btn${statusFilter === s ? ' active' : ''}`} onClick={() => setStatusFilter(s)} id={`filter-${s || 'all'}`}>
             {s ? s : 'All'}
           </button>
         ))}
       </div>
+        <ExportButtons data={withdrawals} columns={exportColumns} filename="withdrawals_list" title="Withdrawal Requests" />
+      </div>
 
       <div className="table-wrapper">
         <table className="data-table">
           <thead>
             <tr>
+              <th>S.No</th>
               <th>Dealer</th>
               <th>Amount Requested</th>
               <th>Status</th>
@@ -56,9 +72,10 @@ function WithdrawalsPageContent() {
           <tbody>
             {isLoading ? <LoadingRows cols={6} /> : withdrawals.length === 0 ? (
               <EmptyState title="No withdrawal requests" description="No requests matching the current filter." />
-            ) : withdrawals.map((wr) => (
+            ) : withdrawals.map((wr, idx) => (
               <tr key={wr.id} style={{ cursor: 'default' }}>
-                <td>{wr.dealers?.business_name || '—'}</td>
+                <td style={{ color: 'var(--color-text-3)' }}>{idx + 1}</td>
+                <td style={{ fontWeight: 600 }}>{wr.dealers?.business_name || '—'}</td>
                 <td style={{ fontWeight: 700 }}><AmountCell value={wr.amount_requested} /></td>
                 <td><StatusBadge status={wr.status} /></td>
                 <td className="text-muted text-sm">{new Date(wr.created_at).toLocaleDateString('en-IN')}</td>

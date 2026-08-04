@@ -1,7 +1,7 @@
 'use strict';
 const jwt = require('jsonwebtoken');
-const { JWT_SECRET } = require('../config/secrets');
-const { supabase }   = require('../config/database');
+const { JWT_SECRET } = require('../../config/secrets');
+const { supabase }   = require('../../config/database');
 const { sendError }  = require('../utils/response');
 
 /**
@@ -44,4 +44,13 @@ async function authenticate(req, res, next) {
   next();
 }
 
-module.exports = { authenticate };
+function requireRole(roles) {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return sendError(res, 403, 'FORBIDDEN', `Requires one of roles: ${roles.join(', ')}`);
+    }
+    next();
+  };
+}
+
+module.exports = { authenticate, requireRole };

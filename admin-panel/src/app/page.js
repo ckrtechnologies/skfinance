@@ -1,13 +1,29 @@
 'use client';
 
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { selectDateRange } from '@/store/slices/dateRangeSlice';
+import { setHeaderInfo } from '@/store/slices/uiSlice';
+import { useEffect } from 'react';
 import { useGetDashboardQuery, useGetApplicationsQuery, useGetCommissionsQuery, useGetWithdrawalsQuery } from '@/store/api/adminApi';
 import MetricCard from '@/components/dashboard/MetricCard';
 import { StatusBadge, AmountCell } from '@/components/ui/Primitives';
 import Link from 'next/link';
+import { 
+  IconFileText, 
+  IconCheck, 
+  IconStar, 
+  IconTrendingUp, 
+  IconCurrencyRupee, 
+  IconWallet, 
+  IconChevronRight 
+} from '@tabler/icons-react';
 
 export default function DashboardPage() {
+  const dispatch = useDispatch();
+  useEffect(() => {
+    dispatch(setHeaderInfo({ title: 'Dashboard', breadcrumbs: ['Overview', 'Dashboard'] }));
+  }, [dispatch]);
+
   const { from, to, label } = useSelector(selectDateRange);
   const { data: dashData, isLoading: dashLoading } = useGetDashboardQuery();
   const { data: appsData, isLoading: appsLoading } = useGetApplicationsQuery({ from, to, limit: 6 });
@@ -30,7 +46,7 @@ export default function DashboardPage() {
       color: 'var(--color-primary)',
       bg: 'var(--color-primary-bg)',
       href: '/applications',
-      icon: IconFile,
+      icon: IconFileText,
     },
     {
       label: 'Approved',
@@ -38,7 +54,7 @@ export default function DashboardPage() {
       sub: 'Awaiting disbursement',
       color: 'var(--color-teal)',
       bg: 'var(--color-teal-bg)',
-      href: '/applications',
+      href: '/applications?status=approved',
       icon: IconCheck,
     },
     {
@@ -47,7 +63,7 @@ export default function DashboardPage() {
       sub: 'Loans paid out',
       color: 'var(--color-emerald)',
       bg: 'var(--color-emerald-bg)',
-      href: '/applications',
+      href: '/applications?status=disbursed',
       icon: IconStar,
     },
     {
@@ -57,7 +73,7 @@ export default function DashboardPage() {
       color: 'var(--color-accent)',
       bg: 'var(--color-accent-bg)',
       href: '/commissions',
-      icon: IconTrend,
+      icon: IconTrendingUp,
     },
     {
       label: 'Commissions Earned',
@@ -66,7 +82,7 @@ export default function DashboardPage() {
       color: 'var(--color-amber)',
       bg: 'var(--color-amber-bg)',
       href: '/commissions',
-      icon: IconRupee,
+      icon: IconCurrencyRupee,
     },
     {
       label: 'Pending Withdrawals',
@@ -74,33 +90,22 @@ export default function DashboardPage() {
       sub: 'Awaiting payout',
       color: pendingWithdrawals > 0 ? 'var(--color-rose)' : 'var(--color-emerald)',
       bg: pendingWithdrawals > 0 ? 'var(--color-rose-bg)' : 'var(--color-emerald-bg)',
-      href: '/withdrawals',
+      href: '/withdrawals?status=requested',
       icon: IconWallet,
     },
   ];
 
   return (
     <>
-      {/* Page header */}
-      <div className="page-header">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="page-title">Dashboard</h1>
-            <p className="page-desc">Platform overview — Shreeja Finance</p>
-          </div>
-        </div>
-      </div>
 
-      {/* Metric Cards */}
+
       <div className="metric-grid" style={{ marginBottom: 32 }}>
         {METRICS.map((m) => (
           <MetricCard key={m.label} {...m} loading={dashLoading && m.label === 'Total Applications'} />
         ))}
       </div>
 
-      {/* Two-column: Recent Applications + Activity */}
       <div className="grid-2" style={{ gap: 20 }}>
-        {/* Recent Applications */}
         <div>
           <div className="section-header">
             <div>
@@ -147,16 +152,14 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Right column: Commissions + Quick Links */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {/* Mini Commission Bar Chart */}
           <div className="chart-card">
             <div className="chart-title">
               <span>Commissions — {label}</span>
               <Link href={`/commissions?from=${from}&to=${to}`} style={{ fontSize: 12, color: 'var(--color-primary)' }}>View all →</Link>
             </div>
             {commissions.length === 0 ? (
-              <div style={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-3)', fontSize: 13 }}>
+              <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-3)', fontSize: 13 }}>
                 No commissions in this range
               </div>
             ) : (
@@ -164,7 +167,6 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Quick Actions */}
           <div className="chart-card">
             <div className="chart-title"><span>Quick Links</span></div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -172,7 +174,6 @@ export default function DashboardPage() {
                 { label: 'Pending Withdrawals', href: '/withdrawals?status=requested', badge: pendingWithdrawals },
                 { label: 'Applications in Progress', href: `/applications?status=in_progress&from=${from}&to=${to}` },
                 { label: 'Lender Configuration', href: '/lenders' },
-                { label: 'Audit Log', href: `/audit-log?from=${from}&to=${to}` },
               ].map((link) => (
                 <Link key={link.href} href={link.href} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px', background: 'var(--color-surface-2)', borderRadius: 8, fontSize: 13, color: 'var(--color-text-2)', transition: 'all 0.15s', textDecoration: 'none' }}
                   onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-surface-3)'; e.currentTarget.style.color = 'var(--color-text)'; }}
@@ -181,7 +182,7 @@ export default function DashboardPage() {
                   <span>{link.label}</span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     {link.badge > 0 && <span className="nav-badge">{link.badge}</span>}
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+                    <IconChevronRight size={14} />
                   </span>
                 </Link>
               ))}
@@ -193,40 +194,33 @@ export default function DashboardPage() {
   );
 }
 
+import { BarChart } from '@mantine/charts';
+
 function MiniBarChart({ commissions }) {
-  const max = Math.max(...commissions.map(c => Number(c.amount)));
-  const display = commissions.slice(0, 8);
+  // Aggregate commissions by day
+  const daily = commissions.reduce((acc, curr) => {
+    const d = new Date(curr.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+    acc[d] = (acc[d] || 0) + Number(curr.amount || 0);
+    return acc;
+  }, {});
+
+  const data = Object.keys(daily).map(date => ({
+    date,
+    Commission: daily[date]
+  })).slice(-10); // Show last 10 days max
+
   return (
-    <div className="chart-area">
-      {display.map((c, i) => (
-        <div key={i} className="chart-bar-wrap" title={`₹${Number(c.amount).toLocaleString('en-IN')}`}>
-          <div
-            className="chart-bar"
-            style={{ height: `${Math.max(8, (Number(c.amount) / max) * 160)}px` }}
-          />
-          <div className="chart-bar-label">{String(i + 1).padStart(2, '0')}</div>
-        </div>
-      ))}
+    <div style={{ height: 200, marginTop: 16 }}>
+      <BarChart
+        h={200}
+        data={data}
+        dataKey="date"
+        series={[{ name: 'Commission', color: 'blue.5' }]}
+        tickLine="y"
+        withYAxis={false}
+        barProps={{ radius: 4 }}
+        tooltipAnimationDuration={200}
+      />
     </div>
   );
-}
-
-/* Inline icons */
-function IconFile({ size = 20 }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>;
-}
-function IconCheck({ size = 20 }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><polyline points="20 6 9 17 4 12" /></svg>;
-}
-function IconStar({ size = 20 }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>;
-}
-function IconTrend({ size = 20 }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" /><polyline points="16 7 22 7 22 13" /></svg>;
-}
-function IconRupee({ size = 20 }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M6 3h12M6 8h12M6 13l8.5 8L18 13" /></svg>;
-}
-function IconWallet({ size = 20 }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M16 12h2" /></svg>;
 }

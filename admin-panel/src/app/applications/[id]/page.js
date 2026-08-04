@@ -2,7 +2,9 @@
 
 import { useGetApplicationQuery, useGetStageEntriesQuery, useAddStageEntryMutation, useDisburseMutation, useReApproveMutation } from '@/store/api/adminApi';
 import { StatusBadge, AmountCell, LoadingRows } from '@/components/ui/Primitives';
-import { useState, use } from 'react';
+import { useState, useEffect, use } from 'react';
+import { useDispatch } from 'react-redux';
+import { setHeaderInfo } from '@/store/slices/uiSlice';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -24,6 +26,15 @@ export default function ApplicationDetailsPage({ params }) {
 
   const app = appData?.data;
   const stages = stagesData?.data || [];
+
+  const dispatch = useDispatch();
+  useEffect(() => {
+    if (app) {
+      dispatch(setHeaderInfo({ title: `App: ${app.application_no}`, breadcrumbs: ['Operations', 'Applications', 'Details'] }));
+    } else {
+      dispatch(setHeaderInfo({ title: 'Application Details', breadcrumbs: ['Operations', 'Applications', 'Details'] }));
+    }
+  }, [dispatch, app?.application_no]);
 
   if (isLoading) return <div className="p-8">Loading application details...</div>;
   if (!app) return <div className="p-8 text-rose-500">Application not found</div>;
@@ -51,12 +62,11 @@ export default function ApplicationDetailsPage({ params }) {
         <div>
           <div className="flex items-center gap-4 mb-2">
             <button onClick={() => router.back()} className="btn btn-secondary btn-sm">← Back</button>
-            <h1 className="page-title" style={{ margin: 0 }}>App: <span className="font-mono">{app.application_no}</span></h1>
             <StatusBadge status={app.status} />
+            <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-2)', marginLeft: '8px' }}>
+              {app.customers?.first_name} {app.customers?.last_name} • {app.product_type?.replace(/_/g, ' ')}
+            </span>
           </div>
-          <p className="page-desc">
-            {app.customers?.first_name} {app.customers?.last_name} • {app.product_type?.replace(/_/g, ' ')}
-          </p>
         </div>
         <div className="flex gap-2">
           {app.status === 'in_progress' && (

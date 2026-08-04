@@ -38,4 +38,18 @@ router.get('/me', authenticate, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// POST /auth/change-password — change current user password
+router.post('/change-password', authenticate, async (req, res, next) => {
+  try {
+    console.log("req.user in change-password:", req.user);
+    const { currentPassword, newPassword } = req.body;
+    const result = await authService.changePassword({ 
+      authUserId: req.user.authUserId, 
+      currentPassword, 
+      newPassword 
+    });
+    sendSuccess(res, result);
+  } catch (err) { next(err); }
+});
+
 module.exports = router;

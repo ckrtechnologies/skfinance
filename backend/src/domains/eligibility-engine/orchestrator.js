@@ -1,6 +1,6 @@
 'use strict';
-const repo     = require('./repository');
-const registry = require('../lenders/registry');
+const repo         = require('./repository');
+const { evaluateRules } = require('./evaluator');
 
 /**
  * orchestrate — calls every active lender module, collects results, ranks by priority.
@@ -25,25 +25,23 @@ async function orchestrate(applicantInput, { stage, loanApplicationId } = {}) {
   const results = [];
 
   for (const lender of activeLenders) {
-    let mod;
-    try {
-      mod = registry.getModule(lender.code);
-    } catch (err) {
-      // Log and skip lenders with no module (e.g. inactive placeholders somehow activated)
-      console.warn(`[orchestrator] Skipping lender '${lender.code}': ${err.message}`);
+    // No try catch needed for module loading anymore, skip if no rules
+    if (!lender.rules || Object.keys(lender.rules).length === 0) {
+      console.warn(`[orchestrator] Skipping lender '${lender.code}': No rules found in DB.`);
       continue;
     }
 
-    // 3. Call pure evaluate() — passes uploaded docs for full-stage document check
-    const verdict = mod.evaluate({ ...applicantInput, uploadedDocTypes });
+    // 3. Evaluate dynamically using rules from DB
+    const rulesJson = lender.rules || {};
+    const verdict = evaluateRules(rulesJson, { ...applicantInput, uploadedDocTypes });
 
-    // 4. Persist evaluation row (append-only) if we have a loan application to tie it to
+    // 4. Persist evaluation row
     let evalId = null;
     if (loanApplicationId) {
       const row = await repo.insertEvaluation({
         loan_application_id: loanApplicationId,
         lender_code:         lender.code,
-        rules_version:       mod.RULES_VERSION,
+        rules_version:       rulesJson.rulesVersion || 'v1',
         stage,
         result:              verdict.result,
         failed_rules:        verdict.failed_rules,
@@ -56,7 +54,7 @@ async function orchestrate(applicantInput, { stage, loanApplicationId } = {}) {
       lender_id:             lender.id,
       lender_name:           lender.name,
       lender_code:           lender.code,
-      rules_version:         mod.RULES_VERSION,
+      rules_version:         rulesJson.rulesVersion || 'v1',
       priority:              lender.priority,
       result:                verdict.result,
       failed_rules:          verdict.failed_rules,

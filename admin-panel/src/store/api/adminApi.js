@@ -14,11 +14,14 @@ export const adminApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Applications', 'Lenders', 'Dealers', 'Staff', 'Commissions', 'Withdrawals', 'Settings', 'AuditLog'],
+  tagTypes: ['Applications', 'Lenders', 'LenderRules', 'Dealers', 'Staff', 'Commissions', 'Withdrawals', 'Settings', 'AuditLog'],
   endpoints: (builder) => ({
     // Dashboard
     getDashboard: builder.query({
-      query: () => '/dashboard',
+      query: ({ from, to } = {}) => ({
+        url: '/dashboard',
+        params: { from, to }
+      }),
     }),
 
     // Applications
@@ -72,10 +75,26 @@ export const adminApi = createApi({
         method: 'PATCH',
         body,
       }),
+      invalidatesTags: (result, error, { id }) => ['Lenders', { type: 'LenderRules', id }],
+    }),
+    createLender: builder.mutation({
+      query: (body) => ({
+        url: '/lenders',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['Lenders'],
+    }),
+    deleteLender: builder.mutation({
+      query: (id) => ({
+        url: `/lenders/${id}`,
+        method: 'DELETE',
+      }),
       invalidatesTags: ['Lenders'],
     }),
     getLenderRules: builder.query({
-      query: (code) => `/lenders/${code}/rules`,
+      query: (id) => `/lenders/${id}/rules`,
+      providesTags: (result, error, id) => [{ type: 'LenderRules', id }],
     }),
 
     // Dealers
@@ -95,6 +114,21 @@ export const adminApi = createApi({
     }),
     createStaff: builder.mutation({
       query: (body) => ({ url: '/staff', method: 'POST', body }),
+      invalidatesTags: ['Staff'],
+    }),
+    updateStaff: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `/staff/${id}`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: ['Staff'],
+    }),
+    deleteStaff: builder.mutation({
+      query: (id) => ({
+        url: `/staff/${id}`,
+        method: 'DELETE',
+      }),
       invalidatesTags: ['Staff'],
     }),
 
@@ -129,12 +163,6 @@ export const adminApi = createApi({
       }),
       invalidatesTags: ['Settings'],
     }),
-
-    // Audit Log
-    getAuditLog: builder.query({
-      query: ({ from, to } = {}) => ({ url: '/audit-log', params: { from, to } }),
-      providesTags: ['AuditLog'],
-    }),
   }),
 });
 
@@ -148,15 +176,18 @@ export const {
   useReApproveMutation,
   useGetLendersQuery,
   useUpdateLenderMutation,
+  useCreateLenderMutation,
+  useDeleteLenderMutation,
   useGetLenderRulesQuery,
   useGetDealersQuery,
   useCreateDealerMutation,
   useGetStaffQuery,
   useCreateStaffMutation,
+  useUpdateStaffMutation,
+  useDeleteStaffMutation,
   useGetCommissionsQuery,
   useGetWithdrawalsQuery,
   useProcessWithdrawalMutation,
   useGetSettingsQuery,
   useUpdateSettingMutation,
-  useGetAuditLogQuery,
 } = adminApi;
