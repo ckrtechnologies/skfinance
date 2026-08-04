@@ -1,40 +1,54 @@
 'use strict';
-// Staff App routes — IDENTICAL contract to staff-panel but separate mount point
-// No commission or wallet routes exist here (L8 — enforced by absence)
-const { Router } = require('express');
+const express = require('express');
 const { authenticate } = require('../../shared/middleware/authenticate');
-const { roleGuard } = require('../../shared/middleware/roleGuard');
-const dashCtrl   = require('./controllers/dashboard.controller');
-const leadsCtrl  = require('./controllers/leads.controller');
-const loanCtrl   = require('./controllers/loan-status.controller');
-const perfCtrl   = require('./controllers/performance.controller');
-const notifCtrl  = require('./controllers/notifications.controller');
-const profileCtrl = require('./controllers/profile.controller');
-const { upload } = require('../../shared/utils/cdnStorage');
+const { roleGuard }    = require('../../shared/middleware/roleGuard');
+const { sendSuccess }  = require('../../shared/utils/response');
+const loanSvc          = require('../../domains/loan-applications/service');
+const notificationSvc  = require('../../domains/notifications/service');
+const { supabase }     = require('../../config/database');
 
-const router = Router();
-router.use(authenticate, roleGuard('staff'));
+const router = express.Router();
+router.use(authenticate, roleGuard(['staff']));
 
-router.get('/dashboard', dashCtrl.dashboard);
+// GET /staff-app/profile
+router.get('/profile', async (req, res, next) => {
+  try {
+    const { data } = await supabase.from('staff').select('*').eq('profile_id', req.user.profileId).single();
+    sendSuccess(res, data);
+  } catch (err) { next(err); }
+});
 
-// Leads & applications
-router.post('/leads', leadsCtrl.createLead);
-router.post('/applications', loanCtrl.create);
-router.patch('/applications/:id', loanCtrl.update);
-router.post('/applications/:id/documents', upload.single('file'), loanCtrl.uploadDoc);
-router.post('/applications/:id/evaluate', loanCtrl.evaluate);
-router.post('/applications/:id/submit', loanCtrl.submit);
-router.post('/applications/:id/stage-entries', loanCtrl.appendStageEntry);
-router.get('/applications', loanCtrl.list);
-router.get('/applications/:id', loanCtrl.getOne);
+// GET /staff-app/applications
+router.get('/applications', async (req, res, next) => {
+  try {
+    const { data: staffMember } = await supabase.from('staff').select('id').eq('profile_id', req.user.profileId).single();
+    const result = await loanSvc.listApplications({ staffId: staffMember.id, status: req.query.status, stage: req.query.stage });
+    sendSuccess(res, result);
+  } catch (err) { next(err); }
+});
 
-// Performance (no commission/wallet — L8)
-router.get('/performance', perfCtrl.getPerformance);
+// GET /staff-app/applications/:id
+router.get('/applications/:id', async (req, res, next) => {
+  try {
+    const app = await loanSvc.getApplication(req.params.id);
+    sendSuccess(res, app);
+  } catch (err) { next(err); }
+});
 
-// Notifications + profile
-router.get('/notifications', notifCtrl.list);
-router.post('/notifications/:id/read', notifCtrl.markRead);
-router.get('/profile', profileCtrl.get);
-router.patch('/profile', profileCtrl.update);
+// GET /staff-app/applications/:id/stage-entries
+router.get('/applications/:id/stage-entries', async (req, res, next) => {
+  try {
+    const entries = await loanSvc.getStageEntries(req.params.id);
+    sendSuccess(res, entries);
+  } catch (err) { next(err); }
+});
+
+// GET /staff-app/notifications
+router.get('/notifications', async (req, res, next) => {
+  try {
+    const notifications = await notificationSvc.listNotifications(req.user.profileId);
+    sendSuccess(res, notifications);
+  } catch (err) { next(err); }
+});
 
 module.exports = router;

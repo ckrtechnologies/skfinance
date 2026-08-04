@@ -1,33 +1,21 @@
 'use strict';
-const supabase = require('../../config/database');
-const secrets = require('../../config/secrets');
+const { supabase } = require('../../config/database');
 
 /**
- * generateApplicationNo — creates the next SF-YYYY-NNNNN application number.
- * Queries the DB for the highest existing number this year to ensure uniqueness.
- * @returns {Promise<string>} e.g. "SF-2026-00042"
+ * generateAppNo — generates the next application number in format SF-YYYY-NNNNN.
+ * Uses a DB count so it's unique per year.
  */
-async function generateApplicationNo() {
+async function generateAppNo() {
   const year = new Date().getFullYear();
-  const prefix = `${secrets.app.appNoPrefix}-${year}-`;
+  const prefix = `SF-${year}-`;
 
-  const { data, error } = await supabase
+  const { count } = await supabase
     .from('loan_applications')
-    .select('application_no')
-    .like('application_no', `${prefix}%`)
-    .order('application_no', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .select('*', { count: 'exact', head: true })
+    .like('application_no', `${prefix}%`);
 
-  if (error) throw error;
-
-  let nextNum = 1;
-  if (data?.application_no) {
-    const parts = data.application_no.split('-');
-    nextNum = parseInt(parts[parts.length - 1], 10) + 1;
-  }
-
-  return `${prefix}${String(nextNum).padStart(5, '0')}`;
+  const seq = String((count || 0) + 1).padStart(5, '0');
+  return `${prefix}${seq}`;
 }
 
-module.exports = { generateApplicationNo };
+module.exports = { generateAppNo };

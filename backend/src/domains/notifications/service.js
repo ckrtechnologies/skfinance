@@ -1,45 +1,26 @@
 'use strict';
-const supabase = require('../../config/database');
+const { supabase } = require('../../config/database');
 
-async function insertForProfile(profileId, { title, body, link_type, link_id }) {
-  const { error } = await supabase.from('notifications').insert({ profile_id: profileId, title, body, link_type, link_id });
-  if (error) console.error('[notifications] insert failed:', error.message);
+async function createNotification({ profileId, title, body, linkType, linkId }) {
+  const { error } = await supabase.from('notifications').insert({ profile_id: profileId, title, body, link_type: linkType, link_id: linkId });
+  if (error) console.error('[notifications] Failed to create notification:', error.message);
 }
 
-async function createForDealer(dealerId, payload) {
-  const { data: dealer } = await supabase.from('dealers').select('profile_id').eq('id', dealerId).single();
-  if (dealer?.profile_id) await insertForProfile(dealer.profile_id, payload);
-}
-
-async function createForStaff(staffId, payload) {
-  const { data: staff } = await supabase.from('staff').select('profile_id').eq('id', staffId).single();
-  if (staff?.profile_id) await insertForProfile(staff.profile_id, payload);
-}
-
-async function createForCustomer(customerId, payload) {
-  const { data: customer } = await supabase.from('customers').select('profile_id').eq('id', customerId).single();
-  if (customer?.profile_id) await insertForProfile(customer.profile_id, payload);
-}
-
-async function listForProfile(profileId, { page = 1, limit = 30 } = {}) {
-  const from = (page - 1) * limit;
-  const { data, count, error } = await supabase
-    .from('notifications')
-    .select('*', { count: 'exact' })
-    .eq('profile_id', profileId)
-    .order('created_at', { ascending: false })
-    .range(from, from + limit - 1);
+async function listNotifications(profileId) {
+  const { data, error } = await supabase.from('notifications').select('*').eq('profile_id', profileId).order('created_at', { ascending: false }).limit(50);
   if (error) throw error;
-  return { items: data, total: count, page, limit };
+  return data;
 }
 
 async function markRead(notificationId, profileId) {
-  const { error } = await supabase
-    .from('notifications')
-    .update({ read_at: new Date().toISOString() })
-    .eq('id', notificationId)
-    .eq('profile_id', profileId);
+  const { data, error } = await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('id', notificationId).eq('profile_id', profileId).select().single();
   if (error) throw error;
+  return data;
 }
 
-module.exports = { insertForProfile, createForDealer, createForStaff, createForCustomer, listForProfile, markRead };
+async function logAudit({ actorProfileId, action, entity, entityId, detail }) {
+  const { error } = await supabase.from('audit_log').insert({ actor_profile_id: actorProfileId, action, entity, entity_id: entityId, detail: detail || {} });
+  if (error) console.error('[audit_log] Failed to write audit log:', error.message);
+}
+
+module.exports = { createNotification, listNotifications, markRead, logAudit };

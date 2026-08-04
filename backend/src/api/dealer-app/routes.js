@@ -1,43 +1,83 @@
 'use strict';
-const { Router } = require('express');
-const { authenticate } = require('../../shared/middleware/authenticate');
-const { roleGuard } = require('../../shared/middleware/roleGuard');
-const dashCtrl   = require('./controllers/dashboard.controller');
-const leadsCtrl  = require('./controllers/leads.controller');
-const loanCtrl   = require('./controllers/loan-status.controller');
-const commCtrl   = require('./controllers/commissions.controller');
-const walletCtrl = require('./controllers/wallet.controller');
-const notifCtrl  = require('./controllers/notifications.controller');
-const profileCtrl = require('./controllers/profile.controller');
-const { upload } = require('../../shared/utils/cdnStorage');
+const express = require('express');
+const { authenticate }  = require('../../shared/middleware/authenticate');
+const { roleGuard }     = require('../../shared/middleware/roleGuard');
+const { sendSuccess }   = require('../../shared/utils/response');
+const loanSvc           = require('../../domains/loan-applications/service');
+const walletSvc         = require('../../domains/wallet/service');
+const notificationSvc   = require('../../domains/notifications/service');
+const { supabase }      = require('../../config/database');
 
-const router = Router();
-router.use(authenticate, roleGuard('dealer'));
+const router = express.Router();
+router.use(authenticate, roleGuard(['dealer']));
 
-router.get('/dashboard', dashCtrl.dashboard);
+// GET /dealer/profile
+router.get('/profile', async (req, res, next) => {
+  try {
+    const { data } = await supabase.from('dealers').select('*').eq('profile_id', req.user.profileId).single();
+    sendSuccess(res, data);
+  } catch (err) { next(err); }
+});
 
-// Leads & applications
-router.post('/leads', leadsCtrl.createLead);
-router.post('/applications', loanCtrl.create);
-router.patch('/applications/:id', loanCtrl.update);
-router.post('/applications/:id/documents', upload.single('file'), loanCtrl.uploadDoc);
-router.post('/applications/:id/evaluate', loanCtrl.evaluate);
-router.post('/applications/:id/submit', loanCtrl.submit);
-router.get('/applications', loanCtrl.list);
-router.get('/applications/:id', loanCtrl.getOne);
+// GET /dealer/applications
+router.get('/applications', async (req, res, next) => {
+  try {
+    const { data: dealer } = await supabase.from('dealers').select('id').eq('profile_id', req.user.profileId).single();
+    const result = await loanSvc.listApplications({ dealerId: dealer.id, status: req.query.status, stage: req.query.stage });
+    sendSuccess(res, result);
+  } catch (err) { next(err); }
+});
 
-// Commissions
-router.get('/commissions', commCtrl.list);
+// GET /dealer/applications/:id
+router.get('/applications/:id', async (req, res, next) => {
+  try {
+    const app = await loanSvc.getApplication(req.params.id);
+    sendSuccess(res, app);
+  } catch (err) { next(err); }
+});
 
-// Wallet
-router.get('/wallet', walletCtrl.getWallet);
-router.post('/wallet/withdrawal-requests', walletCtrl.createWithdrawal);
-router.get('/wallet/withdrawal-requests', walletCtrl.listWithdrawals);
+// GET /dealer/wallet
+router.get('/wallet', async (req, res, next) => {
+  try {
+    const { data: dealer } = await supabase.from('dealers').select('id').eq('profile_id', req.user.profileId).single();
+    const wallet = await walletSvc.getDealerWallet(dealer.id);
+    sendSuccess(res, wallet);
+  } catch (err) { next(err); }
+});
 
-// Notifications + profile
-router.get('/notifications', notifCtrl.list);
-router.post('/notifications/:id/read', notifCtrl.markRead);
-router.get('/profile', profileCtrl.get);
-router.patch('/profile', profileCtrl.update);
+// GET /dealer/commissions
+router.get('/commissions', async (req, res, next) => {
+  try {
+    const { data: dealer } = await supabase.from('dealers').select('id').eq('profile_id', req.user.profileId).single();
+    const commissions = await walletSvc.getDealerCommissions(dealer.id);
+    sendSuccess(res, commissions);
+  } catch (err) { next(err); }
+});
+
+// POST /dealer/withdrawal-requests
+router.post('/withdrawal-requests', async (req, res, next) => {
+  try {
+    const { data: dealer } = await supabase.from('dealers').select('id').eq('profile_id', req.user.profileId).single();
+    const wr = await walletSvc.createWithdrawalRequest(dealer.id, req.body.amount_requested);
+    sendSuccess(res, wr, 201);
+  } catch (err) { next(err); }
+});
+
+// GET /dealer/withdrawal-requests
+router.get('/withdrawal-requests', async (req, res, next) => {
+  try {
+    const { data: dealer } = await supabase.from('dealers').select('id').eq('profile_id', req.user.profileId).single();
+    const wrs = await walletSvc.getWithdrawalRequests(dealer.id);
+    sendSuccess(res, wrs);
+  } catch (err) { next(err); }
+});
+
+// GET /dealer/notifications
+router.get('/notifications', async (req, res, next) => {
+  try {
+    const notifications = await notificationSvc.listNotifications(req.user.profileId);
+    sendSuccess(res, notifications);
+  } catch (err) { next(err); }
+});
 
 module.exports = router;

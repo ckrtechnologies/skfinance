@@ -1,24 +1,45 @@
 'use strict';
-const secrets = require('../../config/secrets');
+const { sendError } = require('../utils/response');
 
 /**
- * Global error handler — catches anything passed to next(err).
- * Always returns the standard { success, error: { code, message } } shape.
- * Never leaks stack traces in production.
+ * Global error handler — must be registered as the LAST app.use().
+ * Catches any error thrown or passed to next(err) from a route.
  */
 function errorHandler(err, req, res, _next) {
-  if (secrets.nodeEnv !== 'production') {
-    console.error('[ERROR]', err);
+  // Zod validation errors
+  if (err.name === 'ZodError') {
+    return res.status(400).json({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: 'Validation failed', details: err.errors },
+    });
   }
 
-  const status = err.status ?? err.statusCode ?? 500;
-  const code = err.code ?? 'INTERNAL_ERROR';
-  const message =
-    secrets.nodeEnv === 'production' && status === 500
-      ? 'An unexpected error occurred'
-      : err.message ?? 'An unexpected error occurred';
+  // Known application errors thrown with a status code
+  if (err.statusCode) {
+    return sendError(res, err.statusCode, err.code || 'APP_ERROR', err.message);
+  }
 
-  res.status(status).json({ success: false, error: { code, message } });
+  // Supabase / DB errors that bubble up with a message
+  if (err.message) {
+    // Parse our Postgres RAISE EXCEPTION codes
+    const pgMatch = err.message.match(/^([A-Z_]+): (.+)$/);
+    if (pgMatch) {
+      const code = pgMatch[1];
+      const msg  = pgMatch[2];
+      const statusMap = {
+        NOT_FOUND:             404,
+        APPLICATION_TERMINAL:  409,
+        WRONG_STAGE:           409,
+        LIMIT_BLOCKED_90D:     409,
+        VALIDATION_ERROR:      400,
+        FORBIDDEN:             403,
+      };
+      return sendError(res, statusMap[code] || 400, code, msg);
+    }
+  }
+
+  console.error('[errorHandler] Unhandled error:', err);
+  return sendError(res, 500, 'INTERNAL_ERROR', 'An unexpected error occurred');
 }
 
 module.exports = { errorHandler };

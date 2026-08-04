@@ -1,9 +1,11 @@
 'use strict';
-const app = require('./app');
-const secrets = require('./src/config/secrets');
-const { startScheduler } = require('./src/jobs/scheduler');
+require('dotenv').config();
+const app = require('./src/app');
 
-app.listen(secrets.port, () => {
-  console.log(`[server] Shreeja Finance backend running on port ${secrets.port} (${secrets.nodeEnv})`);
-  startScheduler();
+const PORT = process.env.PORT || 4000;
+
+app.listen(PORT, () => {
+  console.log(`[shreeja-backend] Server running on port ${PORT}`);
+  // Start cron jobs after server is up
+  require('./src/jobs/scheduler');
 });

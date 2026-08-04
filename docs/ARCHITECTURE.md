@@ -2,194 +2,122 @@
 **Project:** Shreeja Finance Private Limited — Multi-App Vehicle Loan Platform
 **Client contact:** Prateek
 **Prepared by:** CKR Technologies
-**Version:** v1.0
-**Date:** 02 Aug 2026
-**Cross-references:** PRD.md, SCREEN-MAP.md, API.md, SCHEMA.md, AGENTS.md, JOBS.md
+**Version:** v2.0 · **Date:** 02 Aug 2026
+**Supersedes:** v1.0 — replaces the policy-as-data eligibility engine with hardcoded per-lender service modules (PRD.md v3.0 §3).
+**Cross-references:** PRD.md v3.0, SCREEN-MAP.md v3.0, API.md v3.0, SCHEMA.md v3.0, AGENTS.md v3.0
 
 ---
 
-## 1. Overview
+## 1. Overview — unchanged
 
-Five deliverables run against one shared Supabase/Express backend on a single CKR VPS:
+Five deliverables, one backend, one VPS. See v1.0 §1 (stack, deliverable list) — unchanged in this revision.
 
-| # | Deliverable | Platform | Users |
-|---|---|---|---|
-| 1 | Customer App | React Native (bare CLI) | End customers applying for a loan |
-| 2 | Dealer App | React Native (bare CLI) | Channel partner dealers — leads, status, commissions, wallet |
-| 3 | Staff App | React Native (bare CLI) | Shreeja Finance staff — leads, status, performance (no commission/wallet) |
-| 4 | Staff Panel | React + Vite (web) | Same as Staff App, desktop surface |
-| 5 | Admin Panel | React + Vite (web) | Shreeja Finance admin/ops — lenders, files, payouts, dealers, staff |
+## 2. Backend architecture — two layers, lender rules now hardcoded per module
 
-Marketing website is delivered separately and out of scope for this architecture.
-
-**Stack (house default, per `ckr-mobile-project-process`):**
-- Mobile: React Native bare CLI, plain JavaScript (no TypeScript), Redux Toolkit + RTK Query
-- Web panels: React + Vite SPA, static-served via Nginx
-- Backend: Express.js + Supabase (Postgres, Auth, RLS), on CKR VPS behind Nginx
-- No payment gateway in v1 (commission payouts are manual, ledger-tracked — see §5)
-
----
-
-## 2. Backend architecture — two layers, not one
-
-The house pattern (`domains/<name>/routes → controller → service → repository → validation`) is extended for this project with an additional **per-deliverable API layer** on top of it. This is a deliberate, client-requested deviation from the pure single-layer house pattern, recorded as a Locked Decision (§7).
-
-**Why two layers:** the client asked for one API folder per deliverable app so each app's endpoints are easy to find and reason about independently. But several rules in this system — eligibility logic, commission %, lender policy — must never exist in more than one place, because a lender changing their CIBIL cutoff must not require updating logic in five separate app folders. The two-layer split gets both: a clean per-app surface, and a single source of truth underneath it.
+The two-layer pattern from v1.0 (`api/<deliverable>/` thin over `domains/<name>/` fat) is unchanged. What changes is the internal shape of the `lenders` and `eligibility-engine` domains.
 
 ```
 src/
-  api/                              ← thin, one folder per deliverable
-    customer-app/
-      routes.js
-      controllers/
-        eligibility.controller.js
-        loan-application.controller.js
-        documents.controller.js
-    dealer-app/
-      routes.js
-      controllers/
-        leads.controller.js
-        loan-status.controller.js
-        commissions.controller.js
-        wallet.controller.js
-    staff-app/
-      routes.js
-      controllers/
-        leads.controller.js
-        loan-status.controller.js
-        performance.controller.js       ← no commissions/wallet controller exists here
-    staff-panel/
-      routes.js
-      controllers/
-        leads.controller.js
-        loan-status.controller.js
-        performance.controller.js       ← same as staff-app, web surface
+  api/                              ← unchanged from v1.0 — thin, one folder per deliverable
+    customer-app/ ... dealer-app/ ... staff-app/ ... staff-panel/ ...
     admin-panel/
-      routes.js
       controllers/
-        lenders.controller.js
-        policies.controller.js
-        loan-files.controller.js
-        commissions.controller.js
-        payouts.controller.js
-        dealers.controller.js
-        staff.controller.js
+        lenders.controller.js       ← now handles only: list, PATCH active/priority, GET rules-reference
+        (policies.controller.js REMOVED — no policy CRUD surface exists)
 
-  domains/                          ← fat, business logic lives exactly once
+  domains/
     eligibility-engine/
-      service.js
-      rule-evaluator.js
-      repository.js
-      validation.js
+      orchestrator.js                ← calls every active lender module, collects + ranks results
+      repository.js                  ← writes eligibility_evaluations rows
+
     lenders/
-      service.js
-      repository.js
-      validation.js
-    loan-applications/
-      service.js                    ← includes stage tracker (CIBIL→Bank→Valuation→FI→Approval→Disbursement)
-      repository.js
-      validation.js
-    commissions/
-      service.js                    ← 1.5% ≤ ₹10,00,000 / 2% above, single calculation point
-      repository.js
-      validation.js
-    wallet/
-      service.js
-      repository.js
-      validation.js
-    documents/
-      service.js
-      repository.js
-      validation.js
-    auth/
-      service.js
-      rbac.js                       ← role checks: customer / dealer / staff / admin
+      registry.js                    ← maps `lender.code` (from DB) → the correct module's evaluate()/getRulesSummary()
+      shared/
+        evaluator-interface.js       ← documents the fixed contract (see §3) — not executable logic itself
+      sk-finance/
+        rules.js                     ← hardcoded constants: min/max age, CIBIL, LTV, customer types, co-applicant rule
+        documents.js                 ← hardcoded required-document lists per party
+        evaluate.js                  ← SK's 10-step decision logic, written as plain sequential/branching code
+        index.js                     ← exports { evaluate, getRulesSummary, RULES_VERSION }
+      iti-finance/
+        rules.js
+        documents.js
+        evaluate.js
+        index.js
+      # future lenders: bajaj-finserv/, mahindra-finance/, tata-capital/, indusind-bank/ — each added the same way, one folder per lender, by CKR, as its own scoped work item
+
+    lenders-admin/
+      service.js                     ← the ONLY thing DB-backed here: active/inactive toggle, priority rank
+      repository.js                  ← reads/writes the `lenders` table (identity + status only)
+
+    loan-applications/ · commissions/ · wallet/ · documents/ · auth/   ← unchanged from v1.0
 
   jobs/
-    j1-auto-block-90days.js         ← see JOBS.md
+    j1-auto-block-90days.js          ← unchanged
+    # j4-policy-effective-sweep.js REMOVED — no versioned policy rows to sweep
 
-  config/
-    secrets.js                      ← only file allowed to read process.env (see §4)
-    database.js                     ← scoped Supabase client export
-
-  shared/
-    middleware/                     ← auth, error handling, request logging
-    utils/
-
-  app.js                            ← imports each api/<deliverable>/routes.js only
+  config/ · shared/ · app.js          ← unchanged from v1.0
 ```
 
-**Rules that make this hold together:**
-- Controllers in `api/*` are thin — they validate the request shape for that app's context and call into `domains/*` services. They never contain business rules.
-- Each `domains/<name>/repository.js` is the *only* file touching that domain's Supabase tables — no controller or another domain's service queries a table directly.
-- A domain only imports from itself and `shared/` — never reaches into another domain's internals. `api/dealer-app/controllers/commissions.controller.js` and `api/admin-panel/controllers/commissions.controller.js` both call `domains/commissions/service.js` — never duplicate the calculation.
-- **Staff App and Staff Panel structurally cannot expose commissions or wallet** — there is no `commissions.controller.js` or `wallet.controller.js` in either folder. The "staff gets no wallet" rule is enforced by what doesn't exist in the API surface, not by a conditional that could be missed.
-- Adding a domain = copying the fixed file shape (`service.js`, `repository.js`, `validation.js`) and registering one route file in `app.js` — never restructuring what exists.
+**What this buys, and what it costs — recorded per house process for major architecture decisions:**
+- **Gain:** each lender's rules are plain, readable, testable code — no generic JSONB interpreter to reason about. A developer opens `sk-finance/evaluate.js` and reads the 10 steps top to bottom, matching the client's rule sheet almost line for line.
+- **Cost, accepted knowingly:** a rule change or new lender is now a CKR code change + deploy, not an admin form submission. This is the client's explicit, recorded preference (PRD.md v3.0 §3) — maintenance-as-a-service is the intended business model here, not a gap to close later.
 
----
+## 3. The fixed lender-module interface
 
-## 3. What changing a rule actually touches
+Every folder under `domains/lenders/<code>/` must export exactly this shape from its `index.js` — nothing more, nothing less. This is what keeps N lender modules from turning into N inconsistent implementations:
 
-| Change type | Example | What gets updated |
+```js
+module.exports = {
+  RULES_VERSION: 'sk-v1.0',           // bump on every rule change — this is what eligibility_evaluations pins
+  evaluate(applicantInput) {
+    // pure function: applicantInput in, verdict out. No DB calls inside evaluate() itself —
+    // repository reads/writes happen in the orchestrator, not inside a lender module.
+    return {
+      result: 'eligible' | 'not_eligible' | 'incomplete',
+      failed_rules: [ /* human-readable strings */ ],
+      missing_items: [ /* human-readable strings */ ],
+      required_documents: [ /* derived checklist for this applicant's situation */ ],
+    };
+  },
+  getRulesSummary() {
+    // returns a human-readable object powering Admin Panel's read-only Lender Rules Reference (A6)
+    return { minAge, maxAge, minCibil, ltvRange, customerTypes, coApplicantRule, documentLists, guarantorConditions };
+  },
+};
+```
+
+**Rules:**
+- `evaluate()` is a **pure function** — same input always produces the same output. No side effects, no DB access inside it. This is what makes each module trivially unit-testable (feed it a fixed applicant object, assert the verdict) — the exact debugging simplicity that motivated this rework.
+- One module never imports another lender's internals. If two lenders happen to share logic (e.g. identical document-list shape), share it via `domains/lenders/shared/`, not by reaching into a sibling folder.
+- `orchestrator.js` is the only caller of any lender module's `evaluate()` — no controller, no other domain calls a lender module directly.
+- Adding a lender = adding a new folder implementing this interface + one line in `registry.js` mapping `code → module`. Never restructure existing lenders to add a new one.
+
+## 4. What changing a rule actually touches (revised from v1.0 §3)
+
+| Change type | v2.0 (policy-as-data) | v3.0 (hardcoded, current) |
 |---|---|---|
-| Lender policy data | ITI Finance raises CIBIL cutoff 650→680 | One row in `lenders`/`lender_policies` tables via Admin Panel — no code, no frontend change |
-| Business logic | New conditional-trigger type added to the rule evaluator | `domains/eligibility-engine/rule-evaluator.js` only — every app consuming eligibility checks gets it automatically |
-| Commission % | Slab changes from 1.5%/2% to new rates | `domains/commissions/service.js` only |
-| API contract | New field added to an eligibility response | The one `domains/eligibility-engine` service **and** only the specific `api/*` controllers/apps that need to read or display that field |
+| Lender changes a CIBIL cutoff | One DB row, no deploy | One line in that lender's `rules.js`, `RULES_VERSION` bump, deploy |
+| New lender onboarded | Admin form, no deploy | New folder + module, code review, deploy — scoped as its own work item |
+| Lender paused/reordered | DB row (same as before) | **Still just a DB row** — `is_active`/`priority` stay data, unchanged |
+| New *kind* of condition (not covered by existing lenders) | Extend the generic JSONB interpreter | Write it directly into that lender's `evaluate.js` — no interpreter to extend |
 
-This table exists to make the earlier open question concrete: most day-to-day changes (lender rules, commission %) touch exactly one file and zero frontend apps.
+This table is what should sit at the top of any client-facing explanation of "why did this change require a deploy" — it's the direct, honest trade-off of the L11 decision.
 
----
+## 5. Secrets gateway — unchanged from v1.0 §4
 
-## 4. Secrets gateway
+## 6. Frontend architecture — unchanged from v1.0 §5
 
-Exactly one file, `src/config/secrets.js`, is allowed to read `process.env`. It exposes scoped, named exports:
+No frontend app's code changes as a result of this rework — the eligibility check request/response contract is identical; only the backend implementation behind it changed.
 
-- Most domains only get the Supabase client (via `config/database.js`)
-- `wallet`/`commissions` domains get payout-related secrets if/when a payment gateway is introduced post-v1
-- `auth` domain gets the JWT secret
+## 7. Deployment topology — unchanged from v1.0 §6, see DEPLOYMENT.md v3.0
 
-Enforced via ESLint `no-restricted-properties`, banning `process.env` outside `src/config/**`. One `.env` file per environment — the gateway file limits blast radius, not separate env files per domain.
+## 8. Locked Decisions
 
----
-
-## 5. Frontend architecture (all 5 apps, same shape)
-
-```
-src/
-  domains/
-    <name>/
-      screens/ (or pages/ for web)
-      slice.js          ← RTK slice, if the domain has client state
-      api.js             ← RTK Query endpoints for this domain
-  shared/
-    theme/
-    components/
-    navigation/          ← or router/ for web
-    store/                ← RTK store + api base
-```
-
-A domain only imports from itself and `shared/`. Which domains exist per app follows directly from §2 — e.g. Dealer App has `wallet/` and `commissions/` domains, Staff App and Staff Panel do not.
-
----
-
-## 6. Deployment topology
-
-- Single CKR VPS, Nginx as reverse proxy / static host
-- Express backend: one process (PM2-managed), all 5 `api/*` route groups mounted under it
-- Web panels (Admin Panel, Staff Panel): static builds served by Nginx
-- Mobile apps (Customer, Dealer, Staff): store-distributed, call the same backend over HTTPS
-- Supabase: hosted Postgres + Auth + RLS, not self-hosted on the VPS
-- Full detail in DEPLOYMENT.md
-
----
-
-## 7. Locked Decisions
-
-- **L-ARCH-1:** Backend uses a two-layer structure — `api/<deliverable>/` (thin, one folder per app) over `domains/<name>/` (fat, shared business logic) — as a project-specific extension of the house domain-driven pattern, approved by client.
-- **L-ARCH-2:** Staff App and Staff Panel share identical backend domain access (leads, loan status, performance) and are structurally excluded from `commissions` and `wallet` domains — no controller for either exists in their `api/*` folders.
-- **L-ARCH-3:** Staff Panel is a separate React + Vite web codebase, not a restricted-role view inside Admin Panel.
-- **L-ARCH-4:** Eligibility engine, lender policies, and commission calculation each exist in exactly one `domains/*` service — no per-app duplication, regardless of how many `api/*` folders consume them.
+- **L-ARCH-1 through L-ARCH-4:** unchanged from v1.0 (two-layer backend, Staff exclusion, Staff Panel separate codebase, single-source-of-truth-per-domain).
+- **L-ARCH-5 (new):** lender credit rules are hardcoded per-lender modules under `domains/lenders/<code>/`, each implementing the fixed interface in §3. No generic rule interpreter exists in this codebase.
+- **L-ARCH-6 (new):** lender `is_active` and `priority` remain the only DB-editable lender fields; everything else about a lender's behavior is code.
+- **L-ARCH-7 (new):** every lender module exports `RULES_VERSION`, bumped on every rule change, pinned into every `eligibility_evaluations` row that module produces — this is the audit trail replacing the old versioned-policy-row mechanism.
 
 ---
 

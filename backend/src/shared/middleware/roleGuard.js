@@ -1,17 +1,19 @@
 'use strict';
-const { fail } = require('../utils/response');
+const { sendError } = require('../utils/response');
 
 /**
- * roleGuard(allowedRoles) — returns Express middleware that checks req.user.profile.role.
- * Must be used after authenticate().
+ * roleGuard(allowedRoles) — factory that returns middleware
+ * allowing only the specified roles. Must run after authenticate().
  *
- * @param {string[]} allowedRoles - e.g. ['admin'] or ['staff', 'admin']
+ * Usage: router.get('/path', authenticate, roleGuard(['admin']), controller)
  */
-function roleGuard(...allowedRoles) {
+function roleGuard(allowedRoles) {
   return (req, res, next) => {
-    const role = req.user?.profile?.role;
-    if (!role || !allowedRoles.includes(role)) {
-      return fail(res, 'FORBIDDEN', 'You do not have permission to perform this action', 403);
+    if (!req.user) {
+      return sendError(res, 401, 'UNAUTHORIZED', 'Not authenticated');
+    }
+    if (!allowedRoles.includes(req.user.role)) {
+      return sendError(res, 403, 'FORBIDDEN', `Role '${req.user.role}' is not permitted to access this resource`);
     }
     next();
   };

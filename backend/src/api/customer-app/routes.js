@@ -1,38 +1,94 @@
 'use strict';
-const { Router } = require('express');
-const { authenticate } = require('../../shared/middleware/authenticate');
-const { roleGuard } = require('../../shared/middleware/roleGuard');
-const eligCtrl = require('./controllers/eligibility.controller');
-const loanCtrl = require('./controllers/loan-application.controller');
-const docCtrl  = require('./controllers/documents.controller');
-const notifCtrl = require('./controllers/notifications.controller');
-const profileCtrl = require('./controllers/profile.controller');
-const { upload } = require('../../shared/utils/cdnStorage');
+const express  = require('express');
+const multer   = require('multer');
+const { authenticate }  = require('../../shared/middleware/authenticate');
+const { roleGuard }     = require('../../shared/middleware/roleGuard');
+const { sendSuccess }   = require('../../shared/utils/response');
+const { orchestrate }   = require('../../domains/eligibility-engine/orchestrator');
+const loanSvc           = require('../../domains/loan-applications/service');
+const documentSvc       = require('../../domains/documents/service');
+const notificationSvc   = require('../../domains/notifications/service');
+const { supabase }      = require('../../config/database');
 
-const router = Router();
-router.use(authenticate, roleGuard('customer'));
+const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
-// Eligibility
-router.post('/eligibility/pre-check', eligCtrl.preCheck);
-router.post('/applications/:id/evaluate', eligCtrl.fullEvaluate);
+// All customer routes require authentication + customer role
+router.use(authenticate, roleGuard(['customer']));
 
-// Applications
-router.post('/applications', loanCtrl.create);
-router.patch('/applications/:id', loanCtrl.update);
-router.get('/applications', loanCtrl.list);
-router.get('/applications/:id', loanCtrl.getOne);
-router.post('/applications/:id/submit', loanCtrl.submit);
-router.get('/applications/:id/checklist', docCtrl.checklist);
+// GET /customer/profile
+router.get('/profile', async (req, res, next) => {
+  try {
+    const { data } = await supabase.from('customers').select('*').eq('profile_id', req.user.profileId).single();
+    sendSuccess(res, data);
+  } catch (err) { next(err); }
+});
 
-// Documents
-router.post('/applications/:id/documents', upload.single('file'), docCtrl.upload);
+// POST /customer/pre-check — eligibility pre-check (no loan app required)
+router.post('/pre-check', async (req, res, next) => {
+  try {
+    const results = await orchestrate(req.body, { stage: 'pre_check' });
+    sendSuccess(res, results);
+  } catch (err) { next(err); }
+});
 
-// Notifications
-router.get('/notifications', notifCtrl.list);
-router.post('/notifications/:id/read', notifCtrl.markRead);
+// POST /customer/applications — create loan application
+router.post('/applications', async (req, res, next) => {
+  try {
+    const { data: customer } = await supabase.from('customers').select('id').eq('profile_id', req.user.profileId).single();
+    const app = await loanSvc.createApplication({ customerId: customer.id, createdByProfileId: req.user.profileId, dealerId: req.body.dealerId, staffId: null, productType: req.body.productType, vehicleDetails: req.body.vehicleDetails || {}, requestedAmount: req.body.requestedAmount });
+    sendSuccess(res, app, 201);
+  } catch (err) { next(err); }
+});
 
-// Profile
-router.get('/profile', profileCtrl.get);
-router.patch('/profile', profileCtrl.update);
+// GET /customer/applications
+router.get('/applications', async (req, res, next) => {
+  try {
+    const { data: customer } = await supabase.from('customers').select('id').eq('profile_id', req.user.profileId).single();
+    const result = await loanSvc.listApplications({ customerId: customer.id });
+    sendSuccess(res, result);
+  } catch (err) { next(err); }
+});
+
+// GET /customer/applications/:id
+router.get('/applications/:id', async (req, res, next) => {
+  try {
+    const app = await loanSvc.getApplication(req.params.id);
+    sendSuccess(res, app);
+  } catch (err) { next(err); }
+});
+
+// POST /customer/applications/:id/evaluate — full eligibility check
+router.post('/applications/:id/evaluate', async (req, res, next) => {
+  try {
+    const results = await orchestrate(req.body, { stage: 'full', loanApplicationId: req.params.id });
+    sendSuccess(res, results);
+  } catch (err) { next(err); }
+});
+
+// POST /customer/applications/:id/documents — upload document
+router.post('/applications/:id/documents', upload.single('file'), async (req, res, next) => {
+  try {
+    const app = await loanSvc.getApplication(req.params.id);
+    const doc = await documentSvc.uploadDocument({ loanApplicationId: app.id, applicationNo: app.application_no, party: req.body.party, docType: req.body.doc_type, file: req.file, uploadedByProfileId: req.user.profileId });
+    sendSuccess(res, doc, 201);
+  } catch (err) { next(err); }
+});
+
+// GET /customer/applications/:id/documents
+router.get('/applications/:id/documents', async (req, res, next) => {
+  try {
+    const docs = await documentSvc.listDocuments(req.params.id);
+    sendSuccess(res, docs);
+  } catch (err) { next(err); }
+});
+
+// GET /customer/notifications
+router.get('/notifications', async (req, res, next) => {
+  try {
+    const notifications = await notificationSvc.listNotifications(req.user.profileId);
+    sendSuccess(res, notifications);
+  } catch (err) { next(err); }
+});
 
 module.exports = router;

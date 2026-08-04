@@ -1,18 +1,41 @@
 'use strict';
-const { Router } = require('express');
+const express = require('express');
 const { authenticate } = require('../../shared/middleware/authenticate');
-const ctrl = require('./controllers/auth.controller');
+const { sendSuccess, sendError } = require('../../shared/utils/response');
+const authService = require('../../domains/auth/service');
 
-const router = Router();
+const router = express.Router();
 
-// Public — no auth required
-router.post('/otp/request', ctrl.requestOtp);
-router.post('/otp/verify', ctrl.verifyOtp);
-router.post('/login', ctrl.login);
+// POST /auth/login — admin email+password login
+router.post('/login', async (req, res, next) => {
+  try {
+    const result = await authService.loginWithPassword(req.body);
+    sendSuccess(res, result);
+  } catch (err) { next(err); }
+});
 
-// Authenticated
-router.post('/logout', authenticate, ctrl.logout);
-router.get('/me', authenticate, ctrl.me);
-router.patch('/profile', authenticate, ctrl.updateProfile);
+// POST /auth/otp/request — customer/dealer OTP request
+router.post('/otp/request', async (req, res, next) => {
+  try {
+    const result = await authService.requestOtp(req.body);
+    sendSuccess(res, result);
+  } catch (err) { next(err); }
+});
+
+// POST /auth/otp/verify — verify OTP and get JWT
+router.post('/otp/verify', async (req, res, next) => {
+  try {
+    const result = await authService.verifyOtp(req.body);
+    sendSuccess(res, result);
+  } catch (err) { next(err); }
+});
+
+// GET /auth/me — return current profile
+router.get('/me', authenticate, async (req, res, next) => {
+  try {
+    const profile = await authService.getMe(req.user.profileId);
+    sendSuccess(res, profile);
+  } catch (err) { next(err); }
+});
 
 module.exports = router;

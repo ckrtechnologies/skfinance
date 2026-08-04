@@ -1,104 +1,76 @@
 # PRD.md — Shreeja Finance Vehicle Loan Platform
 **Client:** Shreeja Finance Private Limited (contact: Prateek)
-**Prepared by:** CKR Technologies · **Version:** v2.0 · **Date:** 02 Aug 2026
-**Supersedes:** v1.x (4-app, single-lender scope). This version is the source of truth.
-**Companions:** SCREEN-MAP.md v2.0 · ARCHITECTURE.md v1.0 · SCHEMA.md v2.0 · API.md v2.0 · AUTH-MATRIX.md v2.0 · JOBS.md v2.0 · AGENTS.md v2.0
+**Prepared by:** CKR Technologies · **Version:** v3.0 · **Date:** 02 Aug 2026
+**Supersedes:** v2.0 (policy-as-data multi-lender engine). This version replaces the generic rule engine with **per-lender hardcoded service modules**.
+**Companions:** SCREEN-MAP.md v3.0 · ARCHITECTURE.md v2.0 · SCHEMA.md v3.0 · API.md v3.0 · AUTH-MATRIX.md v3.0 · JOBS.md v3.0 · AGENTS.md v3.0 · DESIGN.md v1.1
 
 ---
 
 ## 1. Business context
 
-Shreeja Finance Private Limited (Barabanki, UP · CIN UP64990UP2026PTC244922 · Director Mrs. Shivangi Srivastava) is a DSA / loan aggregator / digital lending platform for vehicle loans. It does **not** lend its own money — it sources loan files through a channel-partner network of car dealers and its own staff, then routes each file to the best-fit lender among its NBFC/bank partners (SK Finance, ITI Finance, Bajaj Finserv, Mahindra Finance, Tata Capital, IndusInd Bank).
+Unchanged from v2.0 §1 — Shreeja Finance Private Limited is a DSA/loan aggregator routing vehicle loan files through channel partners to NBFC/bank partners (SK Finance, ITI Finance, Bajaj Finserv, Mahindra Finance, Tata Capital, IndusInd Bank).
 
-**Products:** New Car Loan, Used Car Loan, Commercial Vehicle Loan.
-**Revenue:** payout from lenders on disbursed files; dealers earn a commission share per disbursed file.
+## 2. What we are building — unchanged deliverable count
 
-## 2. What we are building (5 deliverables + 1 backend)
+Same 5 deliverables + backend as v2.0 §2 (Customer App, Dealer App, Staff App, Staff Panel, Admin Panel). Website excluded (delivered).
 
-| # | Deliverable | Platform | Primary users |
-|---|---|---|---|
-| 1 | Customer App | React Native (bare CLI) | End customers — check eligibility, apply, upload documents, track status |
-| 2 | Dealer App | React Native (bare CLI) | Channel partners — add customers/leads, track files, view commissions + wallet |
-| 3 | Staff App | React Native (bare CLI) | Shreeja staff — add leads, process/track files, view own performance |
-| 4 | Staff Panel | React + Vite web | Same capabilities as Staff App on desktop |
-| 5 | Admin Panel | React + Vite web | Ops/admin — lender & policy management, all files, dealers, staff, payouts |
-| — | Backend | Express.js + Supabase | Shared by all five (see ARCHITECTURE.md) |
+## 3. Eligibility architecture — reworked (v3.0 change)
 
-Marketing website: **already delivered — out of scope.**
+**v2.0 approach (superseded):** lender credit policies stored as versioned JSONB data in Supabase, edited through an admin rule-editor form, interpreted at runtime by a generic rule evaluator.
 
-## 3. The core differentiator — multi-lender eligibility engine
+**v3.0 approach (current):** each lender's credit policy is **hardcoded as its own backend service module** — `domains/lenders/sk-finance/`, `domains/lenders/iti-finance/`, etc. — implementing a fixed evaluation interface. There is no generic JSONB rule interpreter and no admin-editable policy form.
 
-Every partner NBFC has a different credit policy (age band, CIBIL cutoff, LTV, co-applicant rules, guarantor triggers). The platform's engine evaluates one customer profile against **all active lender policies** and returns a per-lender verdict:
+**Reasoning (recorded per house process — deviations/major changes need a recorded reason):**
+- Client explicitly wants rule changes to route through CKR as billable maintenance work, not self-service admin edits.
+- Hardcoded, lender-specific code is simpler to read, test, and debug than a generic conditional-rule interpreter.
+- Trade-off accepted knowingly: adding a new lender or changing an existing lender's cutoff now requires a CKR code change + deploy, not a form submission. This is the intended behavior, not a limitation to fix later.
 
-- **Eligible** — file can go to this lender
-- **Not eligible** — with the exact failed rules (e.g. "age above 62 — ITI max", "CIBIL −1 not accepted")
-- **Incomplete** — with the list of missing data/documents
+**What stays configurable without a deploy:** a lender's **active/inactive** status and **priority rank** remain editable fields in Admin Panel — Prateek can pause a lender or reorder preference without needing CKR, but cannot change *what a lender's rules are*.
 
-When multiple lenders pass, results are ranked by admin-set lender priority; staff/admin choose where to submit. Policies are stored as **versioned data** in Supabase (not code) and managed through an Admin Panel rule editor — adding a lender is data entry, not development. Full design in ARCHITECTURE.md §2–3 and SCHEMA.md.
+**What every lender module must do:** given a customer's captured data + documents, return `{ result: eligible | not_eligible | incomplete, failed_rules: [...], missing_items: [...], required_documents: [...] }`. The **eligibility orchestrator** (`domains/eligibility-engine/orchestrator.js`) calls every active lender module, collects results, ranks by priority — this part is unchanged in spirit from v2.0, only what it calls has changed (fixed functions, not data-driven interpretation).
 
-**Two-stage evaluation:** a quick pre-check (6–8 questions, before documents) narrows the lender list early; the full check runs after data + document capture.
+**Transparency mechanism:** each lender module also exports a human-readable rules summary (min/max age, CIBIL, LTV, document lists, guarantor conditions) that powers a **read-only "Lender Rules Reference" screen** in Admin Panel — so the client can see current rules at a glance even though they can't edit them, and so a shipped rule-change is visibly reflected as proof of completed maintenance work.
 
-**Lender policies available at launch:** SK Finance (New/Used Car) and ITI Finance (New/Used Car) — both seeded from client-provided credit rule sheets. Other lenders and Commercial Vehicle rule sheets are pending from client (Open Item O2).
+**Launch lender modules:** `sk-finance` and `iti-finance`, built from the client-provided credit rule sheets (New/Used Car). Additional lenders (O2) get their own module built by CKR once their rule sheet arrives — each is scoped and billed as its own build/change item.
 
-## 4. Loan pipeline (unchanged from v1)
+## 4. Loan pipeline — unchanged
 
-Six-stage pipeline per file: **CIBIL → Bank → Valuation → FI → Approval → Disbursement.**
-- All verification is **manual** (no CIBIL API, no Aadhaar/KYC API, no third-party valuation API). Vehicle valuation uses the in-house depreciation-slab formula.
-- Stage entries are **immutable/append-only** — corrections are new rows with remarks.
-- **90-day rule:** loans not disbursed within 90 days of approval are auto-blocked and require re-approval (background job J1). The disbursement endpoint independently re-verifies the window at write time.
+Six-stage pipeline (CIBIL → Bank → Valuation → FI → Approval → Disbursement), manual verification, append-only stage entries, 90-day auto-block (job J1) — all unchanged from v2.0 §4.
 
-## 5. Commission & wallet (updated in v2)
+## 5. Commission & wallet — unchanged
 
-- **Slab commission for dealers** on disbursed amount: **1.5% for disbursed amount ≤ ₹10,00,000; 2% above ₹10,00,000.** Auto-calculated at disbursement, single calculation point in `domains/commissions`.
-- **Wallet = append-only ledger** per dealer: `commission_earned` (auto on disbursement) → `payout` (admin pays manually via bank, records UTR + date in Admin Panel) → `adjustment` (corrections as new rows). Balance = sum of ledger. Dealer App shows balance, ledger history, and a "request withdrawal" action that flags admin.
-- **No payment gateway in v1** — payouts are off-platform bank transfers, recorded on-platform.
-- **Staff earn no commission** (salaried). Staff App/Panel have **no wallet or commission surface at all** — structurally excluded (ARCHITECTURE.md L-ARCH-2). Staff get performance tracking: files added, files disbursed, stage conversion.
-- One dealer per loan; no sub-dealer hierarchy.
+Slab commission (1.5% ≤ ₹10,00,000 / 2% above), append-only wallet ledger, manual admin payouts, staff excluded from commission/wallet — unchanged from v2.0 §5.
 
-## 6. Roles & auth
+## 6. Roles & auth — unchanged
 
-| Role | Surfaces | Auth |
-|---|---|---|
-| Customer | Customer App | Phone OTP |
-| Dealer | Dealer App | Phone OTP |
-| Staff | Staff App + Staff Panel (same account) | Username + password |
-| Admin | Admin Panel | Email + password |
+Unchanged from v2.0 §6.
 
-Full permission matrix in AUTH-MATRIX.md. RLS on every table.
-
-## 7. Locked decisions (v2)
+## 7. Locked decisions (v3.0 — supersedes/extends v2.0 L11–L12)
 
 | # | Decision |
 |---|---|
-| L1 | 5 deliverables as per §2; marketing website excluded (delivered) |
-| L2 | Six-stage pipeline CIBIL → Bank → Valuation → FI → Approval → Disbursement |
-| L3 | 90-day approval-to-disbursement window; auto-block via job J1; re-approval required after block |
-| L4 | Stage entries, commissions, ledger rows, evaluations: append-only, never edited or deleted |
-| L5 | All verification manual in v1 — no CIBIL/KYC/valuation APIs; in-house depreciation-slab valuation |
-| L6 | No payment gateway in v1; commission payouts manual + ledger-recorded |
-| L7 | Commission slab: 1.5% ≤ ₹10,00,000 / 2% above, on disbursed amount, dealers only |
-| L8 | Staff (app + panel) structurally excluded from commissions/wallet |
-| L9 | Auth models per §6 |
-| L10 | One dealer per loan; no sub-dealer hierarchy |
-| L11 | Multi-lender eligibility engine: policy-as-data, versioned, admin-editable; evaluations pin the exact policy version used |
-| L12 | Launch lender set: SK Finance + ITI Finance (New/Used Car); additional lenders added via admin rule editor as client supplies rule sheets |
-| L13 | Backend: two-layer structure — thin `api/<deliverable>/` over shared `domains/` (ARCHITECTURE.md L-ARCH-1) |
-| L14 | Staff Panel is a separate React + Vite codebase, not a restricted Admin Panel view |
-| L15 | Loan amount range ₹1,00,000 – ₹15,00,000 (per SK + ITI sheets; per-lender values live in policy data) |
+| L1–L10 | Unchanged from v2.0 (5 deliverables, pipeline, 90-day rule, append-only, manual verification, no payment gateway, commission slab, staff exclusion, auth model, one dealer per loan) |
+| **L11 (revised)** | **Eligibility rules are hardcoded per lender**, one backend service module per lender under `domains/lenders/<lender-code>/`, each implementing a fixed evaluation interface. No generic JSONB rule interpreter. |
+| **L12 (revised)** | Launch lender modules: SK Finance + ITI Finance (New/Used Car), built from client rule sheets. Additional lenders = new CKR-built module per lender, scoped as its own work item, billed accordingly. |
+| L13–L14 | Unchanged from v2.0 (two-layer backend structure, Staff Panel separate codebase) |
+| **L16 (new)** | Lender **active/inactive** status and **priority rank** remain Admin-Panel-editable (DB fields); the underlying credit **rules** are not editable outside a CKR code change. |
+| **L17 (new)** | Every lender module exports a machine-readable rules summary powering a read-only Admin Panel "Lender Rules Reference" screen. |
+| L15 | Loan amount range ₹1,00,000–₹15,00,000 (per-lender values now live in that lender's `rules.js`, not a DB row) |
 
-## 8. Open items (must close at/before Screen Map sign-off)
+## 8. Open items
 
 | # | Item | Owner |
 |---|---|---|
-| O1 | Commission slab basis: does 2% apply to the whole disbursed amount once above ₹10L, or only the portion above? (Docs currently assume whole amount — confirm) | Prateek |
-| O2 | Credit rule sheets for Bajaj, Mahindra, Tata Capital, IndusInd + Commercial Vehicle sheets for all lenders | Prateek |
-| O3 | E-signing of customer loan agreement: Aadhaar eSign via ESP (Digio/Leegality, per-signature cost, creates INTEGRATIONS.md) vs in-app click-to-sign + OTP (no external dependency, weaker legal standing) | Prateek |
-| O4 | SMS/OTP provider account (MSG91/2Factor/other) — client-owned or CKR-procured | Prateek |
-| O5 | Brand assets for the three new/changed surfaces (Staff App, Staff Panel) — confirm same tokens as existing DESIGN.md | Prateek |
+| O1 | Commission slab basis (whole amount vs marginal above ₹10L) | Prateek |
+| O2 | Credit rule sheets for Bajaj, Mahindra, Tata Capital, IndusInd + CV sheets — **each triggers a new lender-module build**, scope/estimate provided per sheet received | Prateek |
+| O3 | E-signing decision (Aadhaar eSign vs click-to-sign+OTP) | Prateek |
+| O4 | SMS/OTP provider account | Prateek |
+| O5 | Brand assets / exact hex confirmation | Prateek |
+| **O6 (new)** | **Rule-change process/SLA** — how a client-requested rule change (e.g. ITI CIBIL cutoff update) is submitted, scoped, and turned around by CKR. Recommend a short lightweight change-request template so these don't get lost in chat. | Prateek + CKR |
 
-## 9. Out of scope (v1)
+## 9. Out of scope (v1) — unchanged
 
-Payment gateway / EMI collection · automated CIBIL/KYC/valuation APIs · push notifications & SMS beyond OTP (notifications are in-app rows) · sub-dealer hierarchy · lender-side portal access · marketing website (delivered separately).
+Payment gateway/EMI, automated CIBIL/KYC/valuation APIs, push/SMS beyond OTP, sub-dealer hierarchy, lender-side portal access, marketing website. **Also now explicitly out of scope:** self-service admin editing of lender credit rules (was in scope in v2.0, removed in v3.0 per L11).
 
 ---
 

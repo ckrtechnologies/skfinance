@@ -1,52 +1,54 @@
 'use strict';
-const supabase = require('../../config/database');
+const { supabase } = require('../../config/database');
 
-/** Fetch all active policies for the engine pre-filter */
-async function findActivePoliciesPrefilter(input) {
-  // Indexed pre-filter: lender must be active; policy must be active
-  // Amount and age bounds checked in DB to reduce rows before JS rule evaluation
-  let q = supabase
-    .from('lender_policies')
-    .select(`
-      *,
-      policy_documents(*),
-      lenders!inner(id, name, code, priority, is_active)
-    `)
-    .eq('status', 'active')
-    .eq('lenders.is_active', true)
-    .lte('min_loan_amount', input.requested_amount)
-    .gte('max_loan_amount', input.requested_amount)
-    .lte('min_age', input.age)
-    .gte('max_age', input.age);
-
-  if (input.product_type) {
-    q = q.eq('product_type', input.product_type);
-  }
-
-  const { data, error } = await q;
-  if (error) throw error;
-  return data ?? [];
-}
-
-/** Append an eligibility_evaluations row (append-only) */
-async function insertEvaluation(row) {
+/**
+ * getActiveLenders — fetches all active lenders ordered by priority.
+ */
+async function getActiveLenders() {
   const { data, error } = await supabase
-    .from('eligibility_evaluations')
-    .insert(row)
-    .select()
-    .single();
+    .from('lenders')
+    .select('id, code, name, priority')
+    .eq('is_active', true)
+    .order('priority', { ascending: true });
+
   if (error) throw error;
   return data;
 }
 
-/** Get uploaded doc types for a loan application (for 'full' evaluation) */
+/**
+ * getUploadedDocTypes — returns list of doc_type strings uploaded for a loan application.
+ */
 async function getUploadedDocTypes(loanApplicationId) {
   const { data, error } = await supabase
     .from('documents')
     .select('doc_type, party')
     .eq('loan_application_id', loanApplicationId);
+
   if (error) throw error;
-  return data?.map(d => d.doc_type) ?? [];
+  return data.map(d => d.doc_type);
 }
 
-module.exports = { findActivePoliciesPrefilter, insertEvaluation, getUploadedDocTypes };
+/**
+ * insertEvaluation — appends a row to eligibility_evaluations (append-only).
+ * Always includes lender_code and rules_version (the audit trail).
+ */
+async function insertEvaluation({ loan_application_id, lender_code, rules_version, stage, result, failed_rules, missing_items }) {
+  const { data, error } = await supabase
+    .from('eligibility_evaluations')
+    .insert({
+      loan_application_id,
+      lender_code,
+      rules_version,
+      stage,
+      result,
+      failed_rules,
+      missing_items,
+    })
+    .select('id')
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+module.exports = { getActiveLenders, getUploadedDocTypes, insertEvaluation };
