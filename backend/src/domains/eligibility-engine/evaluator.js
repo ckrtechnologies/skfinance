@@ -4,7 +4,7 @@
  * Generic Eligibility Evaluator with Lender-Specific Hardcoded Overrides
  */
 
-const BLOOD_RELATIONS = ['father', 'mother', 'brother', 'sister', 'son', 'daughter'];
+const BLOOD_RELATIONS = ['father', 'mother', 'brother', 'sister', 'son', 'daughter', 'husband', 'wife'];
 
 function evaluateRules(rulesJson, input) {
   const {
@@ -52,7 +52,7 @@ function evaluateRules(rulesJson, input) {
   }
 
   // 2. Base KYC Requirements
-  const required_documents = { applicant: ['kyc_pan', 'kyc_aadhaar'], guarantor: [], co_applicant: [] };
+  const required_documents = { applicant: ['kyc_pan', 'kyc_aadhaar_or_voter_id'], guarantor: [], co_applicant: [] };
 
   if (customerType === 'salaried') {
     required_documents.applicant.push('income_bank_statement', 'income_salary_slip');
@@ -118,7 +118,7 @@ function evaluateRules(rulesJson, input) {
     const applicantHasOwnership = uploadedDocTypes.includes('address_electricity_or_khatauni') || uploadedDocTypes.includes('address_ownership_proof');
     const coAppHasOwnership = uploadedDocTypes.includes('co_app_electricity_or_khatauni') || uploadedDocTypes.includes('co_app_ownership_proof');
     
-    if (!applicantHasOwnership && !coAppHasOwnership && addressType !== 'owned') {
+    if (!applicantHasOwnership && !coAppHasOwnership) {
       isGuarantorRequired = true;
       additional_requirements.push('Guarantor is mandatory because no ownership proof was provided by Applicant or Co-Applicant');
     }

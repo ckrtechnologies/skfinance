@@ -16,7 +16,8 @@ import {
   IconWallet,
   IconSettings,
   IconShieldCheck,
-  IconChevronLeft
+  IconChevronLeft,
+  IconUserCheck,
 } from '@tabler/icons-react';
 
 const NAV = [
@@ -29,11 +30,12 @@ const NAV = [
   {
     group: 'Operations',
     items: [
-      { href: '/applications',    label: 'Applications',  icon: IconFileText, color: '#10b981' },
-      { href: '/lenders',         label: 'Lenders',       icon: IconBuildingBank, color: '#8b5cf6' },
-      { href: '/dealers',         label: 'Dealers',       icon: IconBuildingStore, color: '#f59e0b' },
-      { href: '/staff',           label: 'Staff',         icon: IconUsers, color: '#ec4899' },
-      { href: '/customers',       label: 'Customers',     icon: IconUsers, color: '#14b8a6' },
+      { href: '/applications',      label: 'Applications',      icon: IconFileText,      color: '#10b981' },
+      { href: '/lenders',           label: 'Lenders',           icon: IconBuildingBank,  color: '#8b5cf6' },
+      { href: '/dealers',           label: 'Dealers',           icon: IconBuildingStore, color: '#f59e0b' },
+      { href: '/dealer-onboarding', label: 'Dealer Onboarding', icon: IconUserCheck,     color: '#f97316', badge: true },
+      { href: '/staff',             label: 'Staff',             icon: IconUsers,         color: '#ec4899' },
+      { href: '/customers',         label: 'Customers',         icon: IconUsers,         color: '#14b8a6' },
     ],
   },
   {
@@ -55,6 +57,7 @@ export default function Sidebar() {
   const collapsed = useSelector(selectSidebarCollapsed);
   const dispatch  = useDispatch();
   const pathname  = usePathname();
+  const [pendingCount, setPendingCount] = useState(0);
 
   const [theme, setTheme] = useState('dark');
 
@@ -63,6 +66,19 @@ export default function Sidebar() {
     setTheme(savedTheme);
     document.documentElement.setAttribute('data-theme', savedTheme);
   }, []);
+
+  // Fetch pending dealer onboarding count for badge
+  useEffect(() => {
+    const token = localStorage.getItem('sk_admin_token');
+    if (!token) return;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+    fetch(`${apiUrl}/admin/dealer-onboarding?status=under_review&limit=1`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(r => r.json())
+      .then(d => setPendingCount(d?.data?.pending_count || 0))
+      .catch(() => {});
+  }, [pathname]);
 
   const toggleTheme = () => {
     const newTheme = theme === 'dark' ? 'light' : 'dark';
@@ -102,6 +118,22 @@ export default function Sidebar() {
                 >
                   <item.icon className="nav-icon" style={{ color: item.color }} stroke={2} size={18} />
                   <span className="nav-label">{item.label}</span>
+                  {item.badge && pendingCount > 0 && (
+                    <span style={{
+                      marginLeft: 'auto',
+                      backgroundColor: '#f97316',
+                      color: 'white',
+                      borderRadius: '10px',
+                      padding: '1px 7px',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      lineHeight: '18px',
+                      minWidth: '18px',
+                      textAlign: 'center',
+                    }}>
+                      {pendingCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}

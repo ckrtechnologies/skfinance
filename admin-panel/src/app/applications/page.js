@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { useState, useEffect, Suspense } from 'react';
 
 const STATUSES = ['', 'draft', 'in_progress', 'approved', 'disbursed', 'rejected', 'cancelled', 'blocked_90d'];
-const STAGES   = ['', 'cibil', 'bank', 'valuation', 'fi', 'approval', 'disbursement'];
+const STAGES   = ['', 'pre_check', 'cibil', 'document_verification', 'bank', 'valuation', 'fi', 'sanction', 'approval', 'disbursement'];
 
 function ApplicationsPageContent() {
   const dispatch = useDispatch();
@@ -80,6 +80,8 @@ function ApplicationsPageContent() {
             <tr>
               <th>S.No</th>
               <th>App No.</th>
+              <th>Source</th>
+              <th>Customer</th>
               <th>Product</th>
               <th>Requested</th>
               <th>Stage</th>
@@ -90,26 +92,41 @@ function ApplicationsPageContent() {
           </thead>
           <tbody>
             {isLoading || isFetching ? (
-              <LoadingRows cols={8} rows={8} />
+              <LoadingRows cols={10} rows={8} />
             ) : apps.length === 0 ? (
               <EmptyState title="No applications found" description="Try adjusting the date range or filters." />
             ) : (
-              apps.map((app, idx) => (
-                <tr key={app.id}>
-                  <td style={{ color: 'var(--color-text-3)' }}>{offset + idx + 1}</td>
-                  <td><span className="font-mono">{app.application_no}</span></td>
-                  <td style={{ textTransform: 'capitalize' }}>{app.product_type?.replace(/_/g, ' ')}</td>
-                  <td><AmountCell value={app.requested_amount} /></td>
-                  <td style={{ textTransform: 'capitalize' }}>{app.current_stage?.replace(/_/g, ' ')}</td>
-                  <td><StatusBadge status={app.status} /></td>
-                  <td className="text-muted text-sm">{new Date(app.created_at).toLocaleDateString('en-IN')}</td>
-                  <td>
-                    <Link href={`/applications/${app.id}?from=${from}&to=${to}`} className="btn btn-ghost btn-sm">
-                      View
-                    </Link>
-                  </td>
-                </tr>
-              ))
+              apps.map((app, idx) => {
+                const source = app.source || {
+                  type: app.dealer_id ? 'dealer' : app.staff_id ? 'staff' : 'customer',
+                  label: app.dealer_id ? 'Dealer Portal' : app.staff_id ? 'Staff Assisted' : 'Customer Direct',
+                  detail: app.dealers?.business_name || app.staff?.name || 'Direct'
+                };
+                const customerName = app.customers?.profiles?.full_name || app.applicant_details?.customer_name || 'Customer';
+
+                return (
+                  <tr key={app.id}>
+                    <td style={{ color: 'var(--color-text-3)' }}>{offset + idx + 1}</td>
+                    <td><span className="font-mono font-bold text-primary">{app.application_no || app.id?.substring(0,8)}</span></td>
+                    <td>
+                      <span className="text-xs px-2 py-0.5 rounded font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                        {source.type === 'dealer' ? '🏬 Dealer' : source.type === 'staff' ? '👔 Staff' : '👤 Direct'}
+                      </span>
+                    </td>
+                    <td className="font-medium">{customerName}</td>
+                    <td style={{ textTransform: 'capitalize' }}>{app.product_type?.replace(/_/g, ' ')}</td>
+                    <td><AmountCell value={app.requested_amount} /></td>
+                    <td style={{ textTransform: 'capitalize' }} className="font-semibold">{app.current_stage?.replace(/_/g, ' ')}</td>
+                    <td><StatusBadge status={app.status} /></td>
+                    <td className="text-muted text-sm">{new Date(app.created_at).toLocaleDateString('en-IN')}</td>
+                    <td>
+                      <Link href={`/applications/${app.id}?from=${from}&to=${to}`} className="btn btn-ghost btn-sm">
+                        View
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

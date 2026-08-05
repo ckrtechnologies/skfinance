@@ -38,6 +38,7 @@ export const adminApi = createApi({
     }),
     getStageEntries: builder.query({
       query: (id) => `/applications/${id}/stage-entries`,
+      providesTags: (result, error, id) => [{ type: 'Applications', id }, 'Applications'],
     }),
     addStageEntry: builder.mutation({
       query: ({ id, ...body }) => ({

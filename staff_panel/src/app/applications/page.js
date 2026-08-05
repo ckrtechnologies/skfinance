@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { useState, useEffect, Suspense, useMemo } from 'react';
 
 const STATUSES = ['', 'draft', 'in_progress', 'approved', 'disbursed', 'rejected', 'cancelled', 'blocked_90d'];
-const STAGES = ['', 'cibil', 'bank', 'valuation', 'fi', 'approval', 'disbursement'];
+const STAGES = ['', 'pre_check', 'cibil', 'document_verification', 'bank', 'valuation', 'fi', 'sanction', 'approval', 'disbursement'];
 const LIMIT_OPTIONS = [20, 100, 200, 300, 400, 500];
 
 function ApplicationsPageContent() {

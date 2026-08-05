@@ -161,6 +161,26 @@ router.get('/applications/:id', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// GET /dealer/applications/:id/stage-entries
+router.get('/applications/:id/stage-entries', async (req, res, next) => {
+  try {
+    const entries = await loanSvc.getStageEntries(req.params.id);
+    sendSuccess(res, entries);
+  } catch (err) { next(err); }
+});
+
+// POST /dealer/applications/:id/clarification
+router.post('/applications/:id/clarification', async (req, res, next) => {
+  try {
+    const result = await loanSvc.resubmitClarification({
+      loanApplicationId: req.params.id,
+      dealerProfileId: req.user.profileId,
+      notes: req.body.notes
+    });
+    sendSuccess(res, result);
+  } catch (err) { next(err); }
+});
+
 // GET /dealer/wallet
 router.get('/wallet', async (req, res, next) => {
   try {

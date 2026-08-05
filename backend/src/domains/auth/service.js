@@ -113,13 +113,14 @@ async function requestOtp({ phone, email, identifier }) {
   console.log(`==========================================\n\n`);
   // TODO: Replace above with Nodemailer (if email) or DLT HTTP API (if phone)
   
-  return { message: 'OTP sent' };
+  return { message: 'OTP sent', otp: otpCode };
 }
 
 /**
  * verifyOtp — verify custom OTP and issue JWT.
+ * Optional body field: intent = 'dealer' | 'customer' (default: 'customer')
  */
-async function verifyOtp({ phone, email, identifier, token, otp }) {
+async function verifyOtp({ phone, email, identifier, token, otp, intent }) {
   const loginId = identifier || phone || email;
   const otpCode = token || otp;
 
@@ -141,35 +142,104 @@ async function verifyOtp({ phone, email, identifier, token, otp }) {
   // Delete after use to keep table clean
   await supabase.from('otps').delete().eq('id', otpData.id);
 
-  // Find profile
+  const isEmail = loginId.includes('@');
+
+  // 1. Try to find an existing profile by email or phone
   let { data: profile } = await supabase
     .from('profiles')
     .select('id, role, full_name, is_active, auth_user_id')
-    .or(`email.eq.${loginId},phone.eq.${loginId}`)
+    .or(isEmail ? `email.eq.${loginId}` : `phone.eq.${loginId}`)
     .maybeSingle();
 
   if (!profile) {
-    // Auto-create Customer profile (Option B)
-    const dummyPhone = loginId.includes('@') ? `9${Date.now()}`.slice(0, 10) : loginId;
-    const { data: authData, error: authErr } = await supabase.auth.admin.createUser({ phone: dummyPhone, phone_confirm: true });
-    
-    if (authErr) throw Object.assign(new Error('Failed to create user auth record'), { statusCode: 500 });
-    
+    // 2. Try to find if auth user already exists for this identifier
+    const isDealer = intent === 'dealer';
+    const role = isDealer ? 'dealer' : 'customer';
+
+    // Supabase requires E.164 format for phone
+    const e164Phone = isEmail
+      ? `+91${Date.now().toString().slice(-10)}`  // dummy phone for email-based signup
+      : loginId.startsWith('+') ? loginId : `+91${loginId}`;
+
+    let authUserId = null;
+
+    // Try listing users to find by phone/email to avoid duplicate creation
+    if (isEmail) {
+      const { data: usersPage } = await supabase.auth.admin.listUsers({ perPage: 50 });
+      const existingUser = usersPage?.users?.find(u => u.email === loginId);
+      if (existingUser) authUserId = existingUser.id;
+    } else {
+      const { data: usersPage } = await supabase.auth.admin.listUsers({ perPage: 50 });
+      const normalised = loginId.replace(/^\+91/, '');
+      const existingUser = usersPage?.users?.find(u => {
+        const uPhone = (u.phone || '').replace(/^\+91/, '');
+        return uPhone === normalised;
+      });
+      if (existingUser) authUserId = existingUser.id;
+    }
+
+    // If no existing auth user, create one
+    if (!authUserId) {
+      const createPayload = isEmail
+        ? { email: loginId, email_confirm: true, password: `tmp_${Date.now()}` }
+        : { phone: e164Phone, phone_confirm: true };
+      const { data: authData, error: authErr } = await supabase.auth.admin.createUser(createPayload);
+      if (authErr) {
+        console.error('Auth createUser error:', authErr);
+        throw Object.assign(new Error('Failed to create auth user: ' + authErr.message), { statusCode: 500 });
+      }
+      authUserId = authData.user.id;
+    }
+
+    // 3. Upsert profile (handles race condition where profile may exist already)
     const { data: newProf, error: profErr } = await supabase.from('profiles')
-      .insert({ 
-        auth_user_id: authData.user.id, 
-        role: 'customer', 
-        full_name: 'Customer', 
-        phone: loginId.includes('@') ? null : loginId,
-        email: loginId.includes('@') ? loginId : null 
-      })
+      .upsert({
+        auth_user_id: authUserId,
+        role,
+        full_name: isDealer ? 'Dealer' : 'Customer',
+        phone: isEmail ? null : loginId,
+        email: isEmail ? loginId : null
+      }, { onConflict: 'auth_user_id' })
       .select().single();
-      
-    if (profErr) throw Object.assign(new Error('Failed to create customer profile'), { statusCode: 500 });
+
+    if (profErr) {
+      console.error('Profile upsert error:', profErr);
+      throw Object.assign(new Error('Failed to create profile: ' + profErr.message), { statusCode: 500 });
+    }
     profile = newProf;
+
+    if (isDealer) {
+      // Create blank dealers row only if it doesn't already exist
+      const { data: existingDealer } = await supabase
+        .from('dealers')
+        .select('id')
+        .eq('profile_id', profile.id)
+        .maybeSingle();
+
+      if (!existingDealer) {
+        const { error: dealerErr } = await supabase.from('dealers').insert({
+          profile_id: profile.id,
+          onboarding_status: 'pending'
+        });
+        if (dealerErr) console.error('Failed to create blank dealer row:', dealerErr);
+      }
+    }
   }
 
   if (!profile.is_active) throw Object.assign(new Error('Account deactivated'), { statusCode: 403, code: 'FORBIDDEN' });
+
+  // Fetch onboarding_status for dealer role
+  let onboarding_status = null;
+  let onboarding_rejection_reason = null;
+  if (profile.role === 'dealer') {
+    const { data: dealerRow } = await supabase
+      .from('dealers')
+      .select('onboarding_status, onboarding_rejection_reason')
+      .eq('profile_id', profile.id)
+      .maybeSingle();
+    onboarding_status = dealerRow?.onboarding_status || 'pending';
+    onboarding_rejection_reason = dealerRow?.onboarding_rejection_reason || null;
+  }
 
   const jwtToken = jwt.sign(
     { sub: profile.auth_user_id, role: profile.role, profileId: profile.id },
@@ -177,7 +247,16 @@ async function verifyOtp({ phone, email, identifier, token, otp }) {
     { expiresIn: '7d' }
   );
 
-  return { token: jwtToken, profile: { id: profile.id, role: profile.role, full_name: profile.full_name } };
+  return {
+    token: jwtToken,
+    profile: {
+      id: profile.id,
+      role: profile.role,
+      full_name: profile.full_name,
+      onboarding_status,
+      rejection_reason: onboarding_rejection_reason
+    }
+  };
 }
 
 /**

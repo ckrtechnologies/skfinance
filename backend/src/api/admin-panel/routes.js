@@ -130,7 +130,7 @@ router.get('/lenders/:id/rules', async (req, res, next) => {
 // ── Dealers ───────────────────────────────────────────────────────────
 router.get('/dealers', async (req, res, next) => {
   try {
-    const { data, error } = await supabase.from('dealers').select('*, profiles(full_name, phone, email, is_active)').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('dealers').select('*, profiles!profile_id(full_name, phone, email, is_active)').order('created_at', { ascending: false });
     if (error) throw error;
     sendSuccess(res, data);
   } catch (err) { next(err); }
@@ -421,6 +421,120 @@ router.get('/notifications', async (req, res, next) => {
   try {
     const notifications = await notificationSvc.listNotifications(req.user.profileId);
     sendSuccess(res, notifications);
+  } catch (err) { next(err); }
+});
+
+
+// ── Dealer Onboarding ─────────────────────────────────────────────────
+
+/**
+ * GET /admin/dealer-onboarding
+ * List dealers pending review. Also returns a total pending count for badge.
+ */
+router.get('/dealer-onboarding', async (req, res, next) => {
+  try {
+    const status = req.query.status || 'under_review';
+    const limit  = parseInt(req.query.limit, 10) || 20;
+    const offset = parseInt(req.query.offset, 10) || 0;
+
+    const { data: dealers, error, count } = await supabase
+      .from('dealers')
+      .select(`
+        id, onboarding_status, onboarding_submitted_at, onboarding_rejection_reason,
+        business_name, business_address, pan_number, gst_number, city, state, pincode,
+        bank_account_name, bank_account_number, bank_ifsc, bank_name, documents,
+        profiles!profile_id!inner(full_name, phone, email, created_at)
+      `, { count: 'exact' })
+      .eq('onboarding_status', status)
+      .order('onboarding_submitted_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) throw error;
+
+    // Also get pending count for sidebar badge
+    const { count: pendingCount } = await supabase
+      .from('dealers')
+      .select('*', { count: 'exact', head: true })
+      .in('onboarding_status', ['under_review', 'pending']);
+
+    sendSuccess(res, { dealers, total: count, pending_count: pendingCount });
+  } catch (err) { next(err); }
+});
+
+/**
+ * GET /admin/dealer-onboarding/:id
+ * Get full onboarding detail for one dealer.
+ */
+router.get('/dealer-onboarding/:id', async (req, res, next) => {
+  try {
+    const { data: dealer, error } = await supabase
+      .from('dealers')
+      .select(`
+        *, profiles!profile_id!inner(full_name, phone, email, created_at)
+      `)
+      .eq('id', req.params.id)
+      .single();
+
+    if (error || !dealer) return res.status(404).json({ error: 'Dealer not found' });
+    sendSuccess(res, dealer);
+  } catch (err) { next(err); }
+});
+
+/**
+ * POST /admin/dealer-onboarding/:id/approve
+ * Approve a dealer. Requires dealer_code in body.
+ */
+router.post('/dealer-onboarding/:id/approve', async (req, res, next) => {
+  try {
+    const { dealer_code } = req.body;
+    if (!dealer_code) return res.status(400).json({ error: 'dealer_code is required' });
+
+    const { data, error } = await supabase
+      .from('dealers')
+      .update({
+        onboarding_status: 'approved',
+        dealer_code,
+        is_active: true,
+        onboarding_reviewed_at: new Date().toISOString(),
+        onboarding_reviewed_by: req.user.profileId,
+        onboarding_rejection_reason: null
+      })
+      .eq('id', req.params.id)
+      .select('id, dealer_code, onboarding_status, profile_id')
+      .single();
+
+    if (error) throw error;
+
+    // Also activate the profile
+    await supabase.from('profiles').update({ is_active: true }).eq('id', data.profile_id);
+
+    sendSuccess(res, data);
+  } catch (err) { next(err); }
+});
+
+/**
+ * POST /admin/dealer-onboarding/:id/reject
+ * Reject a dealer with a reason. Dealer can resubmit.
+ */
+router.post('/dealer-onboarding/:id/reject', async (req, res, next) => {
+  try {
+    const { reason } = req.body;
+    if (!reason) return res.status(400).json({ error: 'reason is required' });
+
+    const { data, error } = await supabase
+      .from('dealers')
+      .update({
+        onboarding_status: 'rejected',
+        onboarding_rejection_reason: reason,
+        onboarding_reviewed_at: new Date().toISOString(),
+        onboarding_reviewed_by: req.user.profileId
+      })
+      .eq('id', req.params.id)
+      .select('id, onboarding_status')
+      .single();
+
+    if (error) throw error;
+    sendSuccess(res, data);
   } catch (err) { next(err); }
 });
 
