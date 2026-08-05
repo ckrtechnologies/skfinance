@@ -1,8 +1,8 @@
 -- 1. Grant base PostgreSQL permissions so the 'anon' and 'authenticated' roles can actually read/write tables.
 -- Without these grants, disabling RLS still won't let them read the table!
-GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
-GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role, postgres;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role, postgres;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role, postgres;
 
 -- 2. Instead of just disabling RLS (which can be finicky in Supabase), let's create a blanket policy 
 -- that allows ALL operations for ALL roles (anon and authenticated) on every table.

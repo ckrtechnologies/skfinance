@@ -138,17 +138,76 @@ router.get('/dealers', async (req, res, next) => {
 
 router.post('/dealers', async (req, res, next) => {
   try {
-    const { business_name, phone, email, ...dealerFields } = req.body;
+    const { business_name, phone, email, password, ...dealerFields } = req.body;
     const dealer_code = `DLR-${Date.now()}`;
-    const { data: authData, error: authErr } = await supabase.auth.admin.createUser({ phone, phone_confirm: true });
+    const createUserPayload = { password, phone_confirm: true, email_confirm: true };
+    if (email) createUserPayload.email = email;
+    if (phone) createUserPayload.phone = phone;
+    const { data: authData, error: authErr } = await supabase.auth.admin.createUser(createUserPayload);
     if (authErr) throw authErr;
     const { data: profile, error: profErr } = await supabase.from('profiles')
       .upsert({ auth_user_id: authData.user.id, role: 'dealer', full_name: business_name, phone, email }, { onConflict: 'auth_user_id' })
       .select().single();
     if (profErr) throw profErr;
-    const { data: dealer, error: dealErr } = await supabase.from('dealers').insert({ profile_id: profile.id, dealer_code, ...dealerFields }).select().single();
+    const { data: dealer, error: dealErr } = await supabase.from('dealers').insert({ profile_id: profile.id, dealer_code, business_name, ...dealerFields }).select().single();
     if (dealErr) throw dealErr;
     sendSuccess(res, dealer, 201);
+  } catch (err) { next(err); }
+});
+
+router.patch('/dealers/:id', async (req, res, next) => {
+  try {
+    const { business_name, phone, email, password, pan_number, gst_number, is_active } = req.body;
+    
+    const { data: dealerRow, error: getErr } = await supabase.from('dealers').select('profile_id').eq('id', req.params.id).single();
+    if (getErr) throw getErr;
+    
+    const { data: profileRow, error: profGetErr } = await supabase.from('profiles').select('auth_user_id').eq('id', dealerRow.profile_id).single();
+    if (profGetErr) throw profGetErr;
+
+    if (password && password.trim() !== '') {
+      const { error: authErr } = await supabase.auth.admin.updateUserById(profileRow.auth_user_id, { password });
+      if (authErr) throw authErr;
+    }
+
+    const profileUpdate = {};
+    if (business_name !== undefined) profileUpdate.full_name = business_name;
+    if (phone !== undefined) profileUpdate.phone = phone;
+    if (email !== undefined) profileUpdate.email = email;
+    if (is_active !== undefined) profileUpdate.is_active = is_active;
+    
+    if (Object.keys(profileUpdate).length > 0) {
+      const { error: profUpdateErr } = await supabase.from('profiles').update(profileUpdate).eq('id', dealerRow.profile_id);
+      if (profUpdateErr) throw profUpdateErr;
+    }
+
+    const dealerUpdate = {};
+    if (business_name !== undefined) dealerUpdate.business_name = business_name;
+    if (pan_number !== undefined) dealerUpdate.pan_number = pan_number;
+    if (gst_number !== undefined) dealerUpdate.gst_number = gst_number;
+    if (is_active !== undefined) dealerUpdate.is_active = is_active;
+    
+    if (Object.keys(dealerUpdate).length > 0) {
+      const { error: dealerUpdateErr } = await supabase.from('dealers').update(dealerUpdate).eq('id', req.params.id);
+      if (dealerUpdateErr) throw dealerUpdateErr;
+    }
+
+    sendSuccess(res, { success: true });
+  } catch (err) { next(err); }
+});
+
+router.delete('/dealers/:id', async (req, res, next) => {
+  try {
+    const { data: dealerRow, error: getErr } = await supabase.from('dealers').select('profile_id').eq('id', req.params.id).single();
+    if (getErr) throw getErr;
+
+    const { data: profileRow, error: profGetErr } = await supabase.from('profiles').select('auth_user_id').eq('id', dealerRow.profile_id).single();
+    if (profGetErr) throw profGetErr;
+
+    const { error: authDelErr } = await supabase.auth.admin.deleteUser(profileRow.auth_user_id);
+    if (authDelErr) throw authDelErr;
+
+    sendSuccess(res, { deleted: true });
   } catch (err) { next(err); }
 });
 
@@ -165,7 +224,11 @@ router.post('/staff', async (req, res, next) => {
   try {
     const { full_name, email, password, role, phone, ...staffFields } = req.body;
     const staff_code = `STF-${Date.now()}`;
-    const { data: authData, error: authErr } = await supabase.auth.admin.createUser({ email, password, email_confirm: true });
+    const createUserPayload = { password, email_confirm: true, phone_confirm: true };
+    if (email) createUserPayload.email = email;
+    if (phone) createUserPayload.phone = phone;
+    
+    const { data: authData, error: authErr } = await supabase.auth.admin.createUser(createUserPayload);
     if (authErr) throw authErr;
     const { data: profile, error: profErr } = await supabase.from('profiles')
       .upsert({ auth_user_id: authData.user.id, role: role || 'staff', full_name, email, phone }, { onConflict: 'auth_user_id' })
@@ -232,6 +295,82 @@ router.delete('/staff/:id', async (req, res, next) => {
     // Delete Auth User (cascades to profiles and staff)
     const { error: authDelErr } = await supabase.auth.admin.deleteUser(profileRow.auth_user_id);
     if (authDelErr) throw authDelErr;
+
+    sendSuccess(res, { deleted: true });
+  } catch (err) { next(err); }
+});
+
+// ── Customers ──────────────────────────────────────────────────────────
+router.get('/customers', async (req, res, next) => {
+  try {
+    const { data, error } = await supabase.from('customers').select('*, profiles(full_name, phone, email, is_active)').order('created_at', { ascending: false });
+    if (error) throw error;
+    sendSuccess(res, data);
+  } catch (err) { next(err); }
+});
+
+router.patch('/customers/:id', async (req, res, next) => {
+  try {
+    const { full_name, phone, email, is_active, pan_number, co_applicant_name } = req.body;
+    
+    const { data: custRow, error: getErr } = await supabase.from('customers').select('profile_id').eq('id', req.params.id).single();
+    if (getErr) throw getErr;
+
+    const profileUpdate = {};
+    if (full_name !== undefined) profileUpdate.full_name = full_name;
+    if (phone !== undefined) profileUpdate.phone = phone;
+    if (email !== undefined) profileUpdate.email = email;
+    if (is_active !== undefined) profileUpdate.is_active = is_active;
+    
+    if (Object.keys(profileUpdate).length > 0) {
+      const { error: profUpdateErr } = await supabase.from('profiles').update(profileUpdate).eq('id', custRow.profile_id);
+      if (profUpdateErr) throw profUpdateErr;
+    }
+
+    const custUpdate = {};
+    if (pan_number !== undefined) custUpdate.pan_number = pan_number;
+    if (co_applicant_name !== undefined) custUpdate.co_applicant_name = co_applicant_name;
+    
+    if (Object.keys(custUpdate).length > 0) {
+      const { error: custUpdateErr } = await supabase.from('customers').update(custUpdate).eq('id', req.params.id);
+      if (custUpdateErr) throw custUpdateErr;
+    }
+
+    sendSuccess(res, { success: true });
+  } catch (err) { next(err); }
+});
+
+router.delete('/customers/:id', async (req, res, next) => {
+  try {
+    const { data: custRow, error: getErr } = await supabase.from('customers').select('profile_id').eq('id', req.params.id).single();
+    if (getErr) throw getErr;
+
+    const { data: profileRow, error: profGetErr } = await supabase.from('profiles').select('auth_user_id').eq('id', custRow.profile_id).single();
+    if (profGetErr) throw profGetErr;
+
+    if (profileRow?.auth_user_id) {
+      try {
+        const { error: authDelErr } = await supabase.auth.admin.deleteUser(profileRow.auth_user_id);
+        if (authDelErr) console.warn('Auth user delete failed or user missing:', authDelErr);
+      } catch (err) {
+        console.warn('Caught exception deleting auth user:', err);
+      }
+    }
+    
+    // Manually cascade delete loan applications to allow customer deletion
+    const { data: apps } = await supabase.from('loan_applications').select('id').eq('customer_id', req.params.id);
+    if (apps && apps.length > 0) {
+      const appIds = apps.map(a => a.id);
+      await supabase.from('stage_entries').delete().in('application_id', appIds);
+      await supabase.from('documents').delete().in('application_id', appIds);
+      await supabase.from('loan_applications').delete().in('id', appIds);
+    }
+
+    const { error: custDelErr } = await supabase.from('customers').delete().eq('id', req.params.id);
+    if (custDelErr) throw custDelErr;
+    
+    const { error: profDelErr } = await supabase.from('profiles').delete().eq('id', custRow.profile_id);
+    if (profDelErr) throw profDelErr;
 
     sendSuccess(res, { deleted: true });
   } catch (err) { next(err); }

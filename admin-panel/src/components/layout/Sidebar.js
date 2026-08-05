@@ -33,6 +33,7 @@ const NAV = [
       { href: '/lenders',         label: 'Lenders',       icon: IconBuildingBank, color: '#8b5cf6' },
       { href: '/dealers',         label: 'Dealers',       icon: IconBuildingStore, color: '#f59e0b' },
       { href: '/staff',           label: 'Staff',         icon: IconUsers, color: '#ec4899' },
+      { href: '/customers',       label: 'Customers',     icon: IconUsers, color: '#14b8a6' },
     ],
   },
   {

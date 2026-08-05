@@ -22,7 +22,6 @@ async function authenticate(req, res, next) {
     return sendError(res, 401, 'UNAUTHORIZED', 'Token invalid or expired');
   }
 
-  // Load profile to confirm account is still active
   const { data: profile, error } = await supabase
     .from('profiles')
     .select('id, role, is_active, auth_user_id')

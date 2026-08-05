@@ -8,10 +8,11 @@ import { useGetApplicationsQuery } from '@/store/api/staffApi';
 import { StatusBadge, DateRangeBanner, LoadingRows, EmptyState, AmountCell } from '@/components/ui/Primitives';
 import ExportButtons from '@/components/ui/ExportButtons';
 import Link from 'next/link';
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useMemo } from 'react';
 
 const STATUSES = ['', 'draft', 'in_progress', 'approved', 'disbursed', 'rejected', 'cancelled', 'blocked_90d'];
-const STAGES   = ['', 'cibil', 'bank', 'valuation', 'fi', 'approval', 'disbursement'];
+const STAGES = ['', 'cibil', 'bank', 'valuation', 'fi', 'approval', 'disbursement'];
+const LIMIT_OPTIONS = [20, 100, 200, 300, 400, 500];
 
 function ApplicationsPageContent() {
   const dispatch = useDispatch();
@@ -20,22 +21,57 @@ function ApplicationsPageContent() {
   }, [dispatch]);
 
   const searchParams = useSearchParams();
-  const globalRange  = useSelector(selectDateRange);
+  const globalRange = useSelector(selectDateRange);
 
-  const from   = searchParams.get('from') || globalRange.from;
-  const to     = searchParams.get('to')   || globalRange.to;
+  const from = searchParams.get('from') || globalRange.from;
+  const to = searchParams.get('to') || globalRange.to;
 
   const [status, setStatus] = useState(searchParams.get('status') || '');
-  const [stage,  setStage]  = useState(searchParams.get('stage')  || '');
+  const [stage, setStage] = useState(searchParams.get('stage') || '');
   const [offset, setOffset] = useState(0);
-  const limit = 20;
+  const [limit, setLimit] = useState(100);
+
+  // Sorting state
+  const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
 
   const { data, isLoading, isFetching } = useGetApplicationsQuery({ from, to, status: status || undefined, stage: stage || undefined, limit, offset });
 
-  const apps  = data?.data?.data  || [];
+  const apps = data?.data?.data || [];
   const total = data?.data?.count || 0;
   const pages = Math.ceil(total / limit);
-  const page  = Math.floor(offset / limit) + 1;
+  const page = Math.floor(offset / limit) + 1;
+
+  const sortedApps = useMemo(() => {
+    let sortableApps = [...apps];
+    if (sortConfig.key) {
+      sortableApps.sort((a, b) => {
+        let aValue = a[sortConfig.key];
+        let bValue = b[sortConfig.key];
+
+        // Handle nested fields
+        if (sortConfig.key === 'customer_name') {
+          aValue = a.applicant_details?.personal?.full_name || '';
+          bValue = b.applicant_details?.personal?.full_name || '';
+        }
+
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return sortableApps;
+  }, [apps, sortConfig]);
+
+  const requestSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc';
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (columnKey) => {
+    if (sortConfig.key !== columnKey) return '⇅';
+    return sortConfig.direction === 'asc' ? '↑' : '↓';
+  };
 
   const exportColumns = [
     { header: 'S.No', accessor: (_, i) => offset + i + 1 },
@@ -52,7 +88,7 @@ function ApplicationsPageContent() {
     <>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <DateRangeBanner from={from} to={to} />
-        <ExportButtons data={apps} columns={exportColumns} filename="applications_list" title="Loan Applications" />
+        <ExportButtons data={sortedApps} columns={exportColumns} filename="applications_list" title="Loan Applications" />
       </div>
 
       {/* Filters */}
@@ -68,6 +104,12 @@ function ApplicationsPageContent() {
               {STAGES.map(s => <option key={s} value={s}>{s || 'All stages'}</option>)}
             </select>
           </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <label style={{ fontSize: 13, color: 'var(--color-text-2)' }}>Show:</label>
+            <select className="select" style={{ padding: '4px 8px', minHeight: 32 }} value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setOffset(0); }}>
+              {LIMIT_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+          </div>
           <div style={{ color: 'var(--color-text-3)', fontSize: 12, marginLeft: 'auto' }}>
             {total} result{total !== 1 ? 's' : ''}
           </div>
@@ -79,22 +121,22 @@ function ApplicationsPageContent() {
           <thead>
             <tr>
               <th>S.No</th>
-              <th>App No.</th>
-              <th>Product</th>
-              <th>Requested</th>
-              <th>Stage</th>
-              <th>Status</th>
-              <th>Created</th>
+              <th onClick={() => requestSort('application_no')} style={{ cursor: 'pointer' }}>App No. <span className="text-muted text-xs">{getSortIcon('application_no')}</span></th>
+              <th onClick={() => requestSort('product_type')} style={{ cursor: 'pointer' }}>Product <span className="text-muted text-xs">{getSortIcon('product_type')}</span></th>
+              <th onClick={() => requestSort('requested_amount')} style={{ cursor: 'pointer' }}>Requested <span className="text-muted text-xs">{getSortIcon('requested_amount')}</span></th>
+              <th onClick={() => requestSort('current_stage')} style={{ cursor: 'pointer' }}>Stage <span className="text-muted text-xs">{getSortIcon('current_stage')}</span></th>
+              <th onClick={() => requestSort('status')} style={{ cursor: 'pointer' }}>Status <span className="text-muted text-xs">{getSortIcon('status')}</span></th>
+              <th onClick={() => requestSort('created_at')} style={{ cursor: 'pointer' }}>Created <span className="text-muted text-xs">{getSortIcon('created_at')}</span></th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             {isLoading || isFetching ? (
               <LoadingRows cols={8} rows={8} />
-            ) : apps.length === 0 ? (
+            ) : sortedApps.length === 0 ? (
               <EmptyState title="No applications found" description="Try adjusting the date range or filters." />
             ) : (
-              apps.map((app, idx) => (
+              sortedApps.map((app, idx) => (
                 <tr key={app.id}>
                   <td style={{ color: 'var(--color-text-3)' }}>{offset + idx + 1}</td>
                   <td><span className="font-mono">{app.application_no}</span></td>
@@ -134,3 +176,4 @@ export default function ApplicationsPage() {
     </Suspense>
   );
 }
+

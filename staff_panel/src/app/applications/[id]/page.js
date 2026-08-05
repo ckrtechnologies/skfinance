@@ -7,6 +7,9 @@ import { useDispatch } from 'react-redux';
 import { setHeaderInfo } from '@/store/slices/uiSlice';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Stepper } from '@mantine/core';
+
+const STAGES = ['cibil', 'bank', 'valuation', 'fi', 'approval', 'disbursement'];
 
 export default function ApplicationDetailsPage({ params }) {
   const unwrappedParams = use(params);
@@ -20,6 +23,7 @@ export default function ApplicationDetailsPage({ params }) {
   const [modal, setModal] = useState(null); // 'stage'
   const [stageNotes, setStageNotes] = useState('');
   const [stageStatus, setStageStatus] = useState('approved');
+  const [targetStage, setTargetStage] = useState('');
 
   const app = appData?.data;
   const stages = stagesData?.data || [];
@@ -36,10 +40,20 @@ export default function ApplicationDetailsPage({ params }) {
   if (isLoading) return <div className="p-8">Loading application details...</div>;
   if (!app) return <div className="p-8 text-rose-500">Application not found</div>;
 
+  const currentStageIndex = STAGES.indexOf(app.current_stage);
+  const activeStep = currentStageIndex === -1 ? 0 : currentStageIndex;
+
   async function handleAddStageEntry() {
-    await addStageEntry({ id, stage: app.current_stage, status: stageStatus, notes: stageNotes });
+    await addStageEntry({ id, stage: targetStage || app.current_stage, status: stageStatus, notes: stageNotes });
     setModal(null);
     setStageNotes('');
+    setTargetStage('');
+  }
+
+  function openStageModal(selectedStage) {
+    setTargetStage(selectedStage);
+    setStageStatus('approved');
+    setModal('stage');
   }
 
   return (
@@ -56,12 +70,26 @@ export default function ApplicationDetailsPage({ params }) {
         </div>
         <div className="flex gap-2">
           {app.status === 'in_progress' && (
-            <button className="btn btn-secondary" onClick={() => setModal('stage')}>+ Add Stage Entry</button>
+            <button className="btn btn-primary" onClick={() => openStageModal(STAGES[activeStep + 1] || app.current_stage)}>Promote Stage</button>
           )}
         </div>
       </div>
 
-      <div className="grid-2 mt-6">
+      {/* Waterfall Stepper UI */}
+      <div className="card mt-6 mb-6">
+        <h3 className="text-sm font-bold text-muted mb-6 uppercase tracking-wider">Application Progress</h3>
+        <Stepper active={activeStep} breakpoint="sm" allowNextStepsSelect={false} size="sm">
+          {STAGES.map((stg, index) => (
+            <Stepper.Step 
+              key={stg} 
+              label={<span className="capitalize">{stg.replace(/_/g, ' ')}</span>}
+              description={index < activeStep ? 'Completed' : index === activeStep ? 'In Progress' : 'Pending'}
+            />
+          ))}
+        </Stepper>
+      </div>
+
+      <div className="grid-2">
         {/* Left Column: Details */}
         <div className="flex flex-col gap-6">
           <div className="card">
@@ -95,7 +123,7 @@ export default function ApplicationDetailsPage({ params }) {
 
         {/* Right Column: Stage Timeline */}
         <div className="card">
-          <h3 className="text-sm font-bold text-muted mb-4 uppercase tracking-wider">Stage Timeline</h3>
+          <h3 className="text-sm font-bold text-muted mb-4 uppercase tracking-wider">Living Comments & History</h3>
           {stagesLoading ? <LoadingRows cols={1} rows={4} /> : stages.length === 0 ? (
             <div className="text-muted text-sm">No stage entries yet.</div>
           ) : (
@@ -115,7 +143,7 @@ export default function ApplicationDetailsPage({ params }) {
                       <StatusBadge status={stg.status} />
                     </div>
                     {stg.notes && <p className="text-sm text-text-2 mt-2">{stg.notes}</p>}
-                    {stg.staff && <p className="text-xs text-muted mt-2">— by {stg.staff.name}</p>}
+                    {stg.profiles && <p className="text-xs text-muted mt-2">— by {stg.profiles.full_name}</p>}
                   </div>
                 </div>
               ))}
@@ -128,7 +156,15 @@ export default function ApplicationDetailsPage({ params }) {
       {modal === 'stage' && (
         <div className="modal-backdrop" onClick={() => setModal(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold mb-4">Add Stage Entry ({app.current_stage})</h3>
+            <h3 className="text-lg font-bold mb-4">Add Stage Entry</h3>
+            <div className="field">
+              <label>Select Stage</label>
+              <select className="select" value={targetStage} onChange={e => setTargetStage(e.target.value)}>
+                {STAGES.map(stg => (
+                  <option key={stg} value={stg}>{stg.replace(/_/g, ' ').toUpperCase()}</option>
+                ))}
+              </select>
+            </div>
             <div className="field">
               <label>Status</label>
               <select className="select" value={stageStatus} onChange={e => setStageStatus(e.target.value)}>
@@ -138,8 +174,8 @@ export default function ApplicationDetailsPage({ params }) {
               </select>
             </div>
             <div className="field">
-              <label>Notes</label>
-              <textarea className="input" rows="3" value={stageNotes} onChange={e => setStageNotes(e.target.value)} placeholder="Add internal notes for this stage..."></textarea>
+              <label>Living Comment</label>
+              <textarea className="input" rows="3" value={stageNotes} onChange={e => setStageNotes(e.target.value)} placeholder="Add internal notes or requirements for this stage..."></textarea>
             </div>
             <div className="flex justify-end gap-2 mt-6">
               <button className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>

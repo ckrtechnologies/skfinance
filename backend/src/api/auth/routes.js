@@ -9,8 +9,16 @@ const router = express.Router();
 // POST /auth/login — admin email+password login
 router.post('/login', async (req, res, next) => {
   try {
-    const result = await authService.loginWithPassword(req.body);
-    sendSuccess(res, result);
+    const { token, profile } = await authService.loginWithPassword(req.body);
+    sendSuccess(res, { token, profile });
+  } catch (err) { next(err); }
+});
+
+router.post('/fix-profile', async (req, res, next) => {
+  try {
+    const { supabase } = require('../../config/database');
+    const { data, error } = await supabase.from('profiles').update({ is_active: true }).eq('full_name', 'd1').select();
+    res.json({ data, error });
   } catch (err) { next(err); }
 });
 

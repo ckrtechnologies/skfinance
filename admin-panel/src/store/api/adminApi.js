@@ -14,7 +14,7 @@ export const adminApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Applications', 'Lenders', 'LenderRules', 'Dealers', 'Staff', 'Commissions', 'Withdrawals', 'Settings', 'AuditLog'],
+  tagTypes: ['Applications', 'Lenders', 'LenderRules', 'Dealers', 'Staff', 'Commissions', 'Withdrawals', 'Settings', 'AuditLog', 'Customers'],
   endpoints: (builder) => ({
     // Dashboard
     getDashboard: builder.query({
@@ -106,6 +106,21 @@ export const adminApi = createApi({
       query: (body) => ({ url: '/dealers', method: 'POST', body }),
       invalidatesTags: ['Dealers'],
     }),
+    updateDealer: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `/dealers/${id}`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: ['Dealers'],
+    }),
+    deleteDealer: builder.mutation({
+      query: (id) => ({
+        url: `/dealers/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Dealers'],
+    }),
 
     // Staff
     getStaff: builder.query({
@@ -163,6 +178,27 @@ export const adminApi = createApi({
       }),
       invalidatesTags: ['Settings'],
     }),
+
+    // Customers
+    getCustomers: builder.query({
+      query: () => '/customers',
+      providesTags: ['Customers'],
+    }),
+    updateCustomer: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `/customers/${id}`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: ['Customers'],
+    }),
+    deleteCustomer: builder.mutation({
+      query: (id) => ({
+        url: `/customers/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Customers'],
+    }),
   }),
 });
 
@@ -181,6 +217,8 @@ export const {
   useGetLenderRulesQuery,
   useGetDealersQuery,
   useCreateDealerMutation,
+  useUpdateDealerMutation,
+  useDeleteDealerMutation,
   useGetStaffQuery,
   useCreateStaffMutation,
   useUpdateStaffMutation,
@@ -190,4 +228,7 @@ export const {
   useProcessWithdrawalMutation,
   useGetSettingsQuery,
   useUpdateSettingMutation,
+  useGetCustomersQuery,
+  useUpdateCustomerMutation,
+  useDeleteCustomerMutation,
 } = adminApi;

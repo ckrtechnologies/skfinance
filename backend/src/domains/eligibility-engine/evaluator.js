@@ -74,6 +74,14 @@ function evaluateRules(rulesJson, input) {
   if (coApplicantRelation && coAppRules.bloodRelationOnly && !BLOOD_RELATIONS.includes(coApplicantRelation)) {
     failed_rules.push(`Co-Applicant must be a blood relation. '${coApplicantRelation}' is not accepted.`);
   }
+  
+  // SK Finance specific override: if sister, must be unmarried
+  if (lenderCode === 'sk-finance' && coApplicantRelation === 'sister') {
+    if (input.coApplicantMaritalStatus !== 'unmarried') {
+      failed_rules.push(`For ${lenderName}, if the co-applicant is a sister, she must be unmarried.`);
+    }
+  }
+
   if (coApplicantRelation && coAppRules.docs && Array.isArray(coAppRules.docs)) {
     required_documents.co_applicant.push(...coAppRules.docs);
   }
