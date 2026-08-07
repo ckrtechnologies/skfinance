@@ -25,7 +25,7 @@ export default function DashboardPage() {
   }, [dispatch]);
 
   const { from, to, label } = useSelector(selectDateRange);
-  const { data: dashData, isLoading: dashLoading } = useGetDashboardQuery();
+  const { data: dashData, isLoading: dashLoading } = useGetDashboardQuery({ from, to });
   const { data: appsData, isLoading: appsLoading } = useGetApplicationsQuery({ from, to, limit: 6 });
   const { data: commissionsData } = useGetCommissionsQuery({ from, to });
   const { data: withdrawalsData } = useGetWithdrawalsQuery({ status: 'requested' });
@@ -42,7 +42,7 @@ export default function DashboardPage() {
     {
       label: 'Total Applications',
       value: dashLoading ? null : (dashData?.data?.total_applications ?? 0),
-      sub: 'All time',
+      sub: label,
       color: 'var(--color-primary)',
       bg: 'var(--color-primary-bg)',
       href: '/applications',

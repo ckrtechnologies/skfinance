@@ -4,6 +4,7 @@ const multer = require('multer');
 const { authenticate } = require('../../shared/middleware/authenticate');
 const { roleGuard } = require('../../shared/middleware/roleGuard');
 const { sendSuccess, sendError } = require('../../shared/utils/response');
+const authService = require('../../domains/auth/service');
 const loanSvc = require('../../domains/loan-applications/service');
 const walletSvc = require('../../domains/wallet/service');
 const notificationSvc = require('../../domains/notifications/service');
@@ -93,40 +94,22 @@ router.get('/profile', async (req, res, next) => {
 
 router.put('/profile', async (req, res, next) => {
   try {
-    const { 
-      business_name, pan_number, gst_number, business_address, 
-      city, state, pincode, bank_account_name, bank_account_number, 
-      bank_ifsc, bank_name,
-      avatar_url, full_name
-    } = req.body;
+    const result = await authService.updateProfile(req.user.profileId, req.user.role, req.body);
+    sendSuccess(res, result);
+  } catch (err) { next(err); }
+});
 
-    // Update dealers table
-    const { error: dealerError } = await supabase
-      .from('dealers')
-      .update({
-        business_name, pan_number, gst_number, business_address,
-        city, state, pincode, bank_account_name, bank_account_number,
-        bank_ifsc, bank_name
-      })
-      .eq('profile_id', req.user.profileId);
-      
-    if (dealerError) throw dealerError;
+router.post('/profile/avatar', upload.single('avatar'), async (req, res, next) => {
+  try {
+    const result = await authService.uploadAvatar(req.user.profileId, req.file);
+    sendSuccess(res, result);
+  } catch (err) { next(err); }
+});
 
-    // Update profiles table
-    if (avatar_url !== undefined || full_name !== undefined) {
-      const profileUpdates = {};
-      if (avatar_url !== undefined) profileUpdates.avatar_url = avatar_url;
-      if (full_name !== undefined) profileUpdates.full_name = full_name;
-      
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update(profileUpdates)
-        .eq('id', req.user.profileId);
-        
-      if (profileError) throw profileError;
-    }
-
-    sendSuccess(res, { message: 'Profile updated successfully' });
+router.delete('/profile', async (req, res, next) => {
+  try {
+    const result = await authService.softDeleteProfile(req.user.profileId);
+    sendSuccess(res, result);
   } catch (err) { next(err); }
 });
 

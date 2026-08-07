@@ -576,7 +576,7 @@ export default function ApplicationDetailsPage({ params }) {
             <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '16px', padding: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '10px', borderBottom: '1px solid var(--color-border)' }}>
                 <h3 style={{ fontSize: '13px', fontWeight: 800, color: '#8B5CF6', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  👤 Customer Profile & Identification
+                  Customer Profile
                 </h3>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '12px' }}>
@@ -585,12 +585,12 @@ export default function ApplicationDetailsPage({ params }) {
                   <div style={{ fontSize: '13px', fontWeight: 700, marginTop: '4px' }}>{customerName}</div>
                 </div>
                 <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', padding: '12px', borderRadius: '10px' }}>
-                  <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-2)', textTransform: 'uppercase' }}>Phone Number</span>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-2)', textTransform: 'uppercase' }}>Phone</span>
                   <div style={{ fontSize: '13px', fontWeight: 600, marginTop: '4px' }}>{customerPhone}</div>
                 </div>
                 <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', padding: '12px', borderRadius: '10px' }}>
-                  <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-2)', textTransform: 'uppercase' }}>PAN Number</span>
-                  <div style={{ fontSize: '13px', fontWeight: 800, fontFamily: 'monospace', color: '#8B5CF6', marginTop: '4px', textTransform: 'uppercase' }}>{customerPan}</div>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-2)', textTransform: 'uppercase' }}>PAN</span>
+                  <div style={{ fontSize: '13px', fontWeight: 800, fontFamily: 'monospace', color: '#8B5CF6', marginTop: '4px' }}>{customerPan}</div>
                 </div>
               </div>
             </div>

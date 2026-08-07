@@ -22,9 +22,9 @@ export default function DashboardPage() {
   }, [dispatch]);
 
   const { from, to, label } = useSelector(selectDateRange);
-  const { data: appsData, isLoading: appsLoading } = useGetApplicationsQuery({ from, to, limit: 10 });
+  const { data: appsData, isLoading: appsLoading } = useGetApplicationsQuery({ from, to, limit: 1000 });
 
-  const apps = appsData?.data || [];
+  const apps = appsData?.data?.data || [];
   const inProgressApps = apps.filter(a => a.status === 'in_progress').length;
   const approvedApps = apps.filter(a => a.status === 'approved').length;
 

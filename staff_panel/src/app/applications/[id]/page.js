@@ -593,9 +593,6 @@ export default function ApplicationDetailsPage({ params }) {
             </div>
           )}
 
-            </div>
-          )}
-
           {/* Active Tab Panel 4: Stage Audit & Living Activity Log */}
           {activeTab === 'audit' && (
             <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '16px', padding: '16px' }}>

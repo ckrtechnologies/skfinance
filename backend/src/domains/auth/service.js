@@ -304,4 +304,102 @@ async function changePassword({ authUserId, currentPassword, newPassword }) {
   return { success: true };
 }
 
-module.exports = { loginWithPassword, requestOtp, verifyOtp, getMe, changePassword };
+/**
+ * updateProfile - Update user profile text fields
+ */
+async function updateProfile(profileId, role, payload) {
+  // Extract profile fields
+  const profileFields = {};
+  if (payload.full_name !== undefined) profileFields.full_name = payload.full_name;
+  if (payload.email !== undefined) profileFields.email = payload.email;
+  if (payload.phone !== undefined) profileFields.phone = payload.phone;
+  if (payload.avatar_url !== undefined) profileFields.avatar_url = payload.avatar_url;
+
+  if (Object.keys(profileFields).length > 0) {
+    const { error } = await supabase.from('profiles').update(profileFields).eq('id', profileId);
+    if (error) throw Object.assign(new Error(error.message), { statusCode: 400 });
+  }
+
+  // Update specific child tables based on role
+  if (role === 'dealer') {
+    const dealerFields = {};
+    if (payload.business_name !== undefined) dealerFields.business_name = payload.business_name;
+    if (payload.business_address !== undefined) dealerFields.business_address = payload.business_address;
+    if (payload.city !== undefined) dealerFields.city = payload.city;
+    if (payload.state !== undefined) dealerFields.state = payload.state;
+    if (payload.pincode !== undefined) dealerFields.pincode = payload.pincode;
+    if (payload.pan_number !== undefined) dealerFields.pan_number = payload.pan_number;
+    if (payload.gst_number !== undefined) dealerFields.gst_number = payload.gst_number;
+    if (payload.bank_account_name !== undefined) dealerFields.bank_account_name = payload.bank_account_name;
+    if (payload.bank_account_number !== undefined) dealerFields.bank_account_number = payload.bank_account_number;
+    if (payload.bank_ifsc !== undefined) dealerFields.bank_ifsc = payload.bank_ifsc;
+    if (payload.bank_name !== undefined) dealerFields.bank_name = payload.bank_name;
+
+    if (Object.keys(dealerFields).length > 0) {
+      const { error } = await supabase.from('dealers').update(dealerFields).eq('profile_id', profileId);
+      if (error) throw Object.assign(new Error(error.message), { statusCode: 400 });
+    }
+  }
+
+  return { success: true };
+}
+
+/**
+ * uploadAvatar - Handle multipart file upload to Supabase Storage
+ */
+async function uploadAvatar(profileId, file) {
+  if (!file) throw Object.assign(new Error('No file provided'), { statusCode: 400 });
+
+  let publicUrl;
+
+  try {
+    const fileExt = (file.originalname || 'avatar.jpg').split('.').pop();
+    const filePath = `${profileId}/avatar_${Date.now()}.${fileExt}`;
+
+    const { data, error } = await supabase.storage
+      .from('users')
+      .upload(filePath, file.buffer, {
+        contentType: file.mimetype || 'image/jpeg',
+        upsert: true
+      });
+
+    if (error) throw error;
+
+    const { data: publicUrlData } = supabase.storage.from('users').getPublicUrl(filePath);
+    publicUrl = publicUrlData.publicUrl;
+  } catch (storageErr) {
+    console.warn('[uploadAvatar] Supabase storage upload failed, saving to CDN local directory:', storageErr.message);
+
+    const path = require('path');
+    const fs = require('fs');
+    const { CDN_BASE_URL, CDN_LOCAL_PATH } = require('../../config/secrets');
+
+    const ext = path.extname(file.originalname || 'avatar.jpg') || '.jpg';
+    const filename = `avatar_${Date.now()}${ext}`;
+    const relDir = path.join('avatars', profileId);
+    const absDir = path.join(CDN_LOCAL_PATH, relDir);
+    const cdnPath = path.join(relDir, filename).replace(/\\/g, '/');
+
+    fs.mkdirSync(absDir, { recursive: true });
+    fs.writeFileSync(path.join(absDir, filename), file.buffer);
+
+    publicUrl = `${CDN_BASE_URL}/${cdnPath}`;
+  }
+
+  // Update profile avatar_url in DB
+  const { error: updateError } = await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', profileId);
+  if (updateError) throw Object.assign(new Error('Failed to save avatar URL to profile'), { statusCode: 500 });
+
+  return { avatar_url: publicUrl };
+}
+
+/**
+ * softDeleteProfile - Deactivate an account
+ */
+async function softDeleteProfile(profileId) {
+  const { error } = await supabase.from('profiles').update({ is_active: false }).eq('id', profileId);
+  if (error) throw Object.assign(new Error(error.message), { statusCode: 400 });
+  return { success: true, message: 'Account deleted (deactivated)' };
+}
+
+module.exports = { loginWithPassword, requestOtp, verifyOtp, getMe, changePassword, updateProfile, uploadAvatar, softDeleteProfile };

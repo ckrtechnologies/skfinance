@@ -3,6 +3,7 @@ const express = require('express');
 const { authenticate, requireRole } = require('../../shared/middleware/authenticate');
 const { sendSuccess, sendError } = require('../../shared/utils/response');
 const authService = require('../../domains/auth/service');
+const loanSvc = require('../../domains/loan-applications/service');
 const { supabase } = require('../../config/database');
 
 const router = express.Router();
@@ -45,16 +46,10 @@ router.get('/applications', authenticate, requireRole(['staff', 'admin']), async
     const { from, to, status, stage, limit = 20, offset = 0 } = req.query;
 
     let query = supabase.from('loan_applications').select(`
-      id,
-      application_no,
-      reference_id,
-      applicant_details,
-      requested_amount,
-      approved_amount,
-      product_type,
-      status,
-      current_stage,
-      created_at,
+      *,
+      customers(*, profiles!profile_id(full_name, phone, email)),
+      dealers(*, profiles!profile_id(full_name, phone)),
+      staff(*, profiles!profile_id(full_name, phone)),
       lenders(id, name)
     `, { count: 'exact' });
 
@@ -77,50 +72,42 @@ router.get('/applications', authenticate, requireRole(['staff', 'admin']), async
 
 router.get('/applications/:id', authenticate, requireRole(['staff', 'admin']), async (req, res, next) => {
   try {
-    const { data, error } = await supabase
-      .from('loan_applications')
-      .select('*, lenders(id, name), dealers(id, business_name)')
-      .eq('id', req.params.id)
-      .single();
-    if (error) throw error;
-    sendSuccess(res, data);
+    const app = await loanSvc.getApplication(req.params.id);
+    sendSuccess(res, app);
   } catch (err) { next(err); }
 });
 
 router.get('/applications/:id/stage-entries', authenticate, requireRole(['staff', 'admin']), async (req, res, next) => {
   try {
-    const { data, error } = await supabase
-      .from('stage_entries')
-      .select('*, profiles:updated_by(full_name)')
-      .eq('application_id', req.params.id)
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    sendSuccess(res, data);
+    const entries = await loanSvc.getStageEntries(req.params.id);
+    sendSuccess(res, entries);
   } catch (err) { next(err); }
 });
 
 router.post('/applications/:id/stage', authenticate, requireRole(['staff', 'admin']), async (req, res, next) => {
   try {
     const { stage, status, notes } = req.body;
-    const { error: updateError } = await supabase
-      .from('loan_applications')
-      .update({ current_stage: stage, status: status || 'in_progress' })
-      .eq('id', req.params.id);
+    const entry = await loanSvc.addStageEntry({
+      loanApplicationId: req.params.id,
+      stage: stage,
+      enteredByProfileId: req.user.profileId,
+      outcome: status || 'pending',
+      remarks: notes || '',
+      newStatus: status || 'in_progress'
+    });
+    sendSuccess(res, { message: 'Stage updated successfully', data: entry });
+  } catch (err) { next(err); }
+});
 
-    if (updateError) throw updateError;
-
-    const { error: stageError } = await supabase
-      .from('stage_entries')
-      .insert({
-        application_id: req.params.id,
-        stage_name: stage,
-        notes: notes || '',
-        updated_by: req.user.profileId
-      });
-
-    if (stageError) throw stageError;
-
-    sendSuccess(res, { message: 'Stage updated successfully' });
+router.get('/lenders', authenticate, requireRole(['staff', 'admin']), async (req, res, next) => {
+  try {
+    const { data, error } = await supabase
+      .from('lenders')
+      .select('*')
+      .eq('is_active', true)
+      .order('name');
+    if (error) throw error;
+    sendSuccess(res, data);
   } catch (err) { next(err); }
 });
 
