@@ -55,6 +55,9 @@ export const staffApi = createApi({
         body,
       }),
     }),
+    getLenders: builder.query({
+      query: () => '/lenders',
+    }),
   }),
 });
 
@@ -66,4 +69,5 @@ export const {
   useAddStageEntryMutation,
   useGetProfileQuery,
   useChangePasswordMutation,
+  useGetLendersQuery,
 } = staffApi;

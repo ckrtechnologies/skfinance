@@ -1,6 +1,6 @@
 'use client';
 
-import { useGetApplicationQuery, useGetStageEntriesQuery, useAddStageEntryMutation, useDisburseMutation, useReApproveMutation } from '@/store/api/adminApi';
+import { useGetApplicationQuery, useGetStageEntriesQuery, useAddStageEntryMutation, useDisburseMutation, useReApproveMutation, useGetLendersQuery } from '@/store/api/adminApi';
 import { StatusBadge, AmountCell, LoadingRows } from '@/components/ui/Primitives';
 import { useState, useEffect, use } from 'react';
 import { useDispatch } from 'react-redux';
@@ -8,16 +8,29 @@ import { setHeaderInfo } from '@/store/slices/uiSlice';
 import { useRouter } from 'next/navigation';
 
 const PIPELINE_STAGES = [
-  { key: 'pre_check', label: 'Pre-Check', icon: '⚡', desc: 'Rules & Check' },
-  { key: 'cibil', label: 'CIBIL Bureau', icon: '📊', desc: 'Credit Score' },
-  { key: 'document_verification', label: 'KYC & Docs', icon: '📄', desc: 'Verifications' },
-  { key: 'bank', label: 'Bank Underwriting', icon: '🏦', desc: 'Income & Banking' },
+  { key: 'cibil', label: 'CIBIL & Rules', icon: '📊', desc: 'Pre-Check & Bureau' },
+  { key: 'bank', label: 'Docs & Bank', icon: '🏦', desc: 'KYC & Underwriting' },
   { key: 'valuation', label: 'Valuation', icon: '🚗', desc: 'Vehicle Report' },
-  { key: 'fi', label: 'Field Investigation', icon: '🏠', desc: 'Residence Check' },
-  { key: 'sanction', label: 'Sanction', icon: '📜', desc: 'Credit Sanction' },
-  { key: 'approval', label: 'Final Approval', icon: '✅', desc: 'Sanction Letter' },
+  { key: 'fi', label: 'Field Inv.', icon: '🏠', desc: 'Residence Check' },
+  { key: 'approval', label: 'Approval', icon: '✅', desc: 'Sanction & Final' },
   { key: 'disbursement', label: 'Disbursement', icon: '💸', desc: 'Fund Payout' }
 ];
+
+function formatFileName(rawName, docType) {
+  if (!rawName) return `${(docType || 'Document').replace(/_/g, ' ')}.pdf`;
+  try {
+    let name = decodeURIComponent(rawName);
+    if (name.startsWith('rn_image_picker_lib_temp_')) {
+      name = name.replace(/^rn_image_picker_lib_temp_[a-f0-9-]+_?/, '');
+      if (!name || name.trim() === '') {
+        name = `${(docType || 'Document').replace(/_/g, ' ')} File.jpg`;
+      }
+    }
+    return name;
+  } catch {
+    return rawName;
+  }
+}
 
 export default function ApplicationDetailsPage({ params }) {
   const unwrappedParams = use(params);
@@ -29,10 +42,14 @@ export default function ApplicationDetailsPage({ params }) {
   const [addStageEntry, { isLoading: addingEntry }] = useAddStageEntryMutation();
   const [disburse, { isLoading: disbursing }] = useDisburseMutation();
   const [reApprove, { isLoading: reApproving }] = useReApproveMutation();
+  const { data: lendersRes } = useGetLendersQuery();
+  const activeLenders = lendersRes?.data?.filter(l => l.is_active) || [];
 
   const [modal, setModal] = useState(null); // 'stage', 'disburse', 'reapprove'
   const [stageNotes, setStageNotes] = useState('');
-  const [stageAction, setStageAction] = useState('advance'); // 'advance', 'clarification', 'reject'
+  const [stageApprovedAmount, setStageApprovedAmount] = useState('');
+  const [stageLenderName, setStageLenderName] = useState('');
+  const [stageAction, setStageAction] = useState(''); // '', 'advance', 'clarification', 'reject'
   const [targetStage, setTargetStage] = useState('');
   const [utr, setUtr] = useState('');
 
@@ -71,6 +88,15 @@ export default function ApplicationDetailsPage({ params }) {
   const activeIndex = activeStageIndex >= 0 ? activeStageIndex : 0;
   const documents = app.documents || [];
 
+  const stageEntries = stagesData?.data || [];
+  const responseMap = {};
+  stageEntries.forEach(stg => {
+    if ((stg.outcome === 'clarification_submitted' || stg.data?.is_clarification_response) && stg.data?.response_to_query_id) {
+      if (!responseMap[stg.data.response_to_query_id]) responseMap[stg.data.response_to_query_id] = [];
+      responseMap[stg.data.response_to_query_id].push(stg);
+    }
+  });
+
   async function handleAddStageEntry() {
     let newStatus = 'in_progress';
     let outcome = 'approved';
@@ -83,16 +109,23 @@ export default function ApplicationDetailsPage({ params }) {
       outcome = 'rejected';
     } else {
       outcome = 'approved';
-      if (targetStage === 'approval' || targetStage === 'disbursement') newStatus = 'approved';
+      const effectiveStage = targetStage || app?.current_stage || 'cibil';
+      if (effectiveStage === 'approval' || effectiveStage === 'disbursement') newStatus = 'approved';
+      // Note: Disbursement status should only be set by the dedicated Mark as Disbursed flow
     }
 
     try {
-      await addStageEntry({ 
-        id, 
+      const stageData = {};
+      if (stageApprovedAmount) stageData.approved_amount = parseFloat(stageApprovedAmount);
+      if (stageLenderName) stageData.lender_name = stageLenderName;
+
+      await addStageEntry({
+        id,
         stage: targetStage || app.current_stage || 'cibil',
-        outcome, 
+        outcome,
         remarks: stageNotes,
-        new_status: newStatus 
+        new_status: newStatus,
+        data: stageData
       }).unwrap();
     } catch (err) {
       console.log('Stage entry submitted');
@@ -102,6 +135,8 @@ export default function ApplicationDetailsPage({ params }) {
     refetchStages();
     setModal(null);
     setStageNotes('');
+    setStageApprovedAmount('');
+    setStageLenderName('');
   }
 
   async function handleDisburse() {
@@ -115,9 +150,12 @@ export default function ApplicationDetailsPage({ params }) {
     setModal(null);
   }
 
+  const latestClarificationQuery = stages.slice().reverse().find(s => s.outcome === 'rework' || s.outcome === 'clarification_requested');
+  const latestDealerResponse = stages.slice().reverse().find(s => s.outcome === 'clarification_submitted' || s.data?.is_clarification_response);
+
   return (
     <div style={{ width: '100%', fontFamily: 'Inter, system-ui, sans-serif' }}>
-      
+
       {/* Top Header Bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', paddingBottom: '12px', marginBottom: '16px', borderBottom: '1px solid var(--color-border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -131,7 +169,7 @@ export default function ApplicationDetailsPage({ params }) {
         <div style={{ display: 'flex', gap: '8px' }}>
           {displayStatus !== 'approved' && displayStatus !== 'disbursed' && displayStatus !== 'rejected' && (
             <button className="btn btn-primary btn-sm" style={{ background: 'linear-gradient(135deg, #2563EB, #4F46E5)', border: 'none', boxShadow: '0 4px 12px rgba(37,99,235,0.3)' }} onClick={() => { setTargetStage(app.current_stage || 'cibil'); setStageAction('advance'); setModal('stage'); }}>
-              ⚡ Advance Stage / Decision Node
+              ⚡ NEXT
             </button>
           )}
           {displayStatus === 'blocked_90d' && (
@@ -142,6 +180,48 @@ export default function ApplicationDetailsPage({ params }) {
           )}
         </div>
       </div>
+
+      {/* Active Clarification Query & Dealer Response Banner */}
+      {(displayStatus === 'clarification_requested' || latestClarificationQuery || latestDealerResponse) && (
+        <div style={{
+          background: latestDealerResponse ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.1))' : 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.1))',
+          border: `1.5px solid ${latestDealerResponse ? 'rgba(52, 211, 153, 0.4)' : 'rgba(245, 158, 11, 0.4)'}`,
+          borderRadius: '16px',
+          padding: '16px 20px',
+          marginBottom: '20px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '16px'
+        }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+              <span style={{ fontSize: '16px' }}>{latestDealerResponse ? '💬' : '⚠️'}</span>
+              <h4 style={{ fontSize: '14px', fontWeight: 800, color: latestDealerResponse ? '#34D399' : '#FBBF24', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {latestDealerResponse ? 'Dealer Clarification Response Received' : 'Clarification Requested from Dealer'}
+              </h4>
+            </div>
+            {latestClarificationQuery && (
+              <p style={{ fontSize: '12px', color: 'var(--color-text-2)', margin: '4px 0 0 0' }}>
+                <strong>Query Raised:</strong> "{latestClarificationQuery.remarks || latestClarificationQuery.notes || 'Please provide document clarification.'}"
+              </p>
+            )}
+            {latestDealerResponse && (
+              <p style={{ fontSize: '12px', color: '#34D399', margin: '4px 0 0 0', fontWeight: 600 }}>
+                <strong>Dealer Response:</strong> "{latestDealerResponse.remarks || latestDealerResponse.notes || 'Dealer submitted clarification details.'}"
+              </p>
+            )}
+          </div>
+
+          <button
+            className="btn btn-primary btn-sm"
+            style={{ background: 'linear-gradient(135deg, #10B981, #059669)', border: 'none', whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(16,185,129,0.3)' }}
+            onClick={() => { setTargetStage(app.current_stage || 'cibil'); setStageAction('advance'); setModal('stage'); }}
+          >
+            ⚡ NEXT
+          </button>
+        </div>
+      )}
 
       {/* Hero Visual Waterfall Stage Board */}
       <div style={{
@@ -156,10 +236,10 @@ export default function ApplicationDetailsPage({ params }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontSize: '13px', fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', background: 'linear-gradient(90deg, #38BDF8, #818CF8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              🌊 WATERFALL STAGE PIPELINE
+              🌊 STAGE PIPELINE
             </span>
             <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '12px', background: 'rgba(56, 189, 248, 0.15)', color: '#38BDF8', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
-              Stage {activeIndex + 1} of 9
+              Stage {activeIndex + 1} of {PIPELINE_STAGES.length}
             </span>
           </div>
 
@@ -175,29 +255,30 @@ export default function ApplicationDetailsPage({ params }) {
         {/* 9 Horizontal Waterfall Flow Nodes */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(9, minmax(0, 1fr))', gap: '8px' }}>
           {PIPELINE_STAGES.map((stg, idx) => {
-            const isDone = idx < activeIndex || displayStatus === 'approved' || displayStatus === 'disbursed';
-            const isCurrent = idx === activeIndex && displayStatus !== 'approved' && displayStatus !== 'disbursed' && displayStatus !== 'rejected';
+            const isDone = idx < activeIndex || displayStatus === 'disbursed';
+            const isCurrent = (idx === activeIndex && displayStatus !== 'disbursed' && displayStatus !== 'rejected') || (displayStatus === 'approved' && idx === 5);
 
             return (
-              <div 
+              <div
                 key={stg.key}
                 onClick={() => {
                   if (displayStatus !== 'approved' && displayStatus !== 'disbursed' && displayStatus !== 'rejected') {
                     setTargetStage(stg.key);
+                    setStageAction('advance');
                     setModal('stage');
                   }
                 }}
                 style={{
-                  background: isDone 
-                    ? 'linear-gradient(135deg, rgba(5, 150, 105, 0.25) 0%, rgba(16, 185, 129, 0.15) 100%)' 
-                    : isCurrent 
-                    ? 'linear-gradient(135deg, #2563EB 0%, #4F46E5 100%)' 
-                    : 'rgba(255, 255, 255, 0.04)',
-                  border: isDone 
-                    ? '1px solid rgba(52, 211, 153, 0.4)' 
-                    : isCurrent 
-                    ? '2px solid #60A5FA' 
-                    : '1px solid rgba(255, 255, 255, 0.08)',
+                  background: isDone
+                    ? 'linear-gradient(135deg, rgba(5, 150, 105, 0.25) 0%, rgba(16, 185, 129, 0.15) 100%)'
+                    : isCurrent
+                      ? 'linear-gradient(135deg, #2563EB 0%, #4F46E5 100%)'
+                      : 'rgba(255, 255, 255, 0.04)',
+                  border: isDone
+                    ? '1px solid rgba(52, 211, 153, 0.4)'
+                    : isCurrent
+                      ? '2px solid #60A5FA'
+                      : '1px solid rgba(255, 255, 255, 0.08)',
                   borderRadius: '12px',
                   padding: '10px 8px',
                   cursor: 'pointer',
@@ -238,15 +319,15 @@ export default function ApplicationDetailsPage({ params }) {
         </div>
       </div>
 
-      {/* Dual Column Zero-Scroll Workspace */}
+      {/* Full Width Workspace */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, minmax(0, 1fr))', gap: '16px' }}>
-        
-        {/* Left Column (7 Cols): Tabbed Interactive Detail Viewer */}
-        <div style={{ gridColumn: 'span 7 / span 7', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          
+
+        {/* Full Width Column: Tabbed Interactive Detail Viewer */}
+        <div style={{ gridColumn: 'span 12 / span 12', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
           {/* Tab Selection Header */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--color-surface)', padding: '6px', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
-            <button 
+            <button
               onClick={() => setActiveTab('docs')}
               style={{
                 flex: 1,
@@ -262,7 +343,7 @@ export default function ApplicationDetailsPage({ params }) {
               📎 Uploaded Documents ({documents.length})
             </button>
 
-            <button 
+            <button
               onClick={() => setActiveTab('financial')}
               style={{
                 flex: 1,
@@ -278,7 +359,7 @@ export default function ApplicationDetailsPage({ params }) {
               📊 Financial & Loan Terms
             </button>
 
-            <button 
+            <button
               onClick={() => setActiveTab('customer')}
               style={{
                 flex: 1,
@@ -292,6 +373,22 @@ export default function ApplicationDetailsPage({ params }) {
               }}
             >
               👤 Customer & KYC Profile
+            </button>
+
+            <button
+              onClick={() => setActiveTab('audit')}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 700,
+                background: activeTab === 'audit' ? 'linear-gradient(135deg, #F59E0B, #D97706)' : 'transparent',
+                color: activeTab === 'audit' ? '#FFFFFF' : 'var(--color-text-2)',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              📜 Stage Audit Trail
             </button>
           </div>
 
@@ -313,40 +410,62 @@ export default function ApplicationDetailsPage({ params }) {
                   <div style={{ fontSize: '12px', color: 'var(--color-text-2)' }}>No documents attached yet.</div>
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '12px' }}>
-                  {documents.map((doc, idx) => (
-                    <div key={doc.id || idx} style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                          <span style={{ fontSize: '12px', fontWeight: 800, color: '#3B82F6', textTransform: 'uppercase' }}>
-                            {doc.doc_type?.replace(/_/g, ' ')}
-                          </span>
-                          <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: 'var(--color-surface-3)', color: 'var(--color-text-2)', textTransform: 'uppercase' }}>
-                            {doc.party}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: '11px', color: 'var(--color-text-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {doc.original_filename || 'Uploaded File'}
-                        </div>
-                      </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {['applicant', 'co_applicant', 'guarantor'].map((partyKey) => {
+                    const partyDocs = documents.filter(d => (d.party || 'applicant').toLowerCase() === partyKey);
+                    if (partyDocs.length === 0) return null;
 
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid var(--color-border)' }}>
-                        <span style={{ fontSize: '10px', fontWeight: 700, color: doc.verified ? '#10B981' : '#F59E0B' }}>
-                          {doc.verified ? '✓ Verified' : '⏳ Pending Review'}
-                        </span>
-                        {doc.cdn_path ? (
-                          <a 
-                            href={doc.cdn_path} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ fontSize: '11px', fontWeight: 700, color: '#2563EB', textDecoration: 'none', background: 'rgba(37,99,235,0.1)', padding: '3px 8px', borderRadius: '6px' }}
-                          >
-                            View File ↗
-                          </a>
-                        ) : null}
+                    const partyLabel = partyKey === 'co_applicant' ? 'Co-Applicant' : partyKey.charAt(0).toUpperCase() + partyKey.slice(1);
+
+                    return (
+                      <div key={partyKey} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingBottom: '6px', borderBottom: '1px solid var(--color-border)' }}>
+                          <span style={{ fontSize: '12px', fontWeight: 800, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            📁 {partyLabel} Documents ({partyDocs.length})
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '12px' }}>
+                          {partyDocs.map((doc, idx) => {
+                            const displayName = formatFileName(doc.original_filename, doc.doc_type);
+                            return (
+                              <div key={doc.id || idx} style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
+                                <div>
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#3B82F6', textTransform: 'uppercase' }}>
+                                      {doc.doc_type?.replace(/_/g, ' ')}
+                                    </span>
+                                    <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: 'var(--color-surface-3)', color: 'var(--color-text-2)', textTransform: 'uppercase' }}>
+                                      {doc.party}
+                                    </span>
+                                  </div>
+                                  <div style={{ fontSize: '11px', color: 'var(--color-text-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={displayName}>
+                                    {displayName}
+                                  </div>
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid var(--color-border)' }}>
+                                  <span style={{ fontSize: '10px', fontWeight: 700, color: doc.verified ? '#10B981' : '#F59E0B' }}>
+                                    {doc.verified ? '✓ Verified' : '⏳ Pending Review'}
+                                  </span>
+                                  {doc.cdn_url ? (
+                                    <a
+                                      href={doc.cdn_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      style={{ fontSize: '11px', fontWeight: 700, color: '#2563EB', textDecoration: 'none', background: 'rgba(37,99,235,0.1)', padding: '3px 8px', borderRadius: '6px' }}
+                                    >
+                                      View File ↗
+                                    </a>
+                                  ) : null}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -361,21 +480,92 @@ export default function ApplicationDetailsPage({ params }) {
                 </h3>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '12px' }}>
-                <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', padding: '12px', borderRadius: '10px' }}>
-                  <span style={{ fontSize: '10px', fontWeight: 700, color: '#10B981', textTransform: 'uppercase' }}>Requested Loan</span>
-                  <div style={{ fontSize: '18px', fontWeight: 800, color: '#10B981', marginTop: '2px' }}><AmountCell value={app.requested_amount} /></div>
+                <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', padding: '12px', borderRadius: '10px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-2)', textTransform: 'uppercase' }}>Requested Loan</span>
+                  <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--color-text)', marginTop: '2px' }}><AmountCell value={app.requested_amount} /></div>
+                </div>
+                <div style={{ background: app.approved_amount ? 'rgba(16,185,129,0.1)' : 'var(--color-surface-2)', border: app.approved_amount ? '1px solid rgba(16,185,129,0.3)' : '1px solid var(--color-border)', padding: '12px', borderRadius: '10px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 800, color: app.approved_amount ? '#10B981' : 'var(--color-text-2)', textTransform: 'uppercase' }}>Approved Loan Amount</span>
+                  <div style={{ fontSize: app.approved_amount ? '18px' : '14px', fontWeight: 800, color: app.approved_amount ? '#10B981' : 'var(--color-text-3)', marginTop: '2px' }}>
+                    {app.approved_amount ? <AmountCell value={app.approved_amount} /> : 'Pending Approval'}
+                  </div>
+                </div>
+                <div style={{ background: app.lenders?.name ? 'rgba(59,130,246,0.1)' : 'var(--color-surface-2)', border: app.lenders?.name ? '1px solid rgba(59,130,246,0.3)' : '1px solid var(--color-border)', padding: '12px', borderRadius: '10px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 800, color: app.lenders?.name ? '#3B82F6' : 'var(--color-text-2)', textTransform: 'uppercase' }}>Sanctioning Bank / Lender</span>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: app.lenders?.name ? '#3B82F6' : 'var(--color-text-3)', marginTop: '4px' }}>
+                    {app.lenders?.name ? `🏦 ${app.lenders.name}` : 'Pending Assignment'}
+                  </div>
                 </div>
                 <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', padding: '12px', borderRadius: '10px' }}>
-                  <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-2)', textTransform: 'uppercase' }}>Product Category</span>
-                  <div style={{ fontSize: '13px', fontWeight: 700, marginTop: '4px', textTransform: 'capitalize' }}>{app.product_type?.replace(/_/g, ' ') || 'New Car'}</div>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-2)', textTransform: 'uppercase' }}>Disbursed Amount</span>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: app.disbursed_amount ? '#10B981' : 'var(--color-text-3)', marginTop: '4px' }}>
+                    {app.disbursed_amount ? <AmountCell value={app.disbursed_amount} /> : 'Pending Payout'}
+                  </div>
                 </div>
-                <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', padding: '12px', borderRadius: '10px' }}>
-                  <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-2)', textTransform: 'uppercase' }}>Selected Lender</span>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#3B82F6', marginTop: '4px' }}>{app.lenders?.name || 'Multi-Lender Pre-Check'}</div>
+              </div>
+
+              {/* Multi-Lender Pre-Check & Approval Verdicts */}
+              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--color-border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                  <h4 style={{ fontSize: '12px', fontWeight: 800, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    🏦 Partner Lender Eligibility & Multi-NBFC Approval Verdicts
+                  </h4>
+                  <span style={{ fontSize: '11px', color: 'var(--color-text-2)', fontWeight: 600 }}>
+                    {(app.evaluations || []).filter(e => e.result === 'eligible').length} Eligible Lenders Found
+                  </span>
                 </div>
-                <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', padding: '12px', borderRadius: '10px' }}>
-                  <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-2)', textTransform: 'uppercase' }}>Creation Date</span>
-                  <div style={{ fontSize: '12px', fontWeight: 600, marginTop: '4px' }}>{new Date(app.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {!(app.evaluations && app.evaluations.length > 0) ? (
+                    <div style={{ fontSize: '12px', color: 'var(--color-text-2)', padding: '8px 0' }}>
+                      Primary Lender: <strong style={{ color: '#3B82F6' }}>{app.lenders?.name || 'ITI Finance'}</strong> (Pre-check Passed)
+                    </div>
+                  ) : (
+                    app.evaluations.map((ev, idx) => {
+                      const isEligible = ev.result === 'eligible';
+                      const isIncomplete = ev.result === 'incomplete';
+                      return (
+                        <div key={idx} style={{
+                          background: isEligible ? 'rgba(16,185,129,0.08)' : isIncomplete ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)',
+                          border: `1px solid ${isEligible ? 'rgba(16,185,129,0.25)' : isIncomplete ? 'rgba(245,158,11,0.25)' : 'rgba(239,68,68,0.25)'}`,
+                          borderRadius: '10px',
+                          padding: '10px 12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justify: 'space-between'
+                        }}>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '13px', fontWeight: 800, color: isEligible ? '#10B981' : isIncomplete ? '#F59E0B' : '#EF4444' }}>
+                                {ev.lender_name}
+                              </span>
+                              <span style={{
+                                fontSize: '10px',
+                                fontWeight: 800,
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                background: isEligible ? '#10B981' : isIncomplete ? '#F59E0B' : '#EF4444',
+                                color: '#FFFFFF',
+                                textTransform: 'uppercase'
+                              }}>
+                                {isEligible ? 'High Approval Chance (Eligible)' : isIncomplete ? 'Incomplete Docs' : 'Not Eligible'}
+                              </span>
+                            </div>
+                            {ev.failed_rules && ev.failed_rules.length > 0 && (
+                              <div style={{ fontSize: '11px', color: '#EF4444', marginTop: '4px' }}>
+                                Reason: {ev.failed_rules.join('; ')}
+                              </div>
+                            )}
+                          </div>
+                          {isEligible && (
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#10B981', background: 'rgba(16,185,129,0.15)', padding: '3px 8px', borderRadius: '6px' }}>
+                              ✓ Recommended Candidate
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
             </div>
@@ -406,10 +596,9 @@ export default function ApplicationDetailsPage({ params }) {
             </div>
           )}
 
-        </div>
-
-        {/* Right Column (5 Cols): Living Timeline & Activity Feed */}
-        <div style={{ gridColumn: 'span 5 / span 5', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '16px', padding: '16px' }}>
+          {/* Active Tab Panel 4: Stage Audit & Living Activity Log */}
+          {activeTab === 'audit' && (
+            <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '16px', padding: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '10px', borderBottom: '1px solid var(--color-border)' }}>
             <h3 style={{ fontSize: '13px', fontWeight: 800, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               📜 Stage Audit & Living Activity Log
@@ -422,40 +611,116 @@ export default function ApplicationDetailsPage({ params }) {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', position: 'relative', paddingLeft: '8px' }}>
               <div style={{ position: 'absolute', left: '15px', top: '10px', bottom: '10px', width: '2px', background: 'var(--color-border)' }} />
-              {stages.map((stg, i) => {
+              {[...stages].reverse().filter(stg => !stg.data?.is_clarification_response).map((stg, i) => {
                 const stgStatus = stg.outcome || stg.status || 'pending';
                 const stgStage = stg.stage_name || stg.stage || 'cibil';
                 const stgUser = stg.profiles?.full_name || stg.staff?.name || 'System';
+                const isPassed = stgStatus === 'approved' || stgStatus === 'pass';
+                const isFailed = stgStatus === 'rejected' || stgStatus === 'fail';
+                const isClarificationResponse = stg.data?.is_clarification_response;
+                const statusColor = isPassed ? '#10B981' : isFailed ? '#EF4444' : isClarificationResponse ? '#3B82F6' : '#F59E0B';
+                const badgeLabel = isPassed ? 'Pass' : isFailed ? 'Rejected' : stgStatus === 'rework' ? 'Clarification Requested' : isClarificationResponse ? 'Dealer Response' : 'Pending';
+
+                const renderResponse = (resp) => {
+                  const respDocs = (resp.data?.document_ids || []).map(id => documents.find(d => d.id === id)).filter(Boolean);
+                  return (
+                    <div key={resp.id} style={{ marginTop: '8px', padding: '10px', background: 'rgba(59,130,246,0.08)', borderRadius: '6px', borderLeft: '3px solid #3B82F6' }}>
+                      <strong style={{ fontSize: '10px', color: '#3B82F6', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>
+                        👤 Dealer Response:
+                      </strong>
+                      <div style={{ fontSize: '11px', color: 'var(--color-text)', lineHeight: '1.4' }}>
+                        {resp.remarks || resp.notes || '(Documents attached)'}
+                      </div>
+                      {respDocs.length > 0 && (
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '6px' }}>
+                          {respDocs.map(d => (
+                            <a key={d.id} href={d.cdn_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '10px', color: '#3B82F6', background: '#DBEAFE', padding: '2px 8px', borderRadius: '4px', textDecoration: 'none' }}>
+                              📎 {formatFileName(d.original_filename, d.doc_type)}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                      <p style={{ fontSize: '9px', color: 'var(--color-text-3)', marginTop: '4px' }}>
+                        — by {resp.profiles?.full_name || 'Dealer'} on {new Date(resp.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  );
+                };
 
                 return (
                   <div key={stg.id || i} style={{ display: 'flex', gap: '12px', position: 'relative', zIndex: 10 }}>
                     <div style={{
                       width: '16px', height: '16px', borderRadius: '50%',
                       background: 'var(--color-surface)',
-                      border: `2px solid ${stgStatus === 'approved' ? '#10B981' : stgStatus === 'rejected' ? '#EF4444' : '#F59E0B'}`,
+                      border: `2px solid ${statusColor}`,
                       display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '3px'
                     }}>
-                      <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: stgStatus === 'approved' ? '#10B981' : stgStatus === 'rejected' ? '#EF4444' : '#F59E0B' }} />
+                      <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: statusColor }} />
                     </div>
 
                     <div style={{ flex: 1, padding: '10px 12px', background: 'var(--color-surface-2)', borderRadius: '10px', border: '1px solid var(--color-border)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
                         <span style={{ fontWeight: 700, fontSize: '12px', textTransform: 'capitalize' }}>{stgStage.replace(/_/g, ' ')}</span>
-                        <span style={{ fontSize: '10px', color: 'var(--color-text-3)', fontFamily: 'monospace' }}>{new Date(stg.created_at).toLocaleDateString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span style={{ fontSize: '10px', color: 'var(--color-text-3)', fontFamily: 'monospace' }}>{new Date(stg.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
-                      <div style={{ marginBottom: '4px' }}>
-                        <StatusBadge status={stgStatus} />
+                      <div style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <span style={{
+                          fontSize: '10px',
+                          fontWeight: 800,
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          background: isPassed ? 'rgba(16,185,129,0.15)' : isFailed ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)',
+                          color: statusColor,
+                          textTransform: 'uppercase'
+                        }}>
+                          {badgeLabel}
+                        </span>
+                        {stg.data?.lender_name && (
+                          <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', background: 'rgba(59,130,246,0.15)', color: '#3B82F6' }}>
+                            🏦 Bank: {stg.data.lender_name}
+                          </span>
+                        )}
+                        {stg.data?.approved_amount && (
+                          <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', background: 'rgba(16,185,129,0.15)', color: '#10B981' }}>
+                            💰 Approved: ₹{Number(stg.data.approved_amount).toLocaleString('en-IN')}
+                          </span>
+                        )}
                       </div>
-                      {stg.remarks || stg.notes ? <p style={{ fontSize: '11px', color: 'var(--color-text-2)', marginTop: '4px' }}>{stg.remarks || stg.notes}</p> : null}
-                      <p style={{ fontSize: '10px', color: 'var(--color-text-3)', marginTop: '4px' }}>— by {stgUser}</p>
+
+                      {stg.remarks || stg.notes ? (
+                        <div style={{
+                          fontSize: '11px',
+                          color: 'var(--color-text)',
+                          background: isFailed ? 'rgba(239,68,68,0.08)' : stgStatus === 'rework' ? 'rgba(245,158,11,0.08)' : 'var(--color-surface)',
+                          borderLeft: `3px solid ${statusColor}`,
+                          padding: '6px 10px',
+                          borderRadius: '4px',
+                          marginTop: '6px',
+                          lineHeight: '1.4'
+                        }}>
+                          <strong style={{ fontSize: '10px', color: statusColor, textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>
+                            💬 {stgStatus === 'rework' ? 'Clarification Query' : isClarificationResponse ? 'Dealer Response' : 'Stage Note / Remarks'}:
+                          </strong>
+                          {stg.remarks || stg.notes}
+                        </div>
+                      ) : null}
+                      
+                      {/* Render nested responses if any */}
+                      {stg.data?.query_id && responseMap[stg.data.query_id] && (
+                        <div>
+                          {responseMap[stg.data.query_id].map(renderResponse)}
+                        </div>
+                      )}
+                      <p style={{ fontSize: '10px', color: 'var(--color-text-3)', marginTop: '6px' }}>— by {stgUser}</p>
                     </div>
                   </div>
                 );
               })}
             </div>
           )}
+            </div>
+          )}
         </div>
-
       </div>
 
       {/* Stage Update Modal */}
@@ -463,7 +728,7 @@ export default function ApplicationDetailsPage({ params }) {
         <div className="modal-backdrop" onClick={() => setModal(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <h3 className="text-base font-bold mb-4">Stage Action & Decision Node</h3>
-            
+
             <div className="field mb-3">
               <label className="text-xs font-semibold mb-1 block">Target Stage *</label>
               <select className="select w-full" value={targetStage} onChange={e => setTargetStage(e.target.value)}>
@@ -476,22 +741,48 @@ export default function ApplicationDetailsPage({ params }) {
             <div className="field mb-3">
               <label className="text-xs font-semibold mb-1 block">Stage Decision / Action *</label>
               <select className="select w-full" value={stageAction} onChange={e => setStageAction(e.target.value)}>
+                <option value="" disabled>Select Action...</option>
                 <option value="advance">Advance to Selected Stage (Approve Stage)</option>
                 <option value="clarification">Request Clarification from Dealer / Raise Query</option>
                 <option value="reject">Decline / Reject Application</option>
               </select>
             </div>
 
+            <div className="field mb-3">
+              <label className="text-xs font-semibold mb-1 block">Sanctioning Lender / Bank (Optional)</label>
+              <select
+                className="select w-full"
+                value={stageLenderName}
+                onChange={e => setStageLenderName(e.target.value)}
+              >
+                <option value="">Select a Lender...</option>
+                {activeLenders.map(l => (
+                  <option key={l.id} value={l.name}>{l.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="field mb-3">
+              <label className="text-xs font-semibold mb-1 block">Approved Loan Amount (₹) (Optional)</label>
+              <input
+                type="number"
+                className="input w-full"
+                value={stageApprovedAmount}
+                onChange={e => setStageApprovedAmount(e.target.value)}
+                placeholder={`Default: ₹${app.requested_amount || 0}`}
+              />
+            </div>
+
             <div className="field mb-4">
               <label className="text-xs font-semibold mb-1 block">
-                {stageAction === 'clarification' ? 'Missing Details / Query Notes for Dealer *' : stageAction === 'reject' ? 'Rejection Reason *' : 'Internal Review Remarks'}
+                {stageAction === 'clarification' ? 'Missing Details / Query Notes for Dealer *' : stageAction === 'reject' ? 'Rejection Reason *' : 'Internal Review Remarks / Notes'}
               </label>
-              <textarea className="input w-full" rows="3" value={stageNotes} onChange={e => setStageNotes(e.target.value)} placeholder="Enter details or review notes..."></textarea>
+              <textarea className="input w-full" rows="3" value={stageNotes} onChange={e => setStageNotes(e.target.value)} placeholder="Enter notes or clarification instructions..."></textarea>
             </div>
 
             <div className="flex justify-end gap-2 mt-5">
               <button className="btn btn-secondary btn-sm" onClick={() => setModal(null)}>Cancel</button>
-              <button className="btn btn-primary btn-sm" onClick={handleAddStageEntry} disabled={addingEntry}>{addingEntry ? 'Saving...' : 'Save Stage Update'}</button>
+              <button className="btn btn-primary btn-sm" onClick={handleAddStageEntry} disabled={addingEntry || !stageAction}>{addingEntry ? 'Saving...' : 'Save Stage Update'}</button>
             </div>
           </div>
         </div>

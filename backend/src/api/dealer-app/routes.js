@@ -1,15 +1,15 @@
 'use strict';
 const express = require('express');
-const multer  = require('multer');
-const { authenticate }  = require('../../shared/middleware/authenticate');
-const { roleGuard }     = require('../../shared/middleware/roleGuard');
-const { sendSuccess }   = require('../../shared/utils/response');
-const loanSvc           = require('../../domains/loan-applications/service');
-const walletSvc         = require('../../domains/wallet/service');
-const notificationSvc   = require('../../domains/notifications/service');
-const { supabase }      = require('../../config/database');
-const { saveToCdn }     = require('../../shared/utils/cdnStorage');
-const { orchestrate }   = require('../../domains/eligibility-engine/orchestrator');
+const multer = require('multer');
+const { authenticate } = require('../../shared/middleware/authenticate');
+const { roleGuard } = require('../../shared/middleware/roleGuard');
+const { sendSuccess, sendError } = require('../../shared/utils/response');
+const loanSvc = require('../../domains/loan-applications/service');
+const walletSvc = require('../../domains/wallet/service');
+const notificationSvc = require('../../domains/notifications/service');
+const { supabase } = require('../../config/database');
+const { saveToCdn } = require('../../shared/utils/cdnStorage');
+const { orchestrate } = require('../../domains/eligibility-engine/orchestrator');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 const router = express.Router();
@@ -22,25 +22,45 @@ router.post(
   upload.single('file'),
   async (req, res, next) => {
     try {
-      if (!req.file) return res.status(400).json({ error: 'No file provided' });
+      if (!req.file) return res.status(400).json({ success: false, error: { code: 'NO_FILE', message: 'No file provided' } });
       const { loan_application_id, doc_type, party } = req.body;
-      const { cdn_url } = saveToCdn(req.file, 'dealer-upload', party || 'applicant', doc_type || 'document');
-      
+
+      let applicationNo = 'dealer-upload';
+      if (loan_application_id) {
+        const { data: appData } = await supabase
+          .from('loan_applications')
+          .select('application_no')
+          .eq('id', loan_application_id)
+          .single();
+        if (appData?.application_no) {
+          applicationNo = appData.application_no;
+        }
+      }
+
+      const { cdn_path, cdn_url } = saveToCdn(
+        req.file,
+        applicationNo,
+        party || 'applicant',
+        doc_type || 'document'
+      );
+
+      let docId = null;
       if (loan_application_id && doc_type && party) {
-        const { error } = await supabase.from('documents').insert({
+        const { data: docData, error } = await supabase.from('documents').insert({
           loan_application_id,
           doc_type,
           party,
-          cdn_path: cdn_url,
-          original_filename: req.file.originalname,
-          mime_type: req.file.mimetype,
-          file_size_bytes: req.file.size,
+          cdn_path,
+          original_filename: req.file.originalname || `${doc_type || 'document'}.bin`,
+          mime_type: req.file.mimetype || 'application/octet-stream',
+          file_size_bytes: req.file.size || 0,
           uploaded_by_profile_id: req.user.profileId
-        });
+        }).select('id').single();
         if (error) console.error('Failed to insert document record:', error);
+        else docId = docData.id;
       }
 
-      sendSuccess(res, { url: cdn_url }, 201);
+      sendSuccess(res, { url: cdn_url, cdn_path, document_id: docId }, 201);
     } catch (err) { next(err); }
   }
 );
@@ -48,10 +68,65 @@ router.post(
 router.use(authenticate, roleGuard(['dealer']));
 
 // GET /dealer/profile
+
+// GET /dealer/banners
+router.get('/banners', async (req, res, next) => {
+  try {
+    const { data, error } = await supabase.from('dealer_banners').select('*').eq('is_active', true).order('sort_order', { ascending: true });
+    if (error) throw error;
+    sendSuccess(res, data || []);
+  } catch (err) { next(err); }
+});
+
 router.get('/profile', async (req, res, next) => {
   try {
-    const { data } = await supabase.from('dealers').select('*').eq('profile_id', req.user.profileId).single();
+    const { data, error } = await supabase
+      .from('dealers')
+      .select('*, profiles!dealers_profile_id_fkey(avatar_url, full_name, phone, email)')
+      .eq('profile_id', req.user.profileId)
+      .single();
+      
+    if (error) throw error;
     sendSuccess(res, data);
+  } catch (err) { next(err); }
+});
+
+router.put('/profile', async (req, res, next) => {
+  try {
+    const { 
+      business_name, pan_number, gst_number, business_address, 
+      city, state, pincode, bank_account_name, bank_account_number, 
+      bank_ifsc, bank_name,
+      avatar_url, full_name
+    } = req.body;
+
+    // Update dealers table
+    const { error: dealerError } = await supabase
+      .from('dealers')
+      .update({
+        business_name, pan_number, gst_number, business_address,
+        city, state, pincode, bank_account_name, bank_account_number,
+        bank_ifsc, bank_name
+      })
+      .eq('profile_id', req.user.profileId);
+      
+    if (dealerError) throw dealerError;
+
+    // Update profiles table
+    if (avatar_url !== undefined || full_name !== undefined) {
+      const profileUpdates = {};
+      if (avatar_url !== undefined) profileUpdates.avatar_url = avatar_url;
+      if (full_name !== undefined) profileUpdates.full_name = full_name;
+      
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update(profileUpdates)
+        .eq('id', req.user.profileId);
+        
+      if (profileError) throw profileError;
+    }
+
+    sendSuccess(res, { message: 'Profile updated successfully' });
   } catch (err) { next(err); }
 });
 
@@ -62,13 +137,13 @@ router.post('/applications/cibil/fetch', async (req, res, next) => {
     if (!pan_number) {
       return res.status(400).json({ error: 'pan_number is required to fetch CIBIL' });
     }
-    
+
     // Simulate API delay
     await new Promise(r => setTimeout(r, 1500));
-    
+
     // Generate a random score between 600 and 850 as per user request for testing all cases
     const score = Math.floor(Math.random() * (850 - 600 + 1)) + 600;
-    
+
     sendSuccess(res, {
       pan_number,
       score,
@@ -92,10 +167,12 @@ router.get('/applications', async (req, res, next) => {
     const limit = parseInt(req.query.limit, 10) || 20;
     const offset = parseInt(req.query.offset, 10) || 0;
     const { data: dealer } = await supabase.from('dealers').select('id').eq('profile_id', req.user.profileId).single();
-    const result = await loanSvc.listApplications({ 
-      dealerId: dealer.id, 
-      status: req.query.status, 
+    const result = await loanSvc.listApplications({
+      dealerId: dealer.id,
+      status: req.query.status,
       stage: req.query.stage,
+      startDate: req.query.startDate,
+      endDate: req.query.endDate,
       limit,
       offset
     });
@@ -106,43 +183,99 @@ router.get('/applications', async (req, res, next) => {
 // POST /dealer/applications
 router.post('/applications', async (req, res, next) => {
   try {
-    const { data: dealer } = await supabase.from('dealers').select('id').eq('profile_id', req.user.profileId).single();
-    
+    const { data: dealer } = await supabase.from('dealers').select('id').eq('profile_id', req.user.profileId).maybeSingle();
+
     let customerId = req.body.customer_id;
     const { customer_name, phone, pan_number, product_type, vehicle_details, loan_amount, requested_amount, co_applicant_name, co_applicant_income } = req.body;
-    
-    if (!customerId && (customer_name || phone)) {
-      // Find or create customer auth & profile
-      let authUserId = null;
-      try {
-        const dummyPhone = phone || `9${Date.now()}`.slice(0, 10);
-        const { data: authData } = await supabase.auth.admin.createUser({ phone: dummyPhone, phone_confirm: true });
-        authUserId = authData?.user?.id;
-      } catch (e) {
-        if (phone) {
-          const { data: existingProf } = await supabase.from('profiles').select('auth_user_id').eq('phone', phone).single();
-          authUserId = existingProf?.auth_user_id;
+
+    if (!customerId) {
+      // 1. Check if customer exists by PAN number
+      if (pan_number) {
+        const { data: existingCustByPan } = await supabase
+          .from('customers')
+          .select('id')
+          .eq('pan_number', pan_number)
+          .maybeSingle();
+        if (existingCustByPan) customerId = existingCustByPan.id;
+      }
+
+      // 2. Check if customer exists by phone number on profile
+      if (!customerId && phone) {
+        const { data: existingProf } = await supabase
+          .from('profiles')
+          .select('id, auth_user_id')
+          .eq('phone', phone)
+          .maybeSingle();
+
+        if (existingProf) {
+          const { data: existingCust } = await supabase
+            .from('customers')
+            .select('id')
+            .eq('profile_id', existingProf.id)
+            .maybeSingle();
+
+          if (existingCust) {
+            customerId = existingCust.id;
+          } else {
+            const { data: newCust } = await supabase
+              .from('customers')
+              .insert({
+                profile_id: existingProf.id,
+                pan_number,
+                co_applicant_name,
+                co_applicant_income: co_applicant_income ? parseFloat(co_applicant_income) : null
+              })
+              .select()
+              .single();
+            if (newCust) customerId = newCust.id;
+          }
         }
       }
 
-      if (authUserId) {
-        const { data: prof } = await supabase.from('profiles')
-          .upsert({ auth_user_id: authUserId, role: 'customer', full_name: customer_name || 'Customer', phone }, { onConflict: 'auth_user_id' })
-          .select().single();
-          
-        if (prof) {
-          const { data: cust } = await supabase.from('customers')
-            .upsert({ profile_id: prof.id, pan_number, co_applicant_name, co_applicant_income: co_applicant_income ? parseFloat(co_applicant_income) : null }, { onConflict: 'profile_id' })
+      // 3. Create new auth user, profile, and customer record if not found
+      if (!customerId && (customer_name || phone)) {
+        let authUserId = null;
+        try {
+          const dummyPhone = phone || `9${Date.now()}`.slice(0, 10);
+          const { data: authData, error } = await supabase.auth.admin.createUser({ phone: dummyPhone, phone_confirm: true });
+          if (error) throw error;
+          authUserId = authData?.user?.id;
+        } catch (e) {
+          console.error('[Create Customer Error]', e);
+          if (phone) {
+            const { data: existingProf } = await supabase.from('profiles').select('auth_user_id').eq('phone', phone).maybeSingle();
+            authUserId = existingProf?.auth_user_id;
+          }
+          if (!authUserId) {
+            const dummyPhone = `9${Date.now()}`.slice(0, 10);
+            const { data: fallbackAuthData } = await supabase.auth.admin.createUser({ phone: dummyPhone, phone_confirm: true });
+            authUserId = fallbackAuthData?.user?.id;
+          }
+        }
+
+        if (authUserId) {
+          const { data: prof } = await supabase.from('profiles')
+            .upsert({ auth_user_id: authUserId, role: 'customer', full_name: customer_name || 'Customer', phone }, { onConflict: 'auth_user_id' })
             .select().single();
-          if (cust) customerId = cust.id;
+
+          if (prof) {
+            const { data: cust } = await supabase.from('customers')
+              .upsert({ profile_id: prof.id, pan_number, co_applicant_name, co_applicant_income: co_applicant_income ? parseFloat(co_applicant_income) : null }, { onConflict: 'profile_id' })
+              .select().single();
+            if (cust) customerId = cust.id;
+          }
         }
       }
+    }
+
+    if (!customerId) {
+      return sendError(res, 400, 'CUSTOMER_REQUIRED', 'Could not resolve customer record. Please check phone and PAN number details.');
     }
 
     const applicationData = {
       customerId,
       createdByProfileId: req.user.profileId,
-      dealerId: dealer.id,
+      dealerId: dealer ? dealer.id : null,
       productType: product_type || req.body.productType || 'new_car',
       vehicleDetails: vehicle_details || req.body.vehicleDetails || {},
       requestedAmount: parseFloat(loan_amount || requested_amount || 0)
@@ -175,7 +308,9 @@ router.post('/applications/:id/clarification', async (req, res, next) => {
     const result = await loanSvc.resubmitClarification({
       loanApplicationId: req.params.id,
       dealerProfileId: req.user.profileId,
-      notes: req.body.notes
+      notes: req.body.notes,
+      queryId: req.body.queryId,
+      documentIds: req.body.documentIds
     });
     sendSuccess(res, result);
   } catch (err) { next(err); }

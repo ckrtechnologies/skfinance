@@ -10,7 +10,7 @@ import ExportButtons from '@/components/ui/ExportButtons';
 import Link from 'next/link';
 import { useState, useEffect, Suspense } from 'react';
 
-const STATUSES = ['', 'draft', 'in_progress', 'approved', 'disbursed', 'rejected', 'cancelled', 'blocked_90d'];
+const STATUSES = ['', 'draft', 'in_progress', 'clarification_requested', 'approved', 'disbursed', 'rejected', 'cancelled', 'blocked_90d'];
 const STAGES   = ['', 'pre_check', 'cibil', 'document_verification', 'bank', 'valuation', 'fi', 'sanction', 'approval', 'disbursement'];
 
 function ApplicationsPageContent() {

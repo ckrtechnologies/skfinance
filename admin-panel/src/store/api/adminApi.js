@@ -14,13 +14,49 @@ export const adminApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Applications', 'Lenders', 'LenderRules', 'Dealers', 'Staff', 'Commissions', 'Withdrawals', 'Settings', 'AuditLog', 'Customers'],
+  tagTypes: ['Applications', 'Lenders', 'LenderRules', 'Dealers', 'Staff', 'Commissions', 'Withdrawals', 'Settings', 'AuditLog', 'Customers', 'Banners'],
   endpoints: (builder) => ({
     // Dashboard
     getDashboard: builder.query({
       query: ({ from, to } = {}) => ({
         url: '/dashboard',
         params: { from, to }
+      }),
+    }),
+
+    // Banners
+    getBanners: builder.query({
+      query: () => '/banners',
+      providesTags: ['Banners'],
+    }),
+    createBanner: builder.mutation({
+      query: (body) => ({
+        url: '/banners',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['Banners'],
+    }),
+    updateBanner: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `/banners/${id}`,
+        method: 'PUT',
+        body,
+      }),
+      invalidatesTags: ['Banners'],
+    }),
+    deleteBanner: builder.mutation({
+      query: (id) => ({
+        url: `/banners/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Banners'],
+    }),
+    uploadBannerImage: builder.mutation({
+      query: (formData) => ({
+        url: '/banners/upload',
+        method: 'POST',
+        body: formData,
       }),
     }),
 
@@ -46,7 +82,7 @@ export const adminApi = createApi({
         method: 'POST',
         body,
       }),
-      invalidatesTags: ['Applications'],
+      invalidatesTags: (result, error, { id }) => [{ type: 'Applications', id }, 'Applications'],
     }),
     disburse: builder.mutation({
       query: ({ id, ...body }) => ({
@@ -54,7 +90,7 @@ export const adminApi = createApi({
         method: 'POST',
         body,
       }),
-      invalidatesTags: ['Applications', 'Commissions'],
+      invalidatesTags: (result, error, { id }) => [{ type: 'Applications', id }, 'Applications', 'Commissions'],
     }),
     reApprove: builder.mutation({
       query: ({ id, ...body }) => ({
@@ -62,7 +98,7 @@ export const adminApi = createApi({
         method: 'POST',
         body,
       }),
-      invalidatesTags: ['Applications'],
+      invalidatesTags: (result, error, { id }) => [{ type: 'Applications', id }, 'Applications'],
     }),
 
     // Lenders
@@ -227,6 +263,11 @@ export const {
   useGetCommissionsQuery,
   useGetWithdrawalsQuery,
   useProcessWithdrawalMutation,
+  useGetBannersQuery,
+  useCreateBannerMutation,
+  useUpdateBannerMutation,
+  useDeleteBannerMutation,
+  useUploadBannerImageMutation,
   useGetSettingsQuery,
   useUpdateSettingMutation,
   useGetCustomersQuery,

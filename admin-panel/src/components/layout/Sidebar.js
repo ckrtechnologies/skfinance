@@ -18,6 +18,7 @@ import {
   IconShieldCheck,
   IconChevronLeft,
   IconUserCheck,
+  IconPhoto,
 } from '@tabler/icons-react';
 
 const NAV = [
@@ -48,6 +49,7 @@ const NAV = [
   {
     group: 'System',
     items: [
+      { href: '/banners',         label: 'Banners',       icon: IconPhoto,    color: '#a855f7' },
       { href: '/settings',        label: 'Settings',      icon: IconSettings, color: '#64748b' },
     ],
   },

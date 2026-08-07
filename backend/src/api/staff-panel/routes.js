@@ -29,10 +29,10 @@ router.get('/auth/me', authenticate, async (req, res, next) => {
 router.post('/auth/change-password', authenticate, async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    const result = await authService.changePassword({ 
-      authUserId: req.user.authUserId, 
-      currentPassword, 
-      newPassword 
+    const result = await authService.changePassword({
+      authUserId: req.user.authUserId,
+      currentPassword,
+      newPassword
     });
     sendSuccess(res, result);
   } catch (err) { next(err); }
@@ -43,7 +43,7 @@ router.get('/applications', authenticate, requireRole(['staff', 'admin']), async
   try {
     // For staff panel, list applications assigned to this staff or general if allowed
     const { from, to, status, stage, limit = 20, offset = 0 } = req.query;
-    
+
     let query = supabase.from('loan_applications').select(`
       id,
       application_no,
@@ -60,11 +60,11 @@ router.get('/applications', authenticate, requireRole(['staff', 'admin']), async
 
     // Optional: filter by assigned staff if schema supports it
     // query = query.eq('assigned_to', req.user.profileId);
-    
+
     if (from) query = query.gte('created_at', `${from}T00:00:00.000Z`);
-    if (to)   query = query.lte('created_at', `${to}T23:59:59.999Z`);
+    if (to) query = query.lte('created_at', `${to}T23:59:59.999Z`);
     if (status) query = query.eq('status', status);
-    if (stage)  query = query.eq('current_stage', stage);
+    if (stage) query = query.eq('current_stage', stage);
 
     query = query.order('created_at', { ascending: false }).range(offset, offset + limit - 1);
 
@@ -106,9 +106,9 @@ router.post('/applications/:id/stage', authenticate, requireRole(['staff', 'admi
       .from('loan_applications')
       .update({ current_stage: stage, status: status || 'in_progress' })
       .eq('id', req.params.id);
-      
+
     if (updateError) throw updateError;
-    
+
     const { error: stageError } = await supabase
       .from('stage_entries')
       .insert({
@@ -117,7 +117,7 @@ router.post('/applications/:id/stage', authenticate, requireRole(['staff', 'admi
         notes: notes || '',
         updated_by: req.user.profileId
       });
-      
+
     if (stageError) throw stageError;
 
     sendSuccess(res, { message: 'Stage updated successfully' });

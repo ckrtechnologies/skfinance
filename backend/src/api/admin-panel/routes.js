@@ -1,13 +1,20 @@
 'use strict';
 const express = require('express');
 const { authenticate } = require('../../shared/middleware/authenticate');
-const { roleGuard }    = require('../../shared/middleware/roleGuard');
+const { roleGuard } = require('../../shared/middleware/roleGuard');
 const { sendSuccess, sendError } = require('../../shared/utils/response');
-const loanSvc          = require('../../domains/loan-applications/service');
-const walletSvc        = require('../../domains/wallet/service');
-const lendersAdminSvc  = require('../../domains/lenders-admin/service');
-const notificationSvc  = require('../../domains/notifications/service');
-const { supabase }     = require('../../config/database');
+const loanSvc = require('../../domains/loan-applications/service');
+const walletSvc = require('../../domains/wallet/service');
+const lendersAdminSvc = require('../../domains/lenders-admin/service');
+const notificationSvc = require('../../domains/notifications/service');
+const { supabase } = require('../../config/database');
+const multer = require('multer');
+const { v4: uuidv4 } = require('uuid');
+const fs = require('fs');
+const path = require('path');
+const { CDN_LOCAL_PATH, CDN_BASE_URL } = require('../../config/secrets');
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 const router = express.Router();
 router.use(authenticate, roleGuard(['admin']));
@@ -158,10 +165,10 @@ router.post('/dealers', async (req, res, next) => {
 router.patch('/dealers/:id', async (req, res, next) => {
   try {
     const { business_name, phone, email, password, pan_number, gst_number, is_active } = req.body;
-    
+
     const { data: dealerRow, error: getErr } = await supabase.from('dealers').select('profile_id').eq('id', req.params.id).single();
     if (getErr) throw getErr;
-    
+
     const { data: profileRow, error: profGetErr } = await supabase.from('profiles').select('auth_user_id').eq('id', dealerRow.profile_id).single();
     if (profGetErr) throw profGetErr;
 
@@ -175,7 +182,7 @@ router.patch('/dealers/:id', async (req, res, next) => {
     if (phone !== undefined) profileUpdate.phone = phone;
     if (email !== undefined) profileUpdate.email = email;
     if (is_active !== undefined) profileUpdate.is_active = is_active;
-    
+
     if (Object.keys(profileUpdate).length > 0) {
       const { error: profUpdateErr } = await supabase.from('profiles').update(profileUpdate).eq('id', dealerRow.profile_id);
       if (profUpdateErr) throw profUpdateErr;
@@ -186,7 +193,7 @@ router.patch('/dealers/:id', async (req, res, next) => {
     if (pan_number !== undefined) dealerUpdate.pan_number = pan_number;
     if (gst_number !== undefined) dealerUpdate.gst_number = gst_number;
     if (is_active !== undefined) dealerUpdate.is_active = is_active;
-    
+
     if (Object.keys(dealerUpdate).length > 0) {
       const { error: dealerUpdateErr } = await supabase.from('dealers').update(dealerUpdate).eq('id', req.params.id);
       if (dealerUpdateErr) throw dealerUpdateErr;
@@ -227,7 +234,7 @@ router.post('/staff', async (req, res, next) => {
     const createUserPayload = { password, email_confirm: true, phone_confirm: true };
     if (email) createUserPayload.email = email;
     if (phone) createUserPayload.phone = phone;
-    
+
     const { data: authData, error: authErr } = await supabase.auth.admin.createUser(createUserPayload);
     if (authErr) throw authErr;
     const { data: profile, error: profErr } = await supabase.from('profiles')
@@ -243,11 +250,11 @@ router.post('/staff', async (req, res, next) => {
 router.patch('/staff/:id', async (req, res, next) => {
   try {
     const { full_name, phone, role, is_active, password } = req.body;
-    
+
     // Get staff member to find profile_id
     const { data: staffRow, error: getErr } = await supabase.from('staff').select('profile_id').eq('id', req.params.id).single();
     if (getErr) throw getErr;
-    
+
     // Get profile to find auth_user_id
     const { data: profileRow, error: profGetErr } = await supabase.from('profiles').select('auth_user_id').eq('id', staffRow.profile_id).single();
     if (profGetErr) throw profGetErr;
@@ -264,7 +271,7 @@ router.patch('/staff/:id', async (req, res, next) => {
     if (phone !== undefined) profileUpdate.phone = phone;
     if (role !== undefined) profileUpdate.role = role;
     if (is_active !== undefined) profileUpdate.is_active = is_active;
-    
+
     if (Object.keys(profileUpdate).length > 0) {
       const { error: profUpdateErr } = await supabase.from('profiles').update(profileUpdate).eq('id', staffRow.profile_id);
       if (profUpdateErr) throw profUpdateErr;
@@ -274,7 +281,7 @@ router.patch('/staff/:id', async (req, res, next) => {
     const staffUpdate = {};
     if (phone !== undefined) staffUpdate.phone = phone;
     if (is_active !== undefined) staffUpdate.is_active = is_active;
-    
+
     if (Object.keys(staffUpdate).length > 0) {
       const { error: staffUpdateErr } = await supabase.from('staff').update(staffUpdate).eq('id', req.params.id);
       if (staffUpdateErr) throw staffUpdateErr;
@@ -312,7 +319,7 @@ router.get('/customers', async (req, res, next) => {
 router.patch('/customers/:id', async (req, res, next) => {
   try {
     const { full_name, phone, email, is_active, pan_number, co_applicant_name } = req.body;
-    
+
     const { data: custRow, error: getErr } = await supabase.from('customers').select('profile_id').eq('id', req.params.id).single();
     if (getErr) throw getErr;
 
@@ -321,7 +328,7 @@ router.patch('/customers/:id', async (req, res, next) => {
     if (phone !== undefined) profileUpdate.phone = phone;
     if (email !== undefined) profileUpdate.email = email;
     if (is_active !== undefined) profileUpdate.is_active = is_active;
-    
+
     if (Object.keys(profileUpdate).length > 0) {
       const { error: profUpdateErr } = await supabase.from('profiles').update(profileUpdate).eq('id', custRow.profile_id);
       if (profUpdateErr) throw profUpdateErr;
@@ -330,7 +337,7 @@ router.patch('/customers/:id', async (req, res, next) => {
     const custUpdate = {};
     if (pan_number !== undefined) custUpdate.pan_number = pan_number;
     if (co_applicant_name !== undefined) custUpdate.co_applicant_name = co_applicant_name;
-    
+
     if (Object.keys(custUpdate).length > 0) {
       const { error: custUpdateErr } = await supabase.from('customers').update(custUpdate).eq('id', req.params.id);
       if (custUpdateErr) throw custUpdateErr;
@@ -356,7 +363,7 @@ router.delete('/customers/:id', async (req, res, next) => {
         console.warn('Caught exception deleting auth user:', err);
       }
     }
-    
+
     // Manually cascade delete loan applications to allow customer deletion
     const { data: apps } = await supabase.from('loan_applications').select('id').eq('customer_id', req.params.id);
     if (apps && apps.length > 0) {
@@ -368,7 +375,7 @@ router.delete('/customers/:id', async (req, res, next) => {
 
     const { error: custDelErr } = await supabase.from('customers').delete().eq('id', req.params.id);
     if (custDelErr) throw custDelErr;
-    
+
     const { error: profDelErr } = await supabase.from('profiles').delete().eq('id', custRow.profile_id);
     if (profDelErr) throw profDelErr;
 
@@ -434,7 +441,7 @@ router.get('/notifications', async (req, res, next) => {
 router.get('/dealer-onboarding', async (req, res, next) => {
   try {
     const status = req.query.status || 'under_review';
-    const limit  = parseInt(req.query.limit, 10) || 20;
+    const limit = parseInt(req.query.limit, 10) || 20;
     const offset = parseInt(req.query.offset, 10) || 0;
 
     const { data: dealers, error, count } = await supabase
@@ -539,3 +546,53 @@ router.post('/dealer-onboarding/:id/reject', async (req, res, next) => {
 });
 
 module.exports = router;
+
+// ── Banners ────────────────────────────────────────────────────────
+router.post('/banners/upload', upload.single('file'), async (req, res, next) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    const ext = path.extname(req.file.originalname) || '.png';
+    const filename = `${uuidv4()}${ext}`;
+    
+    const absDir = path.join(CDN_LOCAL_PATH, 'banners');
+    fs.mkdirSync(absDir, { recursive: true });
+    fs.writeFileSync(path.join(absDir, filename), req.file.buffer);
+    
+    const cdnUrl = `${CDN_BASE_URL}/banners/${filename}`;
+    sendSuccess(res, { cdn_url: cdnUrl });
+  } catch (err) { next(err); }
+});
+
+router.get('/banners', async (req, res, next) => {
+  try {
+    const { data, error } = await supabase.from('dealer_banners').select('*').order('sort_order', { ascending: true });
+    if (error) throw error;
+    sendSuccess(res, data || []);
+  } catch (err) { next(err); }
+});
+
+router.post('/banners', async (req, res, next) => {
+  try {
+    const { image_url, action_link, is_active, sort_order } = req.body;
+    const { data, error } = await supabase.from('dealer_banners').insert([{ image_url, action_link, is_active, sort_order }]).select().single();
+    if (error) throw error;
+    sendSuccess(res, data, 201);
+  } catch (err) { next(err); }
+});
+
+router.put('/banners/:id', async (req, res, next) => {
+  try {
+    const { image_url, action_link, is_active, sort_order } = req.body;
+    const { data, error } = await supabase.from('dealer_banners').update({ image_url, action_link, is_active, sort_order }).eq('id', req.params.id).select().single();
+    if (error) throw error;
+    sendSuccess(res, data);
+  } catch (err) { next(err); }
+});
+
+router.delete('/banners/:id', async (req, res, next) => {
+  try {
+    const { error } = await supabase.from('dealer_banners').delete().eq('id', req.params.id);
+    if (error) throw error;
+    sendSuccess(res, { deleted: true });
+  } catch (err) { next(err); }
+});

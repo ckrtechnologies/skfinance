@@ -39,7 +39,8 @@ function errorHandler(err, req, res, _next) {
   }
 
   console.error('[errorHandler] Unhandled error:', err);
-  return sendError(res, 500, 'INTERNAL_ERROR', 'An unexpected error occurred');
+  const detailMsg = err.message || 'An unexpected error occurred';
+  return sendError(res, 500, 'INTERNAL_ERROR', detailMsg);
 }
 
 module.exports = { errorHandler };
