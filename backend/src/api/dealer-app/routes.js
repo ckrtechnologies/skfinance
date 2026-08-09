@@ -121,6 +121,20 @@ router.post('/applications/cibil/fetch', async (req, res, next) => {
       return res.status(400).json({ error: 'pan_number is required to fetch CIBIL' });
     }
 
+    const { data: dealer } = await supabase.from('dealers').select('id').eq('profile_id', req.user.profileId).single();
+    if (!dealer) return res.status(403).json({ error: 'Dealer profile required' });
+
+    // Deduct ₹70 from dealer's wallet for CIBIL hit
+    const { error: ledgerError } = await supabase.from('wallet_ledger').insert({
+      dealer_id: dealer.id,
+      entry_type: 'adjustment',
+      amount: -70.00,
+      remarks: `CIBIL check fee for PAN: ${pan_number}`,
+      created_by_profile_id: req.user.profileId
+    });
+
+    if (ledgerError) throw ledgerError;
+
     // Simulate API delay
     await new Promise(r => setTimeout(r, 1500));
 
