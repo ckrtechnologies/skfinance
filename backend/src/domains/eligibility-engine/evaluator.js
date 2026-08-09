@@ -108,8 +108,15 @@ function evaluateRules(rulesJson, input) {
     }
   } else if (addressType === 'owned') {
     // If address is owned, require standard ownership proof for applicant if not already handled
+    const ownershipProvider = input.ownershipProvidedBy || 'applicant';
     if (!required_documents.applicant.includes('address_ownership_proof') && !required_documents.applicant.includes('address_electricity_or_khatauni')) {
-      required_documents.applicant.push('address_ownership_proof');
+      if (ownershipProvider === 'co_applicant') {
+        required_documents.co_applicant.push('address_ownership_proof');
+      } else if (ownershipProvider === 'guarantor') {
+        required_documents.guarantor.push('address_ownership_proof');
+      } else {
+        required_documents.applicant.push('address_ownership_proof');
+      }
     }
   }
 

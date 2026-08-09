@@ -60,11 +60,10 @@ export const adminApi = createApi({
       }),
     }),
 
-    // Applications
     getApplications: builder.query({
-      query: ({ search, status, stage, assigned_staff_id, unassigned, limit = 20, offset = 0, from, to } = {}) => ({
+      query: ({ search, status, stage, source, assigned_staff_id, unassigned, dealer_id, limit = 20, offset = 0, from, to } = {}) => ({
         url: '/applications',
-        params: { search, status, stage, assigned_staff_id, unassigned, limit, offset, from, to },
+        params: { search, status, stage, source, assigned_staff_id, unassigned, dealer_id, limit, offset, from, to },
       }),
       providesTags: ['Applications'],
     }),
@@ -79,6 +78,14 @@ export const adminApi = createApi({
         body: { staff_ids },
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'Applications', id }, 'Applications'],
+    }),
+    bulkAssignApplications: builder.mutation({
+      query: ({ application_ids, staff_ids }) => ({
+        url: `/applications/bulk-assign`,
+        method: 'POST',
+        body: { application_ids, staff_ids },
+      }),
+      invalidatesTags: ['Applications'],
     }),
     getStageEntries: builder.query({
       query: (id) => `/applications/${id}/stage-entries`,
@@ -297,6 +304,7 @@ export const {
   useGetApplicationsQuery,
   useGetApplicationQuery,
   useAssignApplicationMutation,
+  useBulkAssignApplicationsMutation,
   useGetStageEntriesQuery,
   useAddStageEntryMutation,
   useDisburseMutation,

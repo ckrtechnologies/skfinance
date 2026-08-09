@@ -4,6 +4,7 @@ const { authenticate, requireRole } = require('../../shared/middleware/authentic
 const { sendSuccess, sendError } = require('../../shared/utils/response');
 const authService = require('../../domains/auth/service');
 const loanSvc = require('../../domains/loan-applications/service');
+const { generateMergedDocumentPdf } = require('../../domains/loan-applications/documentExportService');
 const { supabase } = require('../../config/database');
 
 const router = express.Router();
@@ -92,7 +93,7 @@ router.get('/applications/:id', authenticate, requireRole(['staff', 'admin']), a
     const app = await loanSvc.getApplication(req.params.id);
     if (req.user.role !== 'admin') {
       const { data: staffData } = await supabase.from('staff').select('id').eq('profile_id', req.user.profileId).maybeSingle();
-      const isAssigned = app.assignees?.some(a => a.staff_id === staffData?.id);
+      const isAssigned = app.assignees?.some(a => a.staff_id === staffData?.id || a.staff?.id === staffData?.id);
       if (!isAssigned) {
          throw Object.assign(new Error('Access denied. This application is not assigned to you.'), { statusCode: 403 });
       }
@@ -120,6 +121,15 @@ router.post('/applications/:id/stage', authenticate, requireRole(['staff', 'admi
       newStatus: status || 'in_progress'
     });
     sendSuccess(res, { message: 'Stage updated successfully', data: entry });
+  } catch (err) { next(err); }
+});
+
+router.get('/applications/:id/export-documents', authenticate, requireRole(['staff', 'admin']), async (req, res, next) => {
+  try {
+    const pdfBuffer = await generateMergedDocumentPdf(req.params.id);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="Application_${req.params.id}_Documents.pdf"`);
+    res.send(pdfBuffer);
   } catch (err) { next(err); }
 });
 

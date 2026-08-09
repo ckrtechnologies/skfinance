@@ -36,7 +36,16 @@ router.post('/pre-check', async (req, res, next) => {
 router.post('/applications', async (req, res, next) => {
   try {
     const { data: customer } = await supabase.from('customers').select('id').eq('profile_id', req.user.profileId).single();
-    const app = await loanSvc.createApplication({ customerId: customer.id, createdByProfileId: req.user.profileId, dealerId: req.body.dealerId, staffId: null, productType: req.body.productType, vehicleDetails: req.body.vehicleDetails || {}, requestedAmount: req.body.requestedAmount });
+    const app = await loanSvc.createApplication({ 
+      customerId: customer.id, 
+      createdByProfileId: req.user.profileId, 
+      dealerId: req.body.dealerId, 
+      staffId: null, 
+      productType: req.body.productType, 
+      vehicleDetails: req.body.vehicleDetails || {}, 
+      requestedAmount: req.body.requestedAmount,
+      ownershipProvidedBy: req.body.ownership_provided_by || null
+    });
     sendSuccess(res, app, 201);
   } catch (err) { next(err); }
 });

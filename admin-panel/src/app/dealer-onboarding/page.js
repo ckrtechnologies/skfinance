@@ -57,16 +57,20 @@ export default function DealerOnboardingPage() {
   useEffect(() => { fetchDealers(); }, [fetchDealers]);
 
   const handleApprove = async () => {
-    if (!dealerCode.trim()) { alert('Please enter a dealer code'); return; }
     setActionLoading(true);
     try {
       const r = await fetch(`${API_URL}/admin/dealer-onboarding/${selected.id}/approve`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-        body: JSON.stringify({ dealer_code: dealerCode })
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('sk_admin_token')}`
+        },
+        body: JSON.stringify({})
       });
-      if (!r.ok) throw new Error('Approval failed');
-      setApproveModal(false); setDealerCode(''); setSelected(null);
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'Failed to approve');
+      alert(`Dealer approved! Assigned code: ${data.data.dealer_code}`);
+      setApproveModal(false); setSelected(null);
       fetchDealers();
     } catch (e) { alert(e.message); }
     finally { setActionLoading(false); }
@@ -113,7 +117,7 @@ export default function DealerOnboardingPage() {
             </tr></thead>
             <tbody>
               {loading ? <LoadingRows cols={6} /> : dealers.length === 0 ?
-                <tr><td colSpan={6}><EmptyState message={`No dealers with status: ${statusFilter}`} /></td></tr> :
+                <EmptyState title="No data" description={`No dealers with status: ${statusFilter}`} /> :
                 dealers.map(d => (
                   <tr key={d.id} onClick={() => setSelected(d)} style={{ cursor: 'pointer', backgroundColor: selected?.id === d.id ? 'rgba(59,130,246,0.08)' : undefined }}>
                     <td>{d.profiles?.full_name || '—'}</td>
@@ -222,9 +226,7 @@ export default function DealerOnboardingPage() {
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div className="card" style={{ width: 360, padding: 24 }}>
             <h3 style={{ margin: '0 0 4px' }}>Approve Dealer</h3>
-            <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--color-text-secondary)' }}>Assign a unique dealer code to activate their account.</p>
-            <input value={dealerCode} onChange={e => setDealerCode(e.target.value)} placeholder="e.g. DLR-010"
-              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)', color: 'var(--color-text)', fontSize: 14, marginBottom: 16, boxSizing: 'border-box' }} />
+            <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--color-text-secondary)' }}>The system will automatically assign a unique dealer code to activate their account.</p>
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => setApproveModal(false)} style={{ flex: 1, padding: '8px', borderRadius: 8, border: '1px solid var(--color-border)', cursor: 'pointer', backgroundColor: 'transparent', color: 'var(--color-text)' }}>Cancel</button>
               <button onClick={handleApprove} disabled={actionLoading}

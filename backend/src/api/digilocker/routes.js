@@ -37,4 +37,20 @@ router.post('/process', authenticate, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// POST /digilocker/preview
+// Body requires: { client_token, state }
+// Fetches user documents data as JSON without saving files
+router.post('/preview', authenticate, async (req, res, next) => {
+  try {
+    const { client_token, state } = req.body;
+    
+    if (!client_token || !state) {
+      return sendError(res, 400, 'VALIDATION_ERROR', 'client_token and state are required.');
+    }
+
+    const result = await digilockerService.fetchDigilockerPreview(client_token, state);
+    sendSuccess(res, result);
+  } catch (err) { next(err); }
+});
+
 module.exports = router;

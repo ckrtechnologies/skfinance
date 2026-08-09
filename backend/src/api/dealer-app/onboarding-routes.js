@@ -19,7 +19,7 @@ router.get('/status', async (req, res, next) => {
   try {
     const { data: dealer, error } = await supabase
       .from('dealers')
-      .select('id, onboarding_status, onboarding_submitted_at, onboarding_rejection_reason, business_name, business_address, pan_number, gst_number, city, state, pincode, bank_account_name, bank_account_number, bank_ifsc, bank_name, documents, profiles!profile_id(full_name)')
+      .select('id, onboarding_status, onboarding_submitted_at, onboarding_rejection_reason, business_name, business_address, pan_number, gst_number, city, state, pincode, bank_account_name, bank_account_number, bank_ifsc, bank_name, documents, location, profiles!profile_id(full_name)')
       .eq('profile_id', req.user.profileId)
       .maybeSingle();
 
@@ -27,6 +27,22 @@ router.get('/status', async (req, res, next) => {
       // No dealer row yet (edge case), report pending
       return sendSuccess(res, { onboarding_status: 'pending' });
     }
+    
+    // Convert PostGIS geography format back to lat/lng for frontend compatibility
+    if (dealer.location) {
+      if (typeof dealer.location === 'object' && dealer.location.coordinates) {
+        dealer.longitude = dealer.location.coordinates[0];
+        dealer.latitude = dealer.location.coordinates[1];
+      } else if (typeof dealer.location === 'string' && dealer.location.startsWith('POINT')) {
+        const match = dealer.location.match(/POINT\(([^ ]+)\s+([^ ]+)\)/);
+        if (match) {
+          dealer.longitude = parseFloat(match[1]);
+          dealer.latitude = parseFloat(match[2]);
+        }
+      }
+    }
+    delete dealer.location;
+
     sendSuccess(res, dealer);
   } catch (err) { next(err); }
 });
@@ -74,7 +90,9 @@ router.post('/submit', async (req, res, next) => {
       bank_account_number,
       bank_ifsc,
       bank_name,
-      documents
+      documents,
+      latitude,
+      longitude
     } = req.body;
 
     // Update profile full_name
@@ -98,6 +116,7 @@ router.post('/submit', async (req, res, next) => {
         bank_account_number,
         bank_ifsc,
         bank_name,
+        location: latitude && longitude ? `POINT(${longitude} ${latitude})` : null,
         documents: documents || {},
         onboarding_status: 'under_review',
         onboarding_submitted_at: new Date().toISOString()

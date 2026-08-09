@@ -53,9 +53,38 @@ export default function ApplicationDetailsPage({ params }) {
 
   // Active Tab View State: 'docs', 'financial', 'customer'
   const [activeTab, setActiveTab] = useState('docs');
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
 
   const app = appData?.data;
   const stages = stagesData?.data || [];
+  const assignedStaffList = app?.assignees?.map(a => a.staff) || [];
+
+  async function handleExportDocuments() {
+    setIsExportingPdf(true);
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+      const res = await fetch(`${API_URL}/staff-panel/applications/${id}/export-documents`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!res.ok) throw new Error('Failed to generate merged PDF');
+      
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Application_${id}_Documents.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      alert('Error exporting documents: ' + err.message);
+    } finally {
+      setIsExportingPdf(false);
+    }
+  }
 
   const dispatch = useDispatch();
   useEffect(() => {
@@ -73,6 +102,13 @@ export default function ApplicationDetailsPage({ params }) {
   const customerName = app.customers?.profiles?.full_name || app.applicant_details?.customer_name || 'Customer';
   const customerPhone = app.customers?.profiles?.phone || app.applicant_details?.phone || '—';
   const customerPan = app.customers?.pan_number || app.applicant_details?.pan_number || '—';
+  const customerDob = app.customers?.dob ? new Date(app.customers.dob).toLocaleDateString('en-IN') : '—';
+  const customerAddress = app.customers?.address_line1 || '—';
+  const customerState = app.customers?.state ? `${app.customers.city ? `${app.customers.city}, ` : ''}${app.customers.state}, ${app.customers.pincode || ''}` : '';
+  const customerGender = app.customers?.custom_fields?.digilocker_gender || '—';
+  const customerFatherName = app.customers?.custom_fields?.digilocker_fathername ? app.customers.custom_fields.digilocker_fathername.replace('S/O ', '') : '—';
+  const customerCibilRaw = app.customers?.cibil_score ?? app.applicant_details?.cibil_score;
+  const customerCibil = customerCibilRaw === -1 ? 'NTC (-1)' : (customerCibilRaw ?? '—');
   const dealerName = app.dealers?.business_name || app.dealers?.profiles?.full_name || 'Direct';
   const staffName = app.staff?.name || app.staff?.profiles?.full_name || 'Unassigned';
 
@@ -396,9 +432,20 @@ export default function ApplicationDetailsPage({ params }) {
                 <h3 style={{ fontSize: '13px', fontWeight: 800, color: '#10B981', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   📎 Verification Documents & KYC Attachments
                 </h3>
-                <span style={{ fontSize: '11px', fontWeight: 700, background: 'rgba(16,185,129,0.1)', color: '#10B981', padding: '2px 8px', borderRadius: '12px' }}>
-                  {documents.length} Files Ready
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, background: 'rgba(16,185,129,0.1)', color: '#10B981', padding: '2px 8px', borderRadius: '12px' }}>
+                    {documents.length} Files Ready
+                  </span>
+                  {documents.length > 0 && (
+                    <button 
+                      onClick={handleExportDocuments} 
+                      disabled={isExportingPdf}
+                      style={{ fontSize: '12px', padding: '6px 12px', borderRadius: '8px', fontWeight: 600, background: 'linear-gradient(135deg, #10B981, #059669)', color: '#FFF', border: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: isExportingPdf ? 'not-allowed' : 'pointer', boxShadow: '0 2px 8px rgba(16,185,129,0.3)', opacity: isExportingPdf ? 0.7 : 1 }}
+                    >
+                      {isExportingPdf ? '⏳ GENERATING...' : '📄 DOWNLOAD MERGED PDF'}
+                    </button>
+                  )}
+                </div>
               </div>
 
               {documents.length === 0 ? (
@@ -590,6 +637,41 @@ export default function ApplicationDetailsPage({ params }) {
                   <div style={{ fontSize: '13px', fontWeight: 800, fontFamily: 'monospace', color: '#8B5CF6', marginTop: '4px', textTransform: 'uppercase' }}>{customerPan}</div>
                 </div>
               </div>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '12px', marginTop: '12px' }}>
+                <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', padding: '12px', borderRadius: '10px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-2)', textTransform: 'uppercase' }}>Date of Birth</span>
+                  <div style={{ fontSize: '13px', fontWeight: 600, marginTop: '4px' }}>{customerDob}</div>
+                </div>
+                <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', padding: '12px', borderRadius: '10px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-2)', textTransform: 'uppercase' }}>Gender</span>
+                  <div style={{ fontSize: '13px', fontWeight: 600, marginTop: '4px' }}>{customerGender}</div>
+                </div>
+                <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', padding: '12px', borderRadius: '10px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-2)', textTransform: 'uppercase' }}>Father's Name</span>
+                  <div style={{ fontSize: '13px', fontWeight: 600, marginTop: '4px' }}>{customerFatherName}</div>
+                </div>
+                <div style={{ background: 'rgba(139, 92, 246, 0.1)', border: '1px solid rgba(139, 92, 246, 0.25)', padding: '12px', borderRadius: '10px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: '#8B5CF6', textTransform: 'uppercase' }}>Ownership Proof By</span>
+                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#6D28D9', marginTop: '4px', textTransform: 'capitalize' }}>
+                    {app.ownership_provided_by ? app.ownership_provided_by.replace('_', '-') : 'Applicant'}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '12px', marginTop: '12px' }}>
+                <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', padding: '12px', borderRadius: '10px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-2)', textTransform: 'uppercase' }}>CIBIL Score</span>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: customerCibil === '—' ? 'inherit' : customerCibil === 'NTC (-1)' ? '#F59E0B' : customerCibil >= 750 ? '#10B981' : customerCibil >= 650 ? '#F59E0B' : '#EF4444', marginTop: '4px' }}>
+                    {customerCibil}
+                  </div>
+                </div>
+                <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', padding: '12px', borderRadius: '10px', gridColumn: 'span 2' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-2)', textTransform: 'uppercase' }}>Address</span>
+                  <div style={{ fontSize: '13px', fontWeight: 600, marginTop: '4px' }}>{customerAddress}</div>
+                  {customerState && <div style={{ fontSize: '12px', color: 'var(--color-text-2)', marginTop: '2px' }}>{customerState}</div>}
+                </div>
+              </div>
             </div>
           )}
 
@@ -616,7 +698,7 @@ export default function ApplicationDetailsPage({ params }) {
                 const isFailed = stgStatus === 'rejected' || stgStatus === 'fail';
                 const isClarificationResponse = stg.data?.is_clarification_response;
                 const statusColor = isPassed ? '#10B981' : isFailed ? '#EF4444' : isClarificationResponse ? '#3B82F6' : '#F59E0B';
-                const badgeLabel = isPassed ? 'Pass' : isFailed ? 'Rejected' : stgStatus === 'rework' ? 'Clarification Requested' : isClarificationResponse ? 'Dealer Response' : 'Pending';
+                const badgeLabel = isPassed ? 'Pass' : isFailed ? 'Rejected' : (stgStatus === 'rework' || stgStatus === 'clarification_requested') ? 'Clarification Requested' : isClarificationResponse ? 'Dealer Response' : 'Pending';
 
                 const renderResponse = (resp) => {
                   const respDocs = (resp.data?.document_ids || []).map(id => documents.find(d => d.id === id)).filter(Boolean);
@@ -696,16 +778,16 @@ export default function ApplicationDetailsPage({ params }) {
                           lineHeight: '1.4'
                         }}>
                           <strong style={{ fontSize: '10px', color: statusColor, textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>
-                            💬 {stgStatus === 'rework' ? 'Clarification Query' : isClarificationResponse ? 'Dealer Response' : 'Stage Note / Remarks'}:
+                            💬 {(stgStatus === 'rework' || stgStatus === 'clarification_requested') ? 'Clarification Query' : isClarificationResponse ? 'Dealer Response' : 'Stage Note / Remarks'}:
                           </strong>
                           {stg.remarks || stg.notes}
                         </div>
                       ) : null}
                       
                       {/* Render nested responses if any */}
-                      {stg.data?.query_id && responseMap[stg.data.query_id] && (
+                      {responseMap[stg.id] && (
                         <div>
-                          {responseMap[stg.data.query_id].map(renderResponse)}
+                          {responseMap[stg.id].map(renderResponse)}
                         </div>
                       )}
                       <p style={{ fontSize: '10px', color: 'var(--color-text-3)', marginTop: '6px' }}>— by {stgUser}</p>

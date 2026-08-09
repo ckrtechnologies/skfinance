@@ -253,7 +253,40 @@ async function processDigilockerData(client_token, state, applicationNo, uploade
   };
 }
 
+/**
+ * fetchDigilockerPreview
+ * Fetches data from Meon without downloading files or saving to DB.
+ * Used for UI preview before final submission.
+ */
+async function fetchDigilockerPreview(client_token, state) {
+  if (!client_token || !state) {
+    throw Object.assign(new Error('client_token and state are required.'), { statusCode: 400 });
+  }
+
+  const dataRes = await fetch(`${MEON_BASE_URL}/v2/send_entire_data`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      client_token,
+      state,
+      status: true,
+    }),
+  });
+  
+  if (!dataRes.ok) {
+    throw Object.assign(new Error('Meon retrieve data request failed (HTTP error)'), { statusCode: 500 });
+  }
+  const resultData = await dataRes.json();
+
+  if (!resultData || resultData.status === 'error' || resultData.status === false) {
+    throw Object.assign(new Error(resultData?.msg || resultData?.message || 'Failed to retrieve Aadhaar data from Meon.'), { statusCode: 400 });
+  }
+
+  return resultData.data || resultData;
+}
+
 module.exports = {
   getAuthUrl,
-  processDigilockerData
+  processDigilockerData,
+  fetchDigilockerPreview
 };

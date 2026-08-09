@@ -89,6 +89,8 @@ async function loginWithPassword({ email, identifier, password, phone }) {
   return { token, profile: { id: profileId, role, full_name: fullName } };
 }
 
+const { sendOtpEmail } = require('../../shared/services/emailService');
+
 /**
  * requestOtp — initiate OTP login for customer/dealer (email or phone).
  */
@@ -127,8 +129,14 @@ async function requestOtp({ phone, email, identifier }) {
       throw smsError;
     }
   } else {
-    // TODO: Replace with Nodemailer (for email)
-    console.log(`[EMAIL] Simulated email dispatch to ${loginId}`);
+    try {
+      await sendOtpEmail({ email: loginId, otp: otpCode, name: 'Dealer' });
+      console.log(`[EMAIL] Successfully dispatched OTP to ${loginId}`);
+    } catch (emailError) {
+      console.error(`[EMAIL] Failed to send OTP to ${loginId}:`, emailError.message);
+      await supabase.from('otps').delete().eq('identifier', loginId).eq('otp_code', otpCode);
+      throw Object.assign(new Error('Failed to send OTP email. Please try again.'), { statusCode: 500 });
+    }
   }
   
   return { message: 'OTP sent', otp: otpCode };

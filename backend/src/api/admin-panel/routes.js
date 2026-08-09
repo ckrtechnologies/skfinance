@@ -4,6 +4,7 @@ const { authenticate } = require('../../shared/middleware/authenticate');
 const { roleGuard } = require('../../shared/middleware/roleGuard');
 const { sendSuccess, sendError } = require('../../shared/utils/response');
 const loanSvc = require('../../domains/loan-applications/service');
+const { generateMergedDocumentPdf } = require('../../domains/loan-applications/documentExportService');
 const walletSvc = require('../../domains/wallet/service');
 const lendersAdminSvc = require('../../domains/lenders-admin/service');
 const notificationSvc = require('../../domains/notifications/service');
@@ -61,6 +62,7 @@ router.get('/applications', async (req, res, next) => {
       status: req.query.status, 
       stage: req.query.stage, 
       source: req.query.source,
+      dealerId: req.query.dealer_id,
       assignedStaffId: req.query.assigned_staff_id,
       unassigned: req.query.unassigned === 'true',
       startDate: req.query.from,
@@ -76,6 +78,20 @@ router.post('/applications/:id/assign', async (req, res, next) => {
   try {
     const { staff_ids } = req.body; // now expects an array
     const result = await loanSvc.assignApplication(req.params.id, staff_ids, req.user?.profileId);
+    sendSuccess(res, result);
+  } catch (err) { next(err); }
+});
+
+router.post('/applications/bulk-assign', async (req, res, next) => {
+  try {
+    const { application_ids, staff_ids } = req.body;
+    if (!Array.isArray(application_ids) || application_ids.length === 0) {
+      throw Object.assign(new Error('application_ids array is required'), { statusCode: 400 });
+    }
+    if (!Array.isArray(staff_ids)) {
+      throw Object.assign(new Error('staff_ids array is required'), { statusCode: 400 });
+    }
+    const result = await loanSvc.assignMultipleApplications(application_ids, staff_ids, req.user?.profileId);
     sendSuccess(res, result);
   } catch (err) { next(err); }
 });
@@ -113,6 +129,15 @@ router.post('/applications/:id/re-approve', async (req, res, next) => {
   try {
     const result = await loanSvc.reApproveLoan({ loanApplicationId: req.params.id, adminProfileId: req.user.profileId, remarks: req.body.remarks });
     sendSuccess(res, result);
+  } catch (err) { next(err); }
+});
+
+router.get('/applications/:id/export-documents', async (req, res, next) => {
+  try {
+    const pdfBuffer = await generateMergedDocumentPdf(req.params.id);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="Application_${req.params.id}_Documents.pdf"`);
+    res.send(pdfBuffer);
   } catch (err) { next(err); }
 });
 
@@ -583,8 +608,7 @@ router.get('/dealer-onboarding/:id', async (req, res, next) => {
  */
 router.post('/dealer-onboarding/:id/approve', async (req, res, next) => {
   try {
-    const { dealer_code } = req.body;
-    if (!dealer_code) return res.status(400).json({ error: 'dealer_code is required' });
+    const dealer_code = 'DLR-' + Math.floor(1000 + Math.random() * 9000).toString();
 
     const { data, error } = await supabase
       .from('dealers')

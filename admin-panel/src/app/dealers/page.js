@@ -23,11 +23,63 @@ export default function DealersPage() {
   const [createDealer, { isLoading: creating }] = useCreateDealerMutation();
   const [deleteDealer] = useDeleteDealerMutation();
   
+  const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
   const [showModal, setShowModal] = useState(false);
   const [dealerToEdit, setDealerToEdit] = useState(null);
+  const [dealerToView, setDealerToView] = useState(null);
   const [newDealer, setNewDealer] = useState({ business_name: '', email: '', phone: '', pan_number: '', gst_number: '', password: '' });
   
   const dealers = data?.data || [];
+
+  const sortedDealers = [...dealers].sort((a, b) => {
+    let aVal, bVal;
+    switch(sortConfig.key) {
+      case 'business_name':
+        aVal = a.business_name || a.profiles?.full_name || '';
+        bVal = b.business_name || b.profiles?.full_name || '';
+        break;
+      case 'phone':
+        aVal = a.phone || a.profiles?.phone || '';
+        bVal = b.phone || b.profiles?.phone || '';
+        break;
+      case 'email':
+        aVal = a.email || a.profiles?.email || '';
+        bVal = b.email || b.profiles?.email || '';
+        break;
+      case 'pan_number':
+        aVal = a.pan_number || '';
+        bVal = b.pan_number || '';
+        break;
+      case 'is_active':
+        aVal = a.is_active ? 1 : 0;
+        bVal = b.is_active ? 1 : 0;
+        break;
+      case 'created_at':
+        aVal = new Date(a.created_at).getTime();
+        bVal = new Date(b.created_at).getTime();
+        break;
+      case 'onboarding_submitted_at':
+        aVal = a.onboarding_submitted_at ? new Date(a.onboarding_submitted_at).getTime() : 0;
+        bVal = b.onboarding_submitted_at ? new Date(b.onboarding_submitted_at).getTime() : 0;
+        break;
+      default:
+        aVal = ''; bVal = '';
+    }
+    if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc';
+    setSortConfig({ key, direction });
+  };
+
+  const SortIcon = ({ columnKey }) => {
+    if (sortConfig.key !== columnKey) return <span style={{ opacity: 0.3, marginLeft: 4 }}>↕</span>;
+    return <span style={{ marginLeft: 4 }}>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>;
+  };
 
   const exportColumns = [
     { header: 'S.No', accessor: (_, i) => i + 1 },
@@ -38,6 +90,7 @@ export default function DealersPage() {
     { header: 'GST', accessor: 'gst_number' },
     { header: 'Status', accessor: (d) => d.is_active ? 'Active' : 'Inactive' },
     { header: 'Joined On', accessor: (d) => new Date(d.created_at).toLocaleDateString() },
+    { header: 'Onboarded On', accessor: (d) => d.onboarding_submitted_at ? new Date(d.onboarding_submitted_at).toLocaleDateString() : '—' },
   ];
 
   async function handleCreate(e) {
@@ -67,7 +120,7 @@ export default function DealersPage() {
   return (
     <>
       <div className="page-header flex items-center justify-between">
-        <ExportButtons data={dealers} columns={exportColumns} filename="dealers_list" title="Dealers" />
+        <ExportButtons data={sortedDealers} columns={exportColumns} filename="dealers_list" title="Dealers" />
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Onboard Dealer</button>
       </div>
 
@@ -76,22 +129,26 @@ export default function DealersPage() {
           <thead>
             <tr>
               <th>S.No</th>
-              <th>Business Name</th>
-              <th>Phone</th>
-              <th>Email</th>
-              <th>PAN / GST</th>
-              <th>Status</th>
-              <th>Joined On</th>
+              <th onClick={() => handleSort('business_name')} style={{ cursor: 'pointer' }}>Business Name <SortIcon columnKey="business_name" /></th>
+              <th onClick={() => handleSort('phone')} style={{ cursor: 'pointer' }}>Phone <SortIcon columnKey="phone" /></th>
+              <th onClick={() => handleSort('email')} style={{ cursor: 'pointer' }}>Email <SortIcon columnKey="email" /></th>
+              <th onClick={() => handleSort('pan_number')} style={{ cursor: 'pointer' }}>PAN / GST <SortIcon columnKey="pan_number" /></th>
+              <th onClick={() => handleSort('is_active')} style={{ cursor: 'pointer' }}>Status <SortIcon columnKey="is_active" /></th>
+              <th onClick={() => handleSort('created_at')} style={{ cursor: 'pointer' }}>Joined On <SortIcon columnKey="created_at" /></th>
+              <th onClick={() => handleSort('onboarding_submitted_at')} style={{ cursor: 'pointer' }}>Onboarded On <SortIcon columnKey="onboarding_submitted_at" /></th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {isLoading ? <LoadingRows cols={8} /> : dealers.length === 0 ? (
+            {isLoading ? <LoadingRows cols={9} /> : sortedDealers.length === 0 ? (
               <EmptyState title="No dealers" description="No dealers have been onboarded yet." />
-            ) : dealers.map((dealer, idx) => (
+            ) : sortedDealers.map((dealer, idx) => (
               <tr key={dealer.id}>
                 <td style={{ color: 'var(--color-text-3)' }}>{idx + 1}</td>
-                <td style={{ fontWeight: 600 }}>{dealer.business_name || dealer.profiles?.full_name || '—'}</td>
+                <td style={{ fontWeight: 600 }}>
+                  <div>{dealer.business_name || dealer.profiles?.full_name || '—'}</div>
+                  {dealer.dealer_code && <div className="text-muted text-sm font-mono mt-1" style={{ fontSize: 12 }}>{dealer.dealer_code}</div>}
+                </td>
                 <td><span className="font-mono">{dealer.phone || dealer.profiles?.phone || '—'}</span></td>
                 <td>{dealer.email || dealer.profiles?.email || '—'}</td>
                 <td>
@@ -102,8 +159,10 @@ export default function DealersPage() {
                 </td>
                 <td><StatusBadge status={dealer.is_active ? 'active' : 'inactive'} /></td>
                 <td className="text-muted text-sm">{new Date(dealer.created_at).toLocaleDateString('en-IN')}</td>
+                <td className="text-muted text-sm">{dealer.onboarding_submitted_at ? new Date(dealer.onboarding_submitted_at).toLocaleDateString('en-IN') : '—'}</td>
                 <td>
                   <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setDealerToView(dealer)}>View</button>
                     <button className="btn btn-ghost btn-sm" onClick={() => setDealerToEdit(dealer)}>Edit</button>
                     <button className="btn btn-ghost btn-sm" style={{ color: 'var(--color-rose)' }} onClick={() => handleDelete(dealer)}>Delete</button>
                   </div>
@@ -161,6 +220,10 @@ export default function DealersPage() {
 
       {dealerToEdit && (
         <EditDealerModal dealer={dealerToEdit} onClose={() => { setDealerToEdit(null); refetch(); }} />
+      )}
+
+      {dealerToView && (
+        <ViewDealerModal dealer={dealerToView} onClose={() => setDealerToView(null)} />
       )}
     </>
   );
@@ -249,6 +312,47 @@ function EditDealerModal({ dealer, onClose }) {
           <button type="submit" className="btn btn-primary" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Changes'}</button>
         </div>
       </form>
+    </div>
+  );
+}
+
+function ViewDealerModal({ dealer, onClose }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }} onClick={onClose}>
+      <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: 32, width: 540, maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <h3 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>Dealer Details</h3>
+          <button type="button" className="btn btn-ghost btn-icon" onClick={onClose}>✕</button>
+        </div>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+          {[
+            ['Business Name', dealer.business_name || dealer.profiles?.full_name],
+            ['Dealer Code', dealer.dealer_code],
+            ['PAN Number', dealer.pan_number],
+            ['GST Number', dealer.gst_number],
+            ['Phone', dealer.phone || dealer.profiles?.phone],
+            ['Email', dealer.email || dealer.profiles?.email],
+            ['Address', dealer.business_address],
+            ['City', dealer.city],
+            ['State', dealer.state],
+            ['Pincode', dealer.pincode],
+            ['Bank', dealer.bank_name],
+            ['Account Number', dealer.account_number],
+            ['IFSC Code', dealer.ifsc_code],
+            ['Account Name', dealer.account_name],
+          ].map(([label, value]) => (
+            <div key={label} style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</span>
+              <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text)' }}>{value || '—'}</span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
+          <button type="button" className="btn btn-secondary" onClick={onClose}>Close</button>
+        </div>
+      </div>
     </div>
   );
 }

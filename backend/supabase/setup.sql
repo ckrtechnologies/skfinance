@@ -209,6 +209,7 @@ CREATE TABLE loan_applications (
   rejected_at           TIMESTAMPTZ,
   cancelled_at          TIMESTAMPTZ,
   blocked_90d_at        TIMESTAMPTZ,   -- set by J1 job
+  ownership_provided_by TEXT CHECK (ownership_provided_by IN ('applicant', 'co_applicant', 'guarantor')),
   internal_notes        TEXT,
   created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()

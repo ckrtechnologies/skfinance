@@ -2,7 +2,7 @@
 const { supabase } = require('../../config/database');
 const { generateAppNo } = require('../../shared/utils/appNo');
 
-async function createApplication({ customerId, createdByProfileId, dealerId, staffId, productType, vehicleDetails, requestedAmount }) {
+async function createApplication({ customerId, createdByProfileId, dealerId, staffId, productType, vehicleDetails, requestedAmount, ownershipProvidedBy }) {
   const application_no = await generateAppNo();
   
   // Auto-Assignment Logic: Find an active staff member with least workload
@@ -23,11 +23,10 @@ async function createApplication({ customerId, createdByProfileId, dealerId, sta
       created_by_profile_id: createdByProfileId,
       dealer_id: dealerId,
       staff_id: staffId, // original creator
-      assigned_staff_id: assignedStaffId,
-      assigned_at: assignedStaffId ? new Date().toISOString() : null,
       product_type: productType,
       vehicle_details: vehicleDetails,
       requested_amount: requestedAmount,
+      ownership_provided_by: ownershipProvidedBy,
       status: 'in_progress',
       current_stage: 'cibil'
     })
@@ -43,6 +42,14 @@ async function createApplication({ customerId, createdByProfileId, dealerId, sta
     outcome: 'pending',
     remarks: 'Application created and submitted for CIBIL pre-check.'
   });
+
+  if (assignedStaffId) {
+    await supabase.from('loan_application_assignees').insert({
+      loan_application_id: data.id,
+      staff_id: assignedStaffId,
+      assigned_by_profile_id: createdByProfileId
+    });
+  }
 
   return data;
 }
@@ -104,6 +111,7 @@ async function getApplication(id) {
         requestedAmount: data.requested_amount || 500000,
         coApplicantRelation: data.applicant_details?.co_applicant?.relation || null,
         coApplicantMaritalStatus: data.applicant_details?.co_applicant?.marital_status || null,
+        ownershipProvidedBy: data.ownership_provided_by || null,
       };
       data.evaluations = await orchestrate(applicantInput, {
         stage: 'full',
@@ -410,6 +418,28 @@ async function assignApplication(loanApplicationId, staffIds, assignedByProfileI
   return await getApplication(loanApplicationId);
 }
 
+async function assignMultipleApplications(applicationIds, staffIds, assignedByProfileId = null) {
+  // Clear existing assignments for these applications
+  await supabase.from('loan_application_assignees').delete().in('loan_application_id', applicationIds);
+  
+  if (staffIds && staffIds.length > 0) {
+    const insertData = [];
+    for (const appId of applicationIds) {
+      for (const staffId of staffIds) {
+        insertData.push({
+          loan_application_id: appId,
+          staff_id: staffId,
+          assigned_by_profile_id: assignedByProfileId
+        });
+      }
+    }
+    const { error } = await supabase.from('loan_application_assignees').insert(insertData);
+    if (error) throw error;
+  }
+  
+  return { success: true, count: applicationIds.length };
+}
+
 module.exports = {
   createApplication,
   getApplication,
@@ -421,5 +451,6 @@ module.exports = {
   resubmitClarification,
   getStageEntries,
   getSetting,
-  assignApplication
+  assignApplication,
+  assignMultipleApplications
 };

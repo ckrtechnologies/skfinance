@@ -188,7 +188,7 @@ router.post('/applications', async (req, res, next) => {
     const { data: dealer } = await supabase.from('dealers').select('id').eq('profile_id', req.user.profileId).maybeSingle();
 
     let customerId = req.body.customer_id;
-    const { customer_name, phone, pan_number, product_type, vehicle_details, loan_amount, requested_amount, co_applicant_name, co_applicant_income } = req.body;
+    const { customer_name, phone, pan_number, product_type, vehicle_details, loan_amount, requested_amount, co_applicant_name, co_applicant_income, cibil_score, age } = req.body;
 
     if (!customerId) {
       // 1. Check if customer exists by PAN number
@@ -224,6 +224,7 @@ router.post('/applications', async (req, res, next) => {
               .insert({
                 profile_id: existingProf.id,
                 pan_number,
+                cibil_score: cibil_score ? parseInt(cibil_score, 10) : null,
                 co_applicant_name,
                 co_applicant_income: co_applicant_income ? parseFloat(co_applicant_income) : null
               })
@@ -274,13 +275,29 @@ router.post('/applications', async (req, res, next) => {
       return sendError(res, 400, 'CUSTOMER_REQUIRED', 'Could not resolve customer record. Please check phone and PAN number details.');
     }
 
+    if (cibil_score || age) {
+      const updateData = {};
+      if (cibil_score) updateData.cibil_score = parseInt(cibil_score, 10);
+      if (age) {
+        // Calculate estimated DOB (Jan 1 of current year - age)
+        const currentYear = new Date().getFullYear();
+        updateData.dob = `${currentYear - parseInt(age, 10)}-01-01`;
+      }
+      
+      await supabase
+        .from('customers')
+        .update(updateData)
+        .eq('id', customerId);
+    }
+
     const applicationData = {
       customerId,
       createdByProfileId: req.user.profileId,
       dealerId: dealer ? dealer.id : null,
       productType: product_type || req.body.productType || 'new_car',
       vehicleDetails: vehicle_details || req.body.vehicleDetails || {},
-      requestedAmount: parseFloat(loan_amount || requested_amount || 0)
+      requestedAmount: parseFloat(loan_amount || requested_amount || 0),
+      ownershipProvidedBy: req.body.ownership_provided_by || null
     };
 
     const newApp = await loanSvc.createApplication(applicationData);
