@@ -13,8 +13,9 @@ const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
 const { CDN_LOCAL_PATH, CDN_BASE_URL } = require('../../config/secrets');
+const whatsappRoutes = require('../../domains/whatsapp/routes');
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
 
 const router = express.Router();
 router.use(authenticate, roleGuard(['admin']));
@@ -50,7 +51,24 @@ router.get('/dashboard', async (req, res, next) => {
 // ── Loan Applications ────────────────────────────────────────────────
 router.get('/applications', async (req, res, next) => {
   try {
-    const result = await loanSvc.listApplications({ status: req.query.status, stage: req.query.stage, limit: Number(req.query.limit) || 20, offset: Number(req.query.offset) || 0 });
+    const result = await loanSvc.listApplications({ 
+      searchQuery: req.query.search, 
+      status: req.query.status, 
+      stage: req.query.stage, 
+      source: req.query.source,
+      assignedStaffId: req.query.assigned_staff_id,
+      unassigned: req.query.unassigned === 'true',
+      limit: Number(req.query.limit) || 20, 
+      offset: Number(req.query.offset) || 0 
+    });
+    sendSuccess(res, result);
+  } catch (err) { next(err); }
+});
+
+router.post('/applications/:id/assign', async (req, res, next) => {
+  try {
+    const { staff_id } = req.body;
+    const result = await loanSvc.assignApplication(req.params.id, staff_id);
     sendSuccess(res, result);
   } catch (err) { next(err); }
 });
@@ -101,11 +119,9 @@ router.get('/lenders', async (req, res, next) => {
 
 router.post('/lenders', async (req, res, next) => {
   try {
-    const { name, code, lender_type, priority } = req.body;
-    if (!name || !code) {
-      return sendError(res, 400, 'VALIDATION_ERROR', 'Name and Code are required');
-    }
-    const lender = await lendersAdminSvc.createLender({ name, code, lender_type, priority });
+    const { name, code, lender_type, priority, contact_phone } = req.body;
+    if (!name || !code) throw Object.assign(new Error('Missing name or code'), { statusCode: 400 });
+    const lender = await lendersAdminSvc.createLender({ name, code, lender_type, priority, contact_phone });
     sendSuccess(res, lender, 201);
   } catch (err) { next(err); }
 });
@@ -400,8 +416,60 @@ router.get('/withdrawal-requests', async (req, res, next) => {
 
 router.post('/withdrawal-requests/:id/process', async (req, res, next) => {
   try {
-    const result = await walletSvc.processWithdrawal({ requestId: req.params.id, adminProfileId: req.user.profileId, approved: req.body.approved, rejectionReason: req.body.rejection_reason, payoutUtr: req.body.payout_utr, payoutDate: req.body.payout_date });
+    let receiptPdfUrl = req.body.receipt_pdf_url;
+    if (receiptPdfUrl && receiptPdfUrl.startsWith('data:')) {
+      const base64Data = receiptPdfUrl.replace(/^data:([A-Za-z-+/]+);base64,/, '');
+      const match = receiptPdfUrl.match(/^data:([A-Za-z-+/]+);base64,/);
+      const mimeType = match ? match[1] : 'image/jpeg';
+      const extension = mimeType.split('/')[1] || 'jpg';
+      const buffer = Buffer.from(base64Data, 'base64');
+      const filename = `${req.params.id}_${Date.now()}.${extension}`;
+      const uploadDir = path.join(CDN_LOCAL_PATH, 'withdrawals');
+      
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      
+      const filePath = path.join(uploadDir, filename);
+      fs.writeFileSync(filePath, buffer);
+      
+      receiptPdfUrl = `${CDN_BASE_URL}/withdrawals/${filename}`;
+    }
+
+    const result = await walletSvc.processWithdrawal({ 
+      requestId: req.params.id, 
+      adminProfileId: req.user.profileId, 
+      approved: req.body.approved, 
+      rejectionReason: req.body.rejection_reason, 
+      payoutUtr: req.body.payout_utr, 
+      payoutDate: req.body.payout_date,
+      receiptPdfUrl: receiptPdfUrl,
+      receiptPdfName: req.body.receipt_pdf_name
+    });
     sendSuccess(res, result);
+  } catch (err) { next(err); }
+});
+
+// POST /admin/wallet/credit
+router.post('/wallet/credit', async (req, res, next) => {
+  try {
+    const { dealer_id, amount, remarks } = req.body;
+    if (!dealer_id || !amount) {
+      return res.status(400).json({ error: 'dealer_id and amount are required' });
+    }
+    
+    // Add credit to dealer's wallet
+    const { data: ledgerEntry, error: ledgerError } = await supabase.from('wallet_ledger').insert({
+      dealer_id,
+      entry_type: 'adjustment',
+      amount: parseFloat(amount),
+      remarks: remarks || 'Admin Credit',
+      created_by_profile_id: req.user.profileId
+    }).select().single();
+
+    if (ledgerError) throw ledgerError;
+
+    sendSuccess(res, ledgerEntry);
   } catch (err) { next(err); }
 });
 
@@ -545,7 +613,8 @@ router.post('/dealer-onboarding/:id/reject', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-module.exports = router;
+router.use('/wa', whatsappRoutes);
+
 
 // ── Banners ────────────────────────────────────────────────────────
 router.post('/banners/upload', upload.single('file'), async (req, res, next) => {
@@ -596,3 +665,4 @@ router.delete('/banners/:id', async (req, res, next) => {
     sendSuccess(res, { deleted: true });
   } catch (err) { next(err); }
 });
+module.exports = router;

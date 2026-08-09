@@ -19,6 +19,7 @@ async function createLender(lenderData) {
       code: lenderData.code,
       lender_type: lenderData.lender_type || 'nbfc',
       priority: lenderData.priority || 99,
+      contact_phone: lenderData.contact_phone || null,
       is_active: true,
       rules: {} // Initialize empty rules
     })

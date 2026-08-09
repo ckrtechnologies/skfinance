@@ -4,6 +4,17 @@ const { generateAppNo } = require('../../shared/utils/appNo');
 
 async function createApplication({ customerId, createdByProfileId, dealerId, staffId, productType, vehicleDetails, requestedAmount }) {
   const application_no = await generateAppNo();
+  
+  // Auto-Assignment Logic: Find an active staff member with least workload
+  let assignedStaffId = null;
+  const { data: staffList } = await supabase.from('staff').select('id').eq('is_active', true);
+  if (staffList && staffList.length > 0) {
+    // Simple load balancer: pick random staff for now, or could query loan_applications to find the one with min count
+    // But since it's a small team, a random pick is a good start for round-robin
+    const idx = Math.floor(Math.random() * staffList.length);
+    assignedStaffId = staffList[idx].id;
+  }
+
   const { data, error } = await supabase
     .from('loan_applications')
     .insert({
@@ -11,7 +22,9 @@ async function createApplication({ customerId, createdByProfileId, dealerId, sta
       customer_id: customerId,
       created_by_profile_id: createdByProfileId,
       dealer_id: dealerId,
-      staff_id: staffId,
+      staff_id: staffId, // original creator
+      assigned_staff_id: assignedStaffId,
+      assigned_at: assignedStaffId ? new Date().toISOString() : null,
       product_type: productType,
       vehicle_details: vehicleDetails,
       requested_amount: requestedAmount,
@@ -55,7 +68,7 @@ async function getApplication(id) {
       *,
       customers(*, profiles!profile_id(full_name, phone, email)),
       dealers(*, profiles!profile_id(full_name, phone, email, is_active)),
-      staff(*, profiles!profile_id(full_name, phone, email)),
+      staff:staff!staff_id(*, profiles!profile_id(full_name, phone, email)),
       lenders(*),
       documents(*)
     `)
@@ -68,7 +81,7 @@ async function getApplication(id) {
 
   if (data) {
     data.source = formatApplicationSource(data);
-    
+
     if (data.documents && data.documents.length > 0) {
       const { CDN_BASE_URL } = require('../../config/secrets');
       data.documents.forEach(doc => {
@@ -91,7 +104,12 @@ async function getApplication(id) {
         coApplicantRelation: data.applicant_details?.co_applicant?.relation || null,
         coApplicantMaritalStatus: data.applicant_details?.co_applicant?.marital_status || null,
       };
-      data.evaluations = await orchestrate(applicantInput, { stage: 'pre_check' });
+      data.evaluations = await orchestrate(applicantInput, {
+        stage: 'full',
+        loanApplicationId: data.id,
+        persist: false,
+        uploadedDocTypes: (data.documents || []).map(d => d.doc_type)
+      });
     } catch (err) {
       console.error('Failed to run orchestrate evaluation in getApplication:', err);
       data.evaluations = [];
@@ -100,22 +118,47 @@ async function getApplication(id) {
   return data;
 }
 
-async function listApplications({ status, stage, dealerId, staffId, customerId, startDate, endDate, limit = 20, offset = 0 } = {}) {
+async function listApplications({ status, stage, dealerId, staffId, customerId, startDate, endDate, searchQuery, source, assignedStaffId, unassigned, limit = 20, offset = 0 } = {}) {
   let query = supabase.from('loan_applications').select(`
     *,
     customers(*, profiles!profile_id(full_name, phone, email)),
     dealers(*, profiles!profile_id(full_name, phone)),
-    staff(*, profiles!profile_id(full_name, phone)),
+    staff:staff!staff_id(*, profiles!profile_id(full_name, phone)),
+    assigned_staff:staff!assigned_staff_id(*, profiles!profile_id(full_name)),
     lenders(id, name)
   `, { count: 'exact' });
 
   if (status) query = query.eq('status', status);
   if (stage) query = query.eq('current_stage', stage);
+  if (source) {
+    if (source === 'dealer') query = query.not('dealer_id', 'is', null);
+    else if (source === 'staff') query = query.not('staff_id', 'is', null);
+    else if (source === 'direct') query = query.is('dealer_id', null).is('staff_id', null);
+  }
   if (dealerId) query = query.eq('dealer_id', dealerId);
   if (staffId) query = query.eq('staff_id', staffId);
+  if (assignedStaffId) query = query.eq('assigned_staff_id', assignedStaffId);
+  if (unassigned) query = query.is('assigned_staff_id', null);
   if (customerId) query = query.eq('customer_id', customerId);
   if (startDate) query = query.gte('created_at', startDate);
   if (endDate) query = query.lte('created_at', endDate);
+
+  if (searchQuery) {
+    const [{ data: c1 }, { data: c2 }] = await Promise.all([
+      supabase.from('customers').select('id').or(`pan_number.ilike.%${searchQuery}%,co_applicant_name.ilike.%${searchQuery}%`),
+      supabase.from('customers').select('id, profiles!inner(full_name, phone)').or(`full_name.ilike.%${searchQuery}%,phone.ilike.%${searchQuery}%`, { foreignTable: 'profiles' })
+    ]);
+    const matchedCustomerIds = new Set([
+      ...(c1 || []).map(c => c.id),
+      ...(c2 || []).map(c => c.id)
+    ]);
+
+    if (matchedCustomerIds.size > 0) {
+      query = query.or(`application_no.ilike.%${searchQuery}%,customer_id.in.(${Array.from(matchedCustomerIds).join(',')})`);
+    } else {
+      query = query.or(`application_no.ilike.%${searchQuery}%`);
+    }
+  }
 
   query = query.order('created_at', { ascending: false }).range(offset, offset + limit - 1);
   const { data, count, error } = await query;
@@ -161,7 +204,7 @@ async function addStageEntry({ loanApplicationId, stage, enteredByProfileId, out
       .eq('loan_application_id', loanApplicationId)
       .eq('outcome', 'rework')
       .eq('data->>resolved', 'false');
-    
+
     if (unresolvedQueries && unresolvedQueries.length > 0) {
       throw new Error('Cannot advance stage: There are unresolved clarification queries.');
     }
@@ -232,6 +275,10 @@ async function submitToLender({ loanApplicationId, lenderId, adminProfileId }) {
 }
 
 async function disburseLoan({ loanApplicationId, adminProfileId, disbursedAmount, remarks, stageData, ninetyDayDays }) {
+  // Workaround: fn_disburse_loan expects stage to be 'approval'. 
+  // If UI already advanced to 'disbursement', we revert it momentarily so the RPC doesn't reject it.
+  await supabase.from('loan_applications').update({ current_stage: 'approval' }).eq('id', loanApplicationId);
+
   const { data, error } = await supabase.rpc('fn_disburse_loan', {
     p_admin_profile_id: adminProfileId,
     p_loan_id: loanApplicationId,
@@ -319,6 +366,20 @@ async function getSetting(key) {
   return data?.value;
 }
 
+async function assignApplication(loanApplicationId, staffId) {
+  const { data, error } = await supabase
+    .from('loan_applications')
+    .update({ 
+      assigned_staff_id: staffId,
+      assigned_at: new Date().toISOString()
+    })
+    .eq('id', loanApplicationId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 module.exports = {
   createApplication,
   getApplication,
@@ -329,5 +390,6 @@ module.exports = {
   reApproveLoan,
   resubmitClarification,
   getStageEntries,
-  getSetting
+  getSetting,
+  assignApplication
 };

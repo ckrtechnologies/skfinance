@@ -316,8 +316,11 @@ CREATE TABLE wallet_ledger (
   entry_type            ledger_entry_type NOT NULL,
   amount                NUMERIC(14,2) NOT NULL,   -- positive = credit, negative = debit
   commission_id         UUID REFERENCES commissions(id) ON DELETE RESTRICT,
+  application_id        UUID REFERENCES loan_applications(id) ON DELETE SET NULL,
   payout_utr            TEXT,
   payout_date           DATE,
+  receipt_pdf_url       TEXT,
+  receipt_pdf_name      TEXT,
   remarks               TEXT,
   created_by_profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE RESTRICT,
   created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -333,6 +336,10 @@ CREATE TABLE withdrawal_requests (
   processed_by     UUID REFERENCES profiles(id) ON DELETE RESTRICT,
   processed_at     TIMESTAMPTZ,
   rejection_reason TEXT,
+  payout_utr       TEXT,
+  payout_date      DATE,
+  receipt_pdf_url  TEXT,
+  receipt_pdf_name TEXT,
   ledger_entry_id  UUID REFERENCES wallet_ledger(id) ON DELETE RESTRICT,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -496,6 +503,7 @@ BEGIN
     status           = 'disbursed',
     current_stage    = 'disbursement',
     disbursed_amount = p_disbursed_amount,
+    approved_amount  = COALESCE(approved_amount, p_disbursed_amount),
     disbursed_at     = NOW(),
     updated_at       = NOW()
   WHERE id = p_loan_id;

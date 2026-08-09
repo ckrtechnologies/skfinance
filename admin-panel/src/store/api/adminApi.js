@@ -14,7 +14,7 @@ export const adminApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Applications', 'Lenders', 'LenderRules', 'Dealers', 'Staff', 'Commissions', 'Withdrawals', 'Settings', 'AuditLog', 'Customers', 'Banners'],
+  tagTypes: ['Applications', 'Lenders', 'LenderRules', 'Dealers', 'Staff', 'Commissions', 'Withdrawals', 'Settings', 'AuditLog', 'Customers', 'Banners', 'WhatsApp'],
   endpoints: (builder) => ({
     // Dashboard
     getDashboard: builder.query({
@@ -62,15 +62,23 @@ export const adminApi = createApi({
 
     // Applications
     getApplications: builder.query({
-      query: ({ status, stage, limit = 20, offset = 0, from, to } = {}) => ({
+      query: ({ search, status, stage, assigned_staff_id, unassigned, limit = 20, offset = 0, from, to } = {}) => ({
         url: '/applications',
-        params: { status, stage, limit, offset, from, to },
+        params: { search, status, stage, assigned_staff_id, unassigned, limit, offset, from, to },
       }),
       providesTags: ['Applications'],
     }),
     getApplication: builder.query({
       query: (id) => `/applications/${id}`,
       providesTags: (result, error, id) => [{ type: 'Applications', id }],
+    }),
+    assignApplication: builder.mutation({
+      query: ({ id, staff_id }) => ({
+        url: `/applications/${id}/assign`,
+        method: 'POST',
+        body: { staff_id },
+      }),
+      invalidatesTags: (result, error, { id }) => [{ type: 'Applications', id }, 'Applications'],
     }),
     getStageEntries: builder.query({
       query: (id) => `/applications/${id}/stage-entries`,
@@ -236,6 +244,51 @@ export const adminApi = createApi({
       }),
       invalidatesTags: ['Customers'],
     }),
+
+    // WhatsApp Marketing
+    getWaTemplates: builder.query({
+      query: (params) => ({
+        url: '/wa/templates',
+        params
+      }),
+      providesTags: ['WhatsApp'],
+    }),
+    syncWaTemplates: builder.mutation({
+      query: () => ({
+        url: '/wa/templates/sync',
+        method: 'POST'
+      }),
+      invalidatesTags: ['WhatsApp'],
+    }),
+    getWaMedia: builder.query({
+      query: (id) => `/wa/media/${id}`,
+    }),
+    uploadWaMedia: builder.mutation({
+      query: (formData) => ({
+        url: '/wa/media',
+        method: 'POST',
+        body: formData,
+      }),
+    }),
+    createWaCampaign: builder.mutation({
+      query: (body) => ({
+        url: '/wa/campaigns',
+        method: 'POST',
+        body
+      }),
+    }),
+    sendWaCampaign: builder.mutation({
+      query: (id) => ({
+        url: `/wa/campaigns/${id}/send`,
+        method: 'POST'
+      }),
+    }),
+    cancelWaCampaign: builder.mutation({
+      query: (id) => ({
+        url: `/wa/campaigns/${id}/cancel`,
+        method: 'POST'
+      }),
+    }),
   }),
 });
 
@@ -243,6 +296,7 @@ export const {
   useGetDashboardQuery,
   useGetApplicationsQuery,
   useGetApplicationQuery,
+  useAssignApplicationMutation,
   useGetStageEntriesQuery,
   useAddStageEntryMutation,
   useDisburseMutation,
@@ -273,4 +327,11 @@ export const {
   useGetCustomersQuery,
   useUpdateCustomerMutation,
   useDeleteCustomerMutation,
+  useGetWaTemplatesQuery,
+  useSyncWaTemplatesMutation,
+  useGetWaMediaQuery,
+  useUploadWaMediaMutation,
+  useCreateWaCampaignMutation,
+  useSendWaCampaignMutation,
+  useCancelWaCampaignMutation,
 } = adminApi;

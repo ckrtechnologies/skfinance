@@ -25,6 +25,7 @@ export default function CustomersPage() {
     { header: 'Phone', accessor: 'profiles.phone' },
     { header: 'PAN', accessor: 'pan_number' },
     { header: 'Status', accessor: (c) => c.profiles?.is_active ? 'Active' : 'Inactive' },
+    { header: 'Address', accessor: 'address_line1' },
     { header: 'Joined On', accessor: (c) => new Date(c.created_at).toLocaleDateString() },
   ];
 
@@ -55,6 +56,7 @@ export default function CustomersPage() {
               <th>Email</th>
               <th>PAN Number</th>
               <th>Co-Applicant</th>
+              <th>Address</th>
               <th>Status</th>
               <th>Joined On</th>
               <th>Actions</th>
@@ -71,6 +73,7 @@ export default function CustomersPage() {
                 <td>{customer.profiles?.email || '—'}</td>
                 <td><span className="font-mono">{customer.pan_number || '—'}</span></td>
                 <td>{customer.co_applicant_name || '—'}</td>
+                <td style={{ maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={customer.address_line1}>{customer.address_line1 || '—'}</td>
                 <td><StatusBadge status={customer.profiles?.is_active ? 'active' : 'inactive'} /></td>
                 <td className="text-muted text-sm">{new Date(customer.created_at).toLocaleDateString('en-IN')}</td>
                 <td>
@@ -100,6 +103,10 @@ function EditCustomerModal({ customer, onClose }) {
     email: customer.profiles?.email || '',
     pan_number: customer.pan_number || '',
     co_applicant_name: customer.co_applicant_name || '',
+    address_line1: customer.address_line1 || '',
+    dob: customer.dob || '',
+    gender: customer.custom_fields?.digilocker_gender || '',
+    fathername: customer.custom_fields?.digilocker_fathername || '',
     is_active: customer.profiles?.is_active !== false,
   });
   const [error, setError] = useState(null);
@@ -117,7 +124,7 @@ function EditCustomerModal({ customer, onClose }) {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }} onClick={onClose}>
-      <form style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: 32, width: 440 }} onClick={e => e.stopPropagation()} onSubmit={handleSubmit}>
+      <form style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: 32, width: 500, maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()} onSubmit={handleSubmit}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <h3 style={{ fontSize: 18, fontWeight: 700 }}>Edit Customer</h3>
           <button type="button" className="btn btn-ghost btn-icon" onClick={onClose}>✕</button>
@@ -150,6 +157,27 @@ function EditCustomerModal({ customer, onClose }) {
             <label>Co-Applicant Name</label>
             <input className="input w-full" value={formData.co_applicant_name} onChange={e => setFormData({...formData, co_applicant_name: e.target.value})} />
           </div>
+        </div>
+
+        <div className="grid-2" style={{ marginTop: 12 }}>
+          <div className="field">
+            <label>Date of Birth</label>
+            <input type="date" className="input w-full" value={formData.dob} onChange={e => setFormData({...formData, dob: e.target.value})} />
+          </div>
+          <div className="field">
+            <label>Gender (Read-only)</label>
+            <input className="input w-full" disabled value={formData.gender} />
+          </div>
+        </div>
+
+        <div className="field" style={{ marginTop: 12 }}>
+          <label>Father's Name (Read-only)</label>
+          <input className="input w-full" disabled value={formData.fathername?.replace('S/O ', '') || ''} />
+        </div>
+
+        <div className="field" style={{ marginTop: 12 }}>
+          <label>Address</label>
+          <textarea className="input w-full" rows="2" value={formData.address_line1} onChange={e => setFormData({...formData, address_line1: e.target.value})} />
         </div>
 
         <div className="field" style={{ marginTop: 16 }}>

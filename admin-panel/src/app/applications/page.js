@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectDateRange } from '@/store/slices/dateRangeSlice';
 import { setHeaderInfo } from '@/store/slices/uiSlice';
-import { useGetApplicationsQuery } from '@/store/api/adminApi';
+import { useGetApplicationsQuery, useGetStaffQuery } from '@/store/api/adminApi';
 import { StatusBadge, DateRangeBanner, LoadingRows, EmptyState, AmountCell } from '@/components/ui/Primitives';
 import ExportButtons from '@/components/ui/ExportButtons';
 import Link from 'next/link';
@@ -25,12 +25,38 @@ function ApplicationsPageContent() {
   const from   = searchParams.get('from') || globalRange.from;
   const to     = searchParams.get('to')   || globalRange.to;
 
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
   const [status, setStatus] = useState(searchParams.get('status') || '');
   const [stage,  setStage]  = useState(searchParams.get('stage')  || '');
+  const [source, setSource] = useState(searchParams.get('source') || '');
+  const [assignment, setAssignment] = useState(searchParams.get('assignment') || ''); // 'unassigned', or staff_id
   const [offset, setOffset] = useState(0);
   const limit = 20;
 
-  const { data, isLoading, isFetching } = useGetApplicationsQuery({ from, to, status: status || undefined, stage: stage || undefined, limit, offset });
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+      setOffset(0);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  const { data, isLoading, isFetching } = useGetApplicationsQuery({ 
+    search: debouncedSearch || undefined, 
+    from, 
+    to, 
+    status: status || undefined, 
+    stage: stage || undefined, 
+    source: source || undefined,
+    assigned_staff_id: assignment && assignment !== 'unassigned' ? assignment : undefined,
+    unassigned: assignment === 'unassigned',
+    limit, 
+    offset 
+  });
+
+  const { data: staffData } = useGetStaffQuery();
+  const staffList = staffData?.data || [];
 
   const apps  = data?.data?.data  || [];
   const total = data?.data?.count || 0;
@@ -44,6 +70,7 @@ function ApplicationsPageContent() {
     { header: 'Lender', accessor: (a) => a.lenders?.name || a.lender_id },
     { header: 'Stage', accessor: 'current_stage' },
     { header: 'Status', accessor: 'status' },
+    { header: 'Assigned To', accessor: (a) => a.assigned_staff?.profiles?.full_name || 'Unassigned' },
     { header: 'Requested', accessor: 'requested_amount' },
     { header: 'Approved', accessor: 'approved_amount' },
   ];
@@ -58,14 +85,40 @@ function ApplicationsPageContent() {
       {/* Filters */}
       <div className="card card-sm" style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1.5, minWidth: 200 }}>
+            <input 
+              type="text" 
+              className="input w-full" 
+              placeholder="Search App No, Name, Phone..." 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
           <div style={{ flex: 1, minWidth: 160 }}>
             <select className="select" value={status} onChange={(e) => { setStatus(e.target.value); setOffset(0); }} id="filter-status">
               {STATUSES.map(s => <option key={s} value={s}>{s ? s.replace(/_/g, ' ') : 'All statuses'}</option>)}
             </select>
           </div>
           <div style={{ flex: 1, minWidth: 160 }}>
+            <select className="select" value={source} onChange={(e) => { setSource(e.target.value); setOffset(0); }} id="filter-source">
+              <option value="">All sources</option>
+              <option value="dealer">Dealer</option>
+              <option value="staff">Staff</option>
+              <option value="direct">Customer Direct</option>
+            </select>
+          </div>
+          <div style={{ flex: 1, minWidth: 160 }}>
             <select className="select" value={stage} onChange={(e) => { setStage(e.target.value); setOffset(0); }} id="filter-stage">
               {STAGES.map(s => <option key={s} value={s}>{s || 'All stages'}</option>)}
+            </select>
+          </div>
+          <div style={{ flex: 1, minWidth: 160 }}>
+            <select className="select" value={assignment} onChange={(e) => { setAssignment(e.target.value); setOffset(0); }} id="filter-assignment">
+              <option value="">All Assignments</option>
+              <option value="unassigned">Unassigned</option>
+              {staffList.filter(s => s.is_active).map(s => (
+                <option key={s.id} value={s.id}>{s.profiles?.full_name || s.staff_code}</option>
+              ))}
             </select>
           </div>
           <div style={{ color: 'var(--color-text-3)', fontSize: 12, marginLeft: 'auto' }}>
@@ -86,6 +139,7 @@ function ApplicationsPageContent() {
               <th>Requested</th>
               <th>Stage</th>
               <th>Status</th>
+              <th>Assigned To</th>
               <th>Created</th>
               <th></th>
             </tr>
@@ -118,6 +172,13 @@ function ApplicationsPageContent() {
                     <td><AmountCell value={app.requested_amount} /></td>
                     <td style={{ textTransform: 'capitalize' }} className="font-semibold">{app.current_stage?.replace(/_/g, ' ')}</td>
                     <td><StatusBadge status={app.status} /></td>
+                    <td>
+                      {app.assigned_staff ? (
+                        <span className="text-sm font-medium">{app.assigned_staff.profiles?.full_name}</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">Unassigned</span>
+                      )}
+                    </td>
                     <td className="text-muted text-sm">{new Date(app.created_at).toLocaleDateString('en-IN')}</td>
                     <td>
                       <Link href={`/applications/${app.id}?from=${from}&to=${to}`} className="btn btn-ghost btn-sm">

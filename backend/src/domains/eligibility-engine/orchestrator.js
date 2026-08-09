@@ -12,14 +12,14 @@ const { evaluateRules } = require('./evaluator');
  * @param {{ stage: 'pre_check'|'full', loanApplicationId?: string }} options
  * @returns {Promise<Array>} per-lender verdict list, sorted: eligible → incomplete → not_eligible
  */
-async function orchestrate(applicantInput, { stage, loanApplicationId } = {}) {
+async function orchestrate(applicantInput, { stage, loanApplicationId, persist = true, uploadedDocTypes = null } = {}) {
   // 1. Fetch active lenders from DB (ordered by priority)
   const activeLenders = await repo.getActiveLenders();
 
   // 2. If full stage, load uploaded document types for this application
-  let uploadedDocTypes = [];
-  if (stage === 'full' && loanApplicationId) {
-    uploadedDocTypes = await repo.getUploadedDocTypes(loanApplicationId);
+  let docs = uploadedDocTypes || [];
+  if (stage === 'full' && loanApplicationId && !uploadedDocTypes) {
+    docs = await repo.getUploadedDocTypes(loanApplicationId);
   }
 
   const results = [];
@@ -33,11 +33,11 @@ async function orchestrate(applicantInput, { stage, loanApplicationId } = {}) {
 
     // 3. Evaluate dynamically using rules from DB
     const rulesJson = lender.rules || {};
-    const verdict = evaluateRules(rulesJson, { ...applicantInput, uploadedDocTypes });
+    const verdict = evaluateRules(rulesJson, { ...applicantInput, uploadedDocTypes: docs });
 
     // 4. Persist evaluation row
     let evalId = null;
-    if (loanApplicationId) {
+    if (loanApplicationId && persist) {
       const row = await repo.insertEvaluation({
         loan_application_id: loanApplicationId,
         lender_code:         lender.code,

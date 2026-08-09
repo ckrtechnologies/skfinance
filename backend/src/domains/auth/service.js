@@ -2,6 +2,8 @@
 const jwt      = require('jsonwebtoken');
 const { supabase } = require('../../config/database');
 const { JWT_SECRET } = require('../../config/secrets');
+const { sendOtpSms } = require('../../shared/services/smsService');
+const { normalizePhone } = require('../../shared/utils/phone');
 
 /**
  * loginWithPassword — admin login (email + password via Supabase Auth).
@@ -109,9 +111,25 @@ async function requestOtp({ phone, email, identifier }) {
   }
 
   console.log(`\n\n==========================================`);
-  console.log(`[DUMMY OTP] Send ${otpCode} to ${loginId}`);
+  console.log(`Generate ${otpCode} for ${loginId}`);
   console.log(`==========================================\n\n`);
-  // TODO: Replace above with Nodemailer (if email) or DLT HTTP API (if phone)
+  
+  // If identifier is not an email, assume it's a phone and send SMS
+  if (!loginId.includes('@')) {
+    try {
+      const normalizedPhone = normalizePhone(loginId);
+      await sendOtpSms({ phone: normalizedPhone, otp: otpCode, name: 'Customer' });
+      console.log(`[SMS] Successfully dispatched OTP to ${normalizedPhone}`);
+    } catch (smsError) {
+      console.error(`[SMS] Failed to send OTP to ${loginId}:`, smsError.message);
+      // Clean up the OTP record if SMS failed to ensure user can try again immediately
+      await supabase.from('otps').delete().eq('identifier', loginId).eq('otp_code', otpCode);
+      throw smsError;
+    }
+  } else {
+    // TODO: Replace with Nodemailer (for email)
+    console.log(`[EMAIL] Simulated email dispatch to ${loginId}`);
+  }
   
   return { message: 'OTP sent', otp: otpCode };
 }

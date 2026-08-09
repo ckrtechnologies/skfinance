@@ -20,4 +20,8 @@ module.exports = {
   PORT:                      process.env.PORT || 4000,
   CORS_ORIGIN:               process.env.CORS_ORIGIN || '*',
   NODE_ENV:                  process.env.NODE_ENV || 'development',
+  MEON_COMPANY_NAME:         process.env.MEON_COMPANY_NAME,
+  MEON_SECRET_TOKEN:         process.env.MEON_SECRET_TOKEN,
+  MEON_BASE_URL:             process.env.MEON_BASE_URL || 'https://digilocker.meon.co.in',
+  MEON_REDIRECT_URL:         process.env.MEON_REDIRECT_URL || 'https://skfinance.in/digilocker/callback',
 };

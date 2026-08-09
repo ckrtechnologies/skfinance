@@ -1,6 +1,15 @@
 'use client';
 
-import { useGetApplicationQuery, useGetStageEntriesQuery, useAddStageEntryMutation, useDisburseMutation, useReApproveMutation, useGetLendersQuery } from '@/store/api/adminApi';
+import { 
+  useGetApplicationQuery, 
+  useGetStageEntriesQuery, 
+  useAddStageEntryMutation, 
+  useDisburseMutation, 
+  useReApproveMutation, 
+  useGetLendersQuery,
+  useGetStaffQuery,
+  useAssignApplicationMutation
+} from '@/store/api/adminApi';
 import { StatusBadge, AmountCell, LoadingRows } from '@/components/ui/Primitives';
 import { useState, useEffect, use } from 'react';
 import { useDispatch } from 'react-redux';
@@ -39,19 +48,22 @@ export default function ApplicationDetailsPage({ params }) {
 
   const { data: appData, isLoading, refetch } = useGetApplicationQuery(id);
   const { data: stagesData, isLoading: stagesLoading, refetch: refetchStages } = useGetStageEntriesQuery(id);
+  const { data: staffData } = useGetStaffQuery();
   const [addStageEntry, { isLoading: addingEntry }] = useAddStageEntryMutation();
   const [disburse, { isLoading: disbursing }] = useDisburseMutation();
   const [reApprove, { isLoading: reApproving }] = useReApproveMutation();
+  const [assignApplication, { isLoading: assigning }] = useAssignApplicationMutation();
   const { data: lendersRes } = useGetLendersQuery();
   const activeLenders = lendersRes?.data?.filter(l => l.is_active) || [];
 
-  const [modal, setModal] = useState(null); // 'stage', 'disburse', 'reapprove'
+  const [modal, setModal] = useState(null); // 'stage', 'disburse', 'reapprove', 'assign'
   const [stageNotes, setStageNotes] = useState('');
   const [stageApprovedAmount, setStageApprovedAmount] = useState('');
   const [stageLenderName, setStageLenderName] = useState('');
   const [stageAction, setStageAction] = useState(''); // '', 'advance', 'clarification', 'reject'
   const [targetStage, setTargetStage] = useState('');
   const [utr, setUtr] = useState('');
+  const [selectedStaffId, setSelectedStaffId] = useState('');
 
   // Active Tab View State: 'docs', 'financial', 'customer'
   const [activeTab, setActiveTab] = useState('docs');
@@ -75,6 +87,11 @@ export default function ApplicationDetailsPage({ params }) {
   const customerName = app.customers?.profiles?.full_name || app.applicant_details?.customer_name || 'Customer';
   const customerPhone = app.customers?.profiles?.phone || app.applicant_details?.phone || '—';
   const customerPan = app.customers?.pan_number || app.applicant_details?.pan_number || '—';
+  const customerDob = app.customers?.dob ? new Date(app.customers.dob).toLocaleDateString('en-IN') : '—';
+  const customerAddress = app.customers?.address_line1 || '—';
+  const customerState = app.customers?.state ? `${app.customers.city ? `${app.customers.city}, ` : ''}${app.customers.state}, ${app.customers.pincode || ''}` : '';
+  const customerGender = app.customers?.custom_fields?.digilocker_gender || '—';
+  const customerFatherName = app.customers?.custom_fields?.digilocker_fathername ? app.customers.custom_fields.digilocker_fathername.replace('S/O ', '') : '—';
   const dealerName = app.dealers?.business_name || app.dealers?.profiles?.full_name || 'Direct';
   const staffName = app.staff?.name || app.staff?.profiles?.full_name || 'Unassigned';
 
@@ -140,7 +157,11 @@ export default function ApplicationDetailsPage({ params }) {
   }
 
   async function handleDisburse() {
-    await disburse({ id, utr_number: utr });
+    await disburse({ 
+      id, 
+      disbursed_amount: app.approved_amount || app.requested_amount || 0,
+      stage_data: { utr_number: utr }
+    });
     setModal(null);
     setUtr('');
   }
@@ -153,6 +174,16 @@ export default function ApplicationDetailsPage({ params }) {
   const latestClarificationQuery = stages.slice().reverse().find(s => s.outcome === 'rework' || s.outcome === 'clarification_requested');
   const latestDealerResponse = stages.slice().reverse().find(s => s.outcome === 'clarification_submitted' || s.data?.is_clarification_response);
 
+  async function handleAssign() {
+    if (!selectedStaffId) return;
+    await assignApplication({ id, staff_id: selectedStaffId });
+    setModal(null);
+    refetch();
+  }
+
+  const staffList = staffData?.data || [];
+  const assignedStaff = staffList.find(s => s.id === app.assigned_staff_id);
+
   return (
     <div style={{ width: '100%', fontFamily: 'Inter, system-ui, sans-serif' }}>
 
@@ -164,6 +195,13 @@ export default function ApplicationDetailsPage({ params }) {
           <span style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '99px', fontWeight: 600, background: 'rgba(59,130,246,0.1)', color: '#3B82F6', border: '1px solid rgba(59,130,246,0.2)', display: 'flex', alignItems: 'center', gap: '6px' }}>
             {sourceInfo.type === 'dealer' ? '🏬' : sourceInfo.type === 'staff' ? '👔' : '👤'} {sourceInfo.label}: <strong style={{ fontWeight: 700 }}>{sourceInfo.detail}</strong>
           </span>
+          <button 
+            onClick={() => { setSelectedStaffId(app.assigned_staff_id || ''); setModal('assign'); }}
+            style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '99px', fontWeight: 600, background: app.assigned_staff_id ? 'rgba(139,92,246,0.1)' : 'rgba(245,158,11,0.1)', color: app.assigned_staff_id ? '#8B5CF6' : '#F59E0B', border: `1px solid ${app.assigned_staff_id ? 'rgba(139,92,246,0.3)' : 'rgba(245,158,11,0.3)'}`, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', transition: 'all 0.2s' }}
+            className="hover:opacity-80"
+          >
+            {app.assigned_staff_id ? `👔 Assigned to: ${assignedStaff?.profiles?.full_name || 'Staff'}` : '⚠️ Unassigned'}
+          </button>
         </div>
 
         <div style={{ display: 'flex', gap: '8px' }}>
@@ -253,7 +291,7 @@ export default function ApplicationDetailsPage({ params }) {
         </div>
 
         {/* 9 Horizontal Waterfall Flow Nodes */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(9, minmax(0, 1fr))', gap: '8px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: '8px' }}>
           {PIPELINE_STAGES.map((stg, idx) => {
             const isDone = idx < activeIndex || displayStatus === 'disbursed';
             const isCurrent = (idx === activeIndex && displayStatus !== 'disbursed' && displayStatus !== 'rejected') || (displayStatus === 'approved' && idx === 5);
@@ -286,7 +324,7 @@ export default function ApplicationDetailsPage({ params }) {
                   boxShadow: isCurrent ? '0 0 16px rgba(59, 130, 246, 0.5)' : 'none',
                   display: 'flex',
                   flexDirection: 'column',
-                  justify: 'space-between',
+                  justifyContent: 'space-between',
                   height: '84px',
                   position: 'relative'
                 }}
@@ -484,16 +522,26 @@ export default function ApplicationDetailsPage({ params }) {
                   <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-2)', textTransform: 'uppercase' }}>Requested Loan</span>
                   <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--color-text)', marginTop: '2px' }}><AmountCell value={app.requested_amount} /></div>
                 </div>
-                <div style={{ background: app.approved_amount ? 'rgba(16,185,129,0.1)' : 'var(--color-surface-2)', border: app.approved_amount ? '1px solid rgba(16,185,129,0.3)' : '1px solid var(--color-border)', padding: '12px', borderRadius: '10px' }}>
-                  <span style={{ fontSize: '10px', fontWeight: 800, color: app.approved_amount ? '#10B981' : 'var(--color-text-2)', textTransform: 'uppercase' }}>Approved Loan Amount</span>
-                  <div style={{ fontSize: app.approved_amount ? '18px' : '14px', fontWeight: 800, color: app.approved_amount ? '#10B981' : 'var(--color-text-3)', marginTop: '2px' }}>
-                    {app.approved_amount ? <AmountCell value={app.approved_amount} /> : 'Pending Approval'}
-                  </div>
-                </div>
+                {(() => {
+                  const effectiveApprovedAmount = app.approved_amount || (app.status === 'disbursed' || app.status === 'approved' ? (app.disbursed_amount || app.requested_amount) : null);
+                  return (
+                    <div style={{ background: effectiveApprovedAmount ? 'rgba(16,185,129,0.1)' : 'var(--color-surface-2)', border: effectiveApprovedAmount ? '1px solid rgba(16,185,129,0.3)' : '1px solid var(--color-border)', padding: '12px', borderRadius: '10px' }}>
+                      <span style={{ fontSize: '10px', fontWeight: 800, color: effectiveApprovedAmount ? '#10B981' : 'var(--color-text-2)', textTransform: 'uppercase' }}>Approved Loan Amount</span>
+                      <div style={{ fontSize: effectiveApprovedAmount ? '18px' : '14px', fontWeight: 800, color: effectiveApprovedAmount ? '#10B981' : 'var(--color-text-3)', marginTop: '2px' }}>
+                        {effectiveApprovedAmount ? <AmountCell value={effectiveApprovedAmount} /> : 'Pending Approval'}
+                      </div>
+                    </div>
+                  );
+                })()}
                 <div style={{ background: app.lenders?.name ? 'rgba(59,130,246,0.1)' : 'var(--color-surface-2)', border: app.lenders?.name ? '1px solid rgba(59,130,246,0.3)' : '1px solid var(--color-border)', padding: '12px', borderRadius: '10px' }}>
                   <span style={{ fontSize: '10px', fontWeight: 800, color: app.lenders?.name ? '#3B82F6' : 'var(--color-text-2)', textTransform: 'uppercase' }}>Sanctioning Bank / Lender</span>
-                  <div style={{ fontSize: '14px', fontWeight: 800, color: app.lenders?.name ? '#3B82F6' : 'var(--color-text-3)', marginTop: '4px' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: app.lenders?.name ? '#3B82F6' : 'var(--color-text-3)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {app.lenders?.name ? `🏦 ${app.lenders.name}` : 'Pending Assignment'}
+                    {app.lenders?.contact_phone && (
+                      <a href={`https://wa.me/${app.lenders.contact_phone}?text=Hello, sharing documents for Application ${app.application_no || app.id}`} target="_blank" rel="noopener noreferrer" style={{ padding: '2px 8px', fontSize: '11px', background: '#25D366', color: '#fff', borderRadius: '4px', textDecoration: 'none', fontWeight: 600 }}>
+                        <i className="fa fa-whatsapp" style={{ marginRight: 4 }}></i>WhatsApp POC
+                      </a>
+                    )}
                   </div>
                 </div>
                 <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', padding: '12px', borderRadius: '10px' }}>
@@ -532,7 +580,7 @@ export default function ApplicationDetailsPage({ params }) {
                           padding: '10px 12px',
                           display: 'flex',
                           alignItems: 'center',
-                          justify: 'space-between'
+                          justifyContent: 'space-between'
                         }}>
                           <div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -591,6 +639,29 @@ export default function ApplicationDetailsPage({ params }) {
                 <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', padding: '12px', borderRadius: '10px' }}>
                   <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-2)', textTransform: 'uppercase' }}>PAN</span>
                   <div style={{ fontSize: '13px', fontWeight: 800, fontFamily: 'monospace', color: '#8B5CF6', marginTop: '4px' }}>{customerPan}</div>
+                </div>
+              </div>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '12px', marginTop: '12px' }}>
+                <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', padding: '12px', borderRadius: '10px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-2)', textTransform: 'uppercase' }}>Date of Birth</span>
+                  <div style={{ fontSize: '13px', fontWeight: 600, marginTop: '4px' }}>{customerDob}</div>
+                </div>
+                <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', padding: '12px', borderRadius: '10px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-2)', textTransform: 'uppercase' }}>Gender</span>
+                  <div style={{ fontSize: '13px', fontWeight: 600, marginTop: '4px' }}>{customerGender}</div>
+                </div>
+                <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', padding: '12px', borderRadius: '10px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-2)', textTransform: 'uppercase' }}>Father's Name</span>
+                  <div style={{ fontSize: '13px', fontWeight: 600, marginTop: '4px' }}>{customerFatherName}</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(1, minmax(0, 1fr))', gap: '12px', marginTop: '12px' }}>
+                <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', padding: '12px', borderRadius: '10px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-2)', textTransform: 'uppercase' }}>Address</span>
+                  <div style={{ fontSize: '13px', fontWeight: 600, marginTop: '4px' }}>{customerAddress}</div>
+                  {customerState && <div style={{ fontSize: '12px', color: 'var(--color-text-2)', marginTop: '2px' }}>{customerState}</div>}
                 </div>
               </div>
             </div>
@@ -813,6 +884,28 @@ export default function ApplicationDetailsPage({ params }) {
             <div className="flex justify-end gap-2 mt-5">
               <button className="btn btn-secondary btn-sm" onClick={() => setModal(null)}>Cancel</button>
               <button className="btn btn-primary btn-sm" onClick={handleReApprove} disabled={reApproving}>{reApproving ? 'Processing...' : 'Confirm Re-Approval'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modal === 'assign' && (
+        <div className="modal-backdrop" onClick={() => setModal(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3 className="text-base font-bold mb-3">Assign Application</h3>
+            <p className="text-xs text-muted mb-4">Assign this application to a specific staff member.</p>
+            <div className="field mb-4">
+              <label className="text-xs font-semibold mb-1 block">Select Staff Member *</label>
+              <select className="select w-full" value={selectedStaffId} onChange={e => setSelectedStaffId(e.target.value)}>
+                <option value="">-- Unassigned --</option>
+                {staffList.filter(s => s.is_active).map(s => (
+                  <option key={s.id} value={s.id}>{s.profiles?.full_name || s.staff_code}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex justify-end gap-2 mt-5">
+              <button className="btn btn-secondary btn-sm" onClick={() => setModal(null)}>Cancel</button>
+              <button className="btn btn-primary btn-sm" onClick={handleAssign} disabled={assigning || !selectedStaffId}>{assigning ? 'Assigning...' : 'Assign Staff'}</button>
             </div>
           </div>
         </div>

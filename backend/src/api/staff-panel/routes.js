@@ -45,16 +45,23 @@ router.get('/applications', authenticate, requireRole(['staff', 'admin']), async
     // For staff panel, list applications assigned to this staff or general if allowed
     const { from, to, status, stage, limit = 20, offset = 0 } = req.query;
 
+    // Get the staff_id for the current user
+    const { data: staffData } = await supabase.from('staff').select('id').eq('profile_id', req.user.profileId).maybeSingle();
+    const staffId = staffData?.id;
+
     let query = supabase.from('loan_applications').select(`
       *,
       customers(*, profiles!profile_id(full_name, phone, email)),
       dealers(*, profiles!profile_id(full_name, phone)),
-      staff(*, profiles!profile_id(full_name, phone)),
+      staff:staff!staff_id(*, profiles!profile_id(full_name, phone)),
+      assigned_staff:staff!assigned_staff_id(*, profiles!profile_id(full_name)),
       lenders(id, name)
     `, { count: 'exact' });
 
-    // Optional: filter by assigned staff if schema supports it
-    // query = query.eq('assigned_to', req.user.profileId);
+    // Restrict to ONLY applications assigned to this staff member
+    if (staffId && req.user.role !== 'admin') {
+      query = query.eq('assigned_staff_id', staffId);
+    }
 
     if (from) query = query.gte('created_at', `${from}T00:00:00.000Z`);
     if (to) query = query.lte('created_at', `${to}T23:59:59.999Z`);
@@ -73,6 +80,12 @@ router.get('/applications', authenticate, requireRole(['staff', 'admin']), async
 router.get('/applications/:id', authenticate, requireRole(['staff', 'admin']), async (req, res, next) => {
   try {
     const app = await loanSvc.getApplication(req.params.id);
+    if (req.user.role !== 'admin') {
+      const { data: staffData } = await supabase.from('staff').select('id').eq('profile_id', req.user.profileId).maybeSingle();
+      if (staffData?.id !== app.assigned_staff_id) {
+         throw Object.assign(new Error('Access denied. This application is not assigned to you.'), { statusCode: 403 });
+      }
+    }
     sendSuccess(res, app);
   } catch (err) { next(err); }
 });

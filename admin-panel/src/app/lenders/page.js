@@ -138,7 +138,7 @@ export default function LendersPage() {
 
 function CreateLenderModal({ onClose }) {
   const [createLender, { isLoading }] = useCreateLenderMutation();
-  const [formData, setFormData] = useState({ name: '', code: '', lender_type: 'nbfc', priority: 99 });
+  const [formData, setFormData] = useState({ name: '', code: '', lender_type: 'nbfc', priority: 99, contact_phone: '' });
   const [error, setError] = useState(null);
 
   async function handleSubmit(e) {
@@ -148,25 +148,32 @@ function CreateLenderModal({ onClose }) {
       await createLender(formData).unwrap();
       onClose();
     } catch (err) {
-      setError(err.data?.error?.message || err.message || 'Failed to create lender');
+      setError(err.data?.error?.message || err.message);
     }
   }
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }} onClick={onClose}>
       <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: 32, width: 400 }} onClick={e => e.stopPropagation()}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 24 }}>Create New NBFC</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Create New NBFC / Lender</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--color-text-3)' }}>&times;</button>
+        </div>
         
         {error && <div style={{ padding: 12, background: 'var(--color-rose-bg)', color: 'var(--color-rose)', fontSize: 13, borderRadius: 8, marginBottom: 16 }}>{error}</div>}
-
+        
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
             <label className="label">Lender Name</label>
             <input required className="input w-full" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g. SK Finance" />
           </div>
           <div>
-            <label className="label">Lender Code</label>
-            <input required className="input w-full font-mono" value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})} placeholder="e.g. sk-finance" />
+            <label className="label">Lender Code (Unique)</label>
+            <input required className="input w-full font-mono" value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})} placeholder="e.g. sk-finance" style={{ textTransform: 'lowercase' }} />
+          </div>
+          <div>
+            <label className="label">POC WhatsApp Number</label>
+            <input className="input w-full" value={formData.contact_phone} onChange={e => setFormData({...formData, contact_phone: e.target.value})} placeholder="e.g. 9876543210" />
           </div>
           <div>
             <label className="label">Type</label>
@@ -190,7 +197,8 @@ function EditLenderModal({ lender, onClose }) {
   const [formData, setFormData] = useState({ 
     name: lender.name, 
     code: lender.code, 
-    lender_type: lender.lender_type 
+    lender_type: lender.lender_type,
+    contact_phone: lender.contact_phone || ''
   });
   const [error, setError] = useState(null);
 
@@ -208,7 +216,10 @@ function EditLenderModal({ lender, onClose }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }} onClick={onClose}>
       <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: 32, width: 400 }} onClick={e => e.stopPropagation()}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 24 }}>Edit NBFC</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Edit NBFC</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--color-text-3)' }}>&times;</button>
+        </div>
         
         {error && <div style={{ padding: 12, background: 'var(--color-rose-bg)', color: 'var(--color-rose)', fontSize: 13, borderRadius: 8, marginBottom: 16 }}>{error}</div>}
 
@@ -220,6 +231,10 @@ function EditLenderModal({ lender, onClose }) {
           <div>
             <label className="label">Code (Unique)</label>
             <input required className="input w-full" value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})} placeholder="e.g. SKF" style={{ textTransform: 'uppercase' }} />
+          </div>
+          <div>
+            <label className="label">POC WhatsApp Number</label>
+            <input className="input w-full" value={formData.contact_phone} onChange={e => setFormData({...formData, contact_phone: e.target.value})} placeholder="e.g. 9876543210" />
           </div>
           <div>
             <label className="label">Lender Type</label>

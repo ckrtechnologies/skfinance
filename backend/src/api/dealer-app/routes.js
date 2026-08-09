@@ -12,7 +12,7 @@ const { supabase } = require('../../config/database');
 const { saveToCdn } = require('../../shared/utils/cdnStorage');
 const { orchestrate } = require('../../domains/eligibility-engine/orchestrator');
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
 const router = express.Router();
 
 // POST /dealer/applications/upload-document  (auth required, dealer role)
@@ -116,7 +116,7 @@ router.delete('/profile', async (req, res, next) => {
 // POST /dealer/applications/cibil/fetch
 router.post('/applications/cibil/fetch', async (req, res, next) => {
   try {
-    const { pan_number } = req.body;
+    const { pan_number, application_id, customer_name, application_no } = req.body;
     if (!pan_number) {
       return res.status(400).json({ error: 'pan_number is required to fetch CIBIL' });
     }
@@ -124,12 +124,16 @@ router.post('/applications/cibil/fetch', async (req, res, next) => {
     const { data: dealer } = await supabase.from('dealers').select('id').eq('profile_id', req.user.profileId).single();
     if (!dealer) return res.status(403).json({ error: 'Dealer profile required' });
 
+    const appText = application_no ? `(App #${application_no})` : '';
+    const custText = customer_name ? `for ${customer_name}` : `PAN: ${pan_number}`;
+
     // Deduct ₹70 from dealer's wallet for CIBIL hit
     const { error: ledgerError } = await supabase.from('wallet_ledger').insert({
       dealer_id: dealer.id,
       entry_type: 'adjustment',
       amount: -70.00,
-      remarks: `CIBIL check fee for PAN: ${pan_number}`,
+      application_id: application_id || null,
+      remarks: `₹70 CIBIL Verification Fee ${custText} ${appText}`.trim(),
       created_by_profile_id: req.user.profileId
     });
 
@@ -166,6 +170,7 @@ router.get('/applications', async (req, res, next) => {
     const { data: dealer } = await supabase.from('dealers').select('id').eq('profile_id', req.user.profileId).single();
     const result = await loanSvc.listApplications({
       dealerId: dealer.id,
+      searchQuery: req.query.search,
       status: req.query.status,
       stage: req.query.stage,
       startDate: req.query.startDate,
@@ -317,7 +322,8 @@ router.post('/applications/:id/clarification', async (req, res, next) => {
 router.get('/wallet', async (req, res, next) => {
   try {
     const { data: dealer } = await supabase.from('dealers').select('id').eq('profile_id', req.user.profileId).single();
-    const wallet = await walletSvc.getDealerWallet(dealer.id);
+    const { startDate, endDate } = req.query;
+    const wallet = await walletSvc.getDealerWallet(dealer.id, { startDate, endDate });
     sendSuccess(res, wallet);
   } catch (err) { next(err); }
 });
@@ -325,8 +331,9 @@ router.get('/wallet', async (req, res, next) => {
 // GET /dealer/commissions
 router.get('/commissions', async (req, res, next) => {
   try {
+    const { startDate, endDate } = req.query;
     const { data: dealer } = await supabase.from('dealers').select('id').eq('profile_id', req.user.profileId).single();
-    const commissions = await walletSvc.getDealerCommissions(dealer.id);
+    const commissions = await walletSvc.getDealerCommissions(dealer.id, { startDate, endDate });
     sendSuccess(res, commissions);
   } catch (err) { next(err); }
 });
@@ -343,8 +350,9 @@ router.post('/withdrawal-requests', async (req, res, next) => {
 // GET /dealer/withdrawal-requests
 router.get('/withdrawal-requests', async (req, res, next) => {
   try {
+    const { startDate, endDate } = req.query;
     const { data: dealer } = await supabase.from('dealers').select('id').eq('profile_id', req.user.profileId).single();
-    const wrs = await walletSvc.getWithdrawalRequests(dealer.id);
+    const wrs = await walletSvc.getWithdrawalRequests(dealer.id, { startDate, endDate });
     sendSuccess(res, wrs);
   } catch (err) { next(err); }
 });
