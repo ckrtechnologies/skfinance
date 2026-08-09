@@ -73,10 +73,10 @@ export const adminApi = createApi({
       providesTags: (result, error, id) => [{ type: 'Applications', id }],
     }),
     assignApplication: builder.mutation({
-      query: ({ id, staff_id }) => ({
+      query: ({ id, staff_ids }) => ({
         url: `/applications/${id}/assign`,
         method: 'POST',
-        body: { staff_id },
+        body: { staff_ids },
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'Applications', id }, 'Applications'],
     }),
@@ -144,7 +144,7 @@ export const adminApi = createApi({
 
     // Dealers
     getDealers: builder.query({
-      query: () => '/dealers',
+      query: ({ from, to } = {}) => ({ url: '/dealers', params: { from, to } }),
       providesTags: ['Dealers'],
     }),
     createDealer: builder.mutation({
@@ -198,7 +198,7 @@ export const adminApi = createApi({
       providesTags: ['Commissions'],
     }),
     getWithdrawals: builder.query({
-      query: ({ status } = {}) => ({ url: '/withdrawal-requests', params: { status } }),
+      query: ({ status, from, to } = {}) => ({ url: '/withdrawal-requests', params: { status, from, to } }),
       providesTags: ['Withdrawals'],
     }),
     processWithdrawal: builder.mutation({
@@ -226,7 +226,7 @@ export const adminApi = createApi({
 
     // Customers
     getCustomers: builder.query({
-      query: () => '/customers',
+      query: ({ from, to } = {}) => ({ url: '/customers', params: { from, to } }),
       providesTags: ['Customers'],
     }),
     updateCustomer: builder.mutation({

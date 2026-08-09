@@ -69,6 +69,7 @@ async function getApplication(id) {
       customers(*, profiles!profile_id(full_name, phone, email)),
       dealers(*, profiles!profile_id(full_name, phone, email, is_active)),
       staff:staff!staff_id(*, profiles!profile_id(full_name, phone, email)),
+      assignees:loan_application_assignees(staff:staff_id(*, profiles!profile_id(full_name))),
       lenders(*),
       documents(*)
     `)
@@ -124,7 +125,7 @@ async function listApplications({ status, stage, dealerId, staffId, customerId, 
     customers(*, profiles!profile_id(full_name, phone, email)),
     dealers(*, profiles!profile_id(full_name, phone)),
     staff:staff!staff_id(*, profiles!profile_id(full_name, phone)),
-    assigned_staff:staff!assigned_staff_id(*, profiles!profile_id(full_name)),
+    assignees:loan_application_assignees(staff:staff_id(*, profiles!profile_id(full_name))),
     lenders(id, name)
   `, { count: 'exact' });
 
@@ -137,8 +138,34 @@ async function listApplications({ status, stage, dealerId, staffId, customerId, 
   }
   if (dealerId) query = query.eq('dealer_id', dealerId);
   if (staffId) query = query.eq('staff_id', staffId);
-  if (assignedStaffId) query = query.eq('assigned_staff_id', assignedStaffId);
-  if (unassigned) query = query.is('assigned_staff_id', null);
+  if (assignedStaffId) {
+    // We must inner join to filter parent rows by child condition in Supabase
+    query = supabase.from('loan_applications').select(`
+      *,
+      customers(*, profiles!profile_id(full_name, phone, email)),
+      dealers(*, profiles!profile_id(full_name, phone)),
+      staff:staff!staff_id(*, profiles!profile_id(full_name, phone)),
+      assignees:loan_application_assignees!inner(staff_id, staff:staff_id(*, profiles!profile_id(full_name))),
+      lenders(id, name)
+    `, { count: 'exact' }).eq('loan_application_assignees.staff_id', assignedStaffId);
+
+    if (status) query = query.eq('status', status);
+    if (stage) query = query.eq('current_stage', stage);
+    if (source) {
+      if (source === 'dealer') query = query.not('dealer_id', 'is', null);
+      else if (source === 'staff') query = query.not('staff_id', 'is', null);
+      else if (source === 'direct') query = query.is('dealer_id', null).is('staff_id', null);
+    }
+    if (dealerId) query = query.eq('dealer_id', dealerId);
+    if (staffId) query = query.eq('staff_id', staffId);
+  }
+  if (unassigned) {
+    const { data: assignedApps } = await supabase.from('loan_application_assignees').select('loan_application_id');
+    const assignedIds = (assignedApps || []).map(r => r.loan_application_id);
+    if (assignedIds.length > 0) {
+      query = query.not('id', 'in', `(${assignedIds.join(',')})`);
+    }
+  }
   if (customerId) query = query.eq('customer_id', customerId);
   if (startDate) query = query.gte('created_at', startDate);
   if (endDate) query = query.lte('created_at', endDate);
@@ -366,18 +393,21 @@ async function getSetting(key) {
   return data?.value;
 }
 
-async function assignApplication(loanApplicationId, staffId) {
-  const { data, error } = await supabase
-    .from('loan_applications')
-    .update({ 
-      assigned_staff_id: staffId,
-      assigned_at: new Date().toISOString()
-    })
-    .eq('id', loanApplicationId)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+async function assignApplication(loanApplicationId, staffIds, assignedByProfileId = null) {
+  // Clear existing assignments
+  await supabase.from('loan_application_assignees').delete().eq('loan_application_id', loanApplicationId);
+  
+  if (staffIds && staffIds.length > 0) {
+    const insertData = staffIds.map(staffId => ({
+      loan_application_id: loanApplicationId,
+      staff_id: staffId,
+      assigned_by_profile_id: assignedByProfileId
+    }));
+    const { error } = await supabase.from('loan_application_assignees').insert(insertData);
+    if (error) throw error;
+  }
+  
+  return await getApplication(loanApplicationId);
 }
 
 module.exports = {

@@ -3,8 +3,9 @@
 import { useGetDealersQuery, useCreateDealerMutation, useUpdateDealerMutation, useDeleteDealerMutation } from '@/store/api/adminApi';
 import { StatusBadge, LoadingRows, EmptyState } from '@/components/ui/Primitives';
 import { useState, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { setHeaderInfo } from '@/store/slices/uiSlice';
+import { selectDateRange } from '@/store/slices/dateRangeSlice';
 import ExportButtons from '@/components/ui/ExportButtons';
 
 export default function DealersPage() {
@@ -12,7 +13,13 @@ export default function DealersPage() {
   useEffect(() => {
     dispatch(setHeaderInfo({ title: 'Dealers', breadcrumbs: ['Operations', 'Dealers'] }));
   }, [dispatch]);
-  const { data, isLoading, refetch } = useGetDealersQuery();
+  
+  const dateRange = useSelector(selectDateRange);
+  
+  const { data, isLoading, refetch } = useGetDealersQuery({
+    from: dateRange?.from,
+    to: dateRange?.to
+  });
   const [createDealer, { isLoading: creating }] = useCreateDealerMutation();
   const [deleteDealer] = useDeleteDealerMutation();
   

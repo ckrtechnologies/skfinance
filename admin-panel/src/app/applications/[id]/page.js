@@ -63,7 +63,7 @@ export default function ApplicationDetailsPage({ params }) {
   const [stageAction, setStageAction] = useState(''); // '', 'advance', 'clarification', 'reject'
   const [targetStage, setTargetStage] = useState('');
   const [utr, setUtr] = useState('');
-  const [selectedStaffId, setSelectedStaffId] = useState('');
+  const [selectedStaffIds, setSelectedStaffIds] = useState([]);
 
   // Active Tab View State: 'docs', 'financial', 'customer'
   const [activeTab, setActiveTab] = useState('docs');
@@ -92,6 +92,8 @@ export default function ApplicationDetailsPage({ params }) {
   const customerState = app.customers?.state ? `${app.customers.city ? `${app.customers.city}, ` : ''}${app.customers.state}, ${app.customers.pincode || ''}` : '';
   const customerGender = app.customers?.custom_fields?.digilocker_gender || '—';
   const customerFatherName = app.customers?.custom_fields?.digilocker_fathername ? app.customers.custom_fields.digilocker_fathername.replace('S/O ', '') : '—';
+  const customerCibilRaw = app.customers?.cibil_score ?? app.applicant_details?.cibil_score;
+  const customerCibil = customerCibilRaw === -1 ? 'NTC (-1)' : (customerCibilRaw ?? '—');
   const dealerName = app.dealers?.business_name || app.dealers?.profiles?.full_name || 'Direct';
   const staffName = app.staff?.name || app.staff?.profiles?.full_name || 'Unassigned';
 
@@ -175,14 +177,13 @@ export default function ApplicationDetailsPage({ params }) {
   const latestDealerResponse = stages.slice().reverse().find(s => s.outcome === 'clarification_submitted' || s.data?.is_clarification_response);
 
   async function handleAssign() {
-    if (!selectedStaffId) return;
-    await assignApplication({ id, staff_id: selectedStaffId });
+    await assignApplication({ id, staff_ids: selectedStaffIds });
     setModal(null);
     refetch();
   }
 
   const staffList = staffData?.data || [];
-  const assignedStaff = staffList.find(s => s.id === app.assigned_staff_id);
+  const assignedStaffList = app.assignees?.map(a => a.staff) || [];
 
   return (
     <div style={{ width: '100%', fontFamily: 'Inter, system-ui, sans-serif' }}>
@@ -196,11 +197,11 @@ export default function ApplicationDetailsPage({ params }) {
             {sourceInfo.type === 'dealer' ? '🏬' : sourceInfo.type === 'staff' ? '👔' : '👤'} {sourceInfo.label}: <strong style={{ fontWeight: 700 }}>{sourceInfo.detail}</strong>
           </span>
           <button 
-            onClick={() => { setSelectedStaffId(app.assigned_staff_id || ''); setModal('assign'); }}
-            style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '99px', fontWeight: 600, background: app.assigned_staff_id ? 'rgba(139,92,246,0.1)' : 'rgba(245,158,11,0.1)', color: app.assigned_staff_id ? '#8B5CF6' : '#F59E0B', border: `1px solid ${app.assigned_staff_id ? 'rgba(139,92,246,0.3)' : 'rgba(245,158,11,0.3)'}`, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', transition: 'all 0.2s' }}
+            onClick={() => { setSelectedStaffIds(app.assignees?.map(a => a.staff_id) || []); setModal('assign'); }}
+            style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '99px', fontWeight: 600, background: assignedStaffList.length ? 'rgba(139,92,246,0.1)' : 'rgba(245,158,11,0.1)', color: assignedStaffList.length ? '#8B5CF6' : '#F59E0B', border: `1px solid ${assignedStaffList.length ? 'rgba(139,92,246,0.3)' : 'rgba(245,158,11,0.3)'}`, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', transition: 'all 0.2s' }}
             className="hover:opacity-80"
           >
-            {app.assigned_staff_id ? `👔 Assigned to: ${assignedStaff?.profiles?.full_name || 'Staff'}` : '⚠️ Unassigned'}
+            {assignedStaffList.length > 0 ? `👔 Assigned to: ${assignedStaffList.map(s => s.profiles?.full_name).join(', ')}` : '⚠️ Unassigned'}
           </button>
         </div>
 
@@ -657,8 +658,14 @@ export default function ApplicationDetailsPage({ params }) {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(1, minmax(0, 1fr))', gap: '12px', marginTop: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '12px', marginTop: '12px' }}>
                 <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', padding: '12px', borderRadius: '10px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-2)', textTransform: 'uppercase' }}>CIBIL Score</span>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: customerCibil === '—' ? 'inherit' : customerCibil === 'NTC (-1)' ? '#F59E0B' : customerCibil >= 750 ? '#10B981' : customerCibil >= 650 ? '#F59E0B' : '#EF4444', marginTop: '4px' }}>
+                    {customerCibil}
+                  </div>
+                </div>
+                <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', padding: '12px', borderRadius: '10px', gridColumn: 'span 2' }}>
                   <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-2)', textTransform: 'uppercase' }}>Address</span>
                   <div style={{ fontSize: '13px', fontWeight: 600, marginTop: '4px' }}>{customerAddress}</div>
                   {customerState && <div style={{ fontSize: '12px', color: 'var(--color-text-2)', marginTop: '2px' }}>{customerState}</div>}
@@ -892,20 +899,33 @@ export default function ApplicationDetailsPage({ params }) {
       {modal === 'assign' && (
         <div className="modal-backdrop" onClick={() => setModal(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3 className="text-base font-bold mb-3">Assign Application</h3>
-            <p className="text-xs text-muted mb-4">Assign this application to a specific staff member.</p>
-            <div className="field mb-4">
-              <label className="text-xs font-semibold mb-1 block">Select Staff Member *</label>
-              <select className="select w-full" value={selectedStaffId} onChange={e => setSelectedStaffId(e.target.value)}>
-                <option value="">-- Unassigned --</option>
+            <h3 className="text-base font-bold mb-3">Manage Assignment</h3>
+            <p className="text-xs text-muted mb-4">Assign this application to one or more staff members.</p>
+            <div className="field mb-4 max-h-[300px] overflow-y-auto pr-2">
+              <label className="text-xs font-semibold mb-2 block">Select Staff Members</label>
+              <div className="flex flex-col gap-2">
                 {staffList.filter(s => s.is_active).map(s => (
-                  <option key={s.id} value={s.id}>{s.profiles?.full_name || s.staff_code}</option>
+                  <label key={s.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 p-1 rounded">
+                    <input 
+                      type="checkbox" 
+                      className="checkbox checkbox-primary checkbox-sm"
+                      checked={selectedStaffIds.includes(s.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedStaffIds([...selectedStaffIds, s.id]);
+                        } else {
+                          setSelectedStaffIds(selectedStaffIds.filter(id => id !== s.id));
+                        }
+                      }}
+                    />
+                    {s.profiles?.full_name || s.staff_code}
+                  </label>
                 ))}
-              </select>
+              </div>
             </div>
             <div className="flex justify-end gap-2 mt-5">
               <button className="btn btn-secondary btn-sm" onClick={() => setModal(null)}>Cancel</button>
-              <button className="btn btn-primary btn-sm" onClick={handleAssign} disabled={assigning || !selectedStaffId}>{assigning ? 'Assigning...' : 'Assign Staff'}</button>
+              <button className="btn btn-primary btn-sm" onClick={handleAssign} disabled={assigning}>{assigning ? 'Saving...' : 'Save Assignments'}</button>
             </div>
           </div>
         </div>

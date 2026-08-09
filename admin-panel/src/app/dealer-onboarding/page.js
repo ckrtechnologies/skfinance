@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { setHeaderInfo } from '@/store/slices/uiSlice';
+import { selectDateRange } from '@/store/slices/dateRangeSlice';
 import { StatusBadge, LoadingRows, EmptyState } from '@/components/ui/Primitives';
 import { IconCheck, IconX, IconChevronRight } from '@tabler/icons-react';
 
@@ -36,10 +37,14 @@ export default function DealerOnboardingPage() {
   const [rejectModal, setRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
 
+  const dateRange = useSelector(selectDateRange);
+
   const fetchDealers = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await fetch(`${API_URL}/admin/dealer-onboarding?status=${statusFilter}&limit=50`, {
+      const fromParam = dateRange?.from ? `&from=${dateRange.from}` : '';
+      const toParam = dateRange?.to ? `&to=${dateRange.to}` : '';
+      const r = await fetch(`${API_URL}/admin/dealer-onboarding?status=${statusFilter}&limit=50${fromParam}${toParam}`, {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
       const d = await r.json();
@@ -47,7 +52,7 @@ export default function DealerOnboardingPage() {
       setTotal(d?.data?.total || 0);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
-  }, [statusFilter]);
+  }, [statusFilter, dateRange]);
 
   useEffect(() => { fetchDealers(); }, [fetchDealers]);
 

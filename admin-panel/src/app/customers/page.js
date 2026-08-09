@@ -3,8 +3,9 @@
 import { useGetCustomersQuery, useUpdateCustomerMutation, useDeleteCustomerMutation } from '@/store/api/adminApi';
 import { StatusBadge, LoadingRows, EmptyState } from '@/components/ui/Primitives';
 import { useState, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { setHeaderInfo } from '@/store/slices/uiSlice';
+import { selectDateRange } from '@/store/slices/dateRangeSlice';
 import ExportButtons from '@/components/ui/ExportButtons';
 
 export default function CustomersPage() {
@@ -12,7 +13,13 @@ export default function CustomersPage() {
   useEffect(() => {
     dispatch(setHeaderInfo({ title: 'Customers', breadcrumbs: ['Operations', 'Customers'] }));
   }, [dispatch]);
-  const { data, isLoading, refetch } = useGetCustomersQuery();
+
+  const dateRange = useSelector(selectDateRange);
+
+  const { data, isLoading, refetch } = useGetCustomersQuery({
+    from: dateRange?.from,
+    to: dateRange?.to
+  });
   const [deleteCustomer] = useDeleteCustomerMutation();
   
   const [customerToEdit, setCustomerToEdit] = useState(null);

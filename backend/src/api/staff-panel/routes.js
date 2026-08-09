@@ -54,13 +54,23 @@ router.get('/applications', authenticate, requireRole(['staff', 'admin']), async
       customers(*, profiles!profile_id(full_name, phone, email)),
       dealers(*, profiles!profile_id(full_name, phone)),
       staff:staff!staff_id(*, profiles!profile_id(full_name, phone)),
-      assigned_staff:staff!assigned_staff_id(*, profiles!profile_id(full_name)),
+      assignees:loan_application_assignees!inner(staff_id, staff:staff_id(*, profiles!profile_id(full_name))),
       lenders(id, name)
     `, { count: 'exact' });
 
     // Restrict to ONLY applications assigned to this staff member
     if (staffId && req.user.role !== 'admin') {
-      query = query.eq('assigned_staff_id', staffId);
+      query = query.eq('loan_application_assignees.staff_id', staffId);
+    } else {
+      // For admin or no specific staff filter, use a standard join
+      query = supabase.from('loan_applications').select(`
+        *,
+        customers(*, profiles!profile_id(full_name, phone, email)),
+        dealers(*, profiles!profile_id(full_name, phone)),
+        staff:staff!staff_id(*, profiles!profile_id(full_name, phone)),
+        assignees:loan_application_assignees(staff:staff_id(*, profiles!profile_id(full_name))),
+        lenders(id, name)
+      `, { count: 'exact' });
     }
 
     if (from) query = query.gte('created_at', `${from}T00:00:00.000Z`);
@@ -82,7 +92,8 @@ router.get('/applications/:id', authenticate, requireRole(['staff', 'admin']), a
     const app = await loanSvc.getApplication(req.params.id);
     if (req.user.role !== 'admin') {
       const { data: staffData } = await supabase.from('staff').select('id').eq('profile_id', req.user.profileId).maybeSingle();
-      if (staffData?.id !== app.assigned_staff_id) {
+      const isAssigned = app.assignees?.some(a => a.staff_id === staffData?.id);
+      if (!isAssigned) {
          throw Object.assign(new Error('Access denied. This application is not assigned to you.'), { statusCode: 403 });
       }
     }

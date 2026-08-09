@@ -90,14 +90,21 @@ async function processWithdrawal({ requestId, adminProfileId, approved, rejectio
   return data;
 }
 
-async function listAllCommissions() {
-  const { data, error } = await supabase.from('commissions').select('*, dealers(business_name, profile_id), loan_applications(application_no)').order('created_at', { ascending: false });
+async function listAllCommissions({ startDate, endDate } = {}) {
+  let query = supabase.from('commissions').select('*, dealers(business_name, profile_id), loan_applications(application_no)').order('created_at', { ascending: false });
+  if (startDate) query = query.gte('created_at', startDate);
+  if (endDate) query = query.lte('created_at', endDate);
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 }
 
-async function listAllWithdrawals() {
-  const { data, error } = await supabase.from('withdrawal_requests').select('*, dealers(business_name)').order('created_at', { ascending: false });
+async function listAllWithdrawals({ status, startDate, endDate } = {}) {
+  let query = supabase.from('withdrawal_requests').select('*, dealers(business_name)').order('created_at', { ascending: false });
+  if (status) query = query.eq('status', status);
+  if (startDate) query = query.gte('created_at', startDate);
+  if (endDate) query = query.lte('created_at', endDate);
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 }

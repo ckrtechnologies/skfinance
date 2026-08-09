@@ -2,7 +2,8 @@
 
 import { useGetWithdrawalsQuery, useProcessWithdrawalMutation } from '@/store/api/adminApi';
 import { setHeaderInfo } from '@/store/slices/uiSlice';
-import { useDispatch } from 'react-redux';
+import { selectDateRange } from '@/store/slices/dateRangeSlice';
+import { useDispatch, useSelector } from 'react-redux';
 import { StatusBadge, LoadingRows, EmptyState, AmountCell } from '@/components/ui/Primitives';
 import ExportButtons from '@/components/ui/ExportButtons';
 import { useState, Suspense, useEffect } from 'react';
@@ -18,8 +19,14 @@ function WithdrawalsPageContent() {
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
   const [searchQuery, setSearchQuery] = useState('');
   const [modal, setModal] = useState(null);
+  
+  const dateRange = useSelector(selectDateRange);
 
-  const { data, isLoading, refetch } = useGetWithdrawalsQuery({ status: statusFilter || undefined });
+  const { data, isLoading, refetch } = useGetWithdrawalsQuery({ 
+    status: statusFilter || undefined,
+    from: dateRange?.from,
+    to: dateRange?.to
+  });
   const [processWithdrawal, { isLoading: processing }] = useProcessWithdrawalMutation();
   const rawWithdrawals = data?.data || [];
   

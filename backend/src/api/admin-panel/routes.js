@@ -20,6 +20,13 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 
 const router = express.Router();
 router.use(authenticate, roleGuard(['admin']));
 
+const getEndOfDay = (dateStr) => {
+  if (!dateStr) return undefined;
+  const d = new Date(dateStr);
+  d.setUTCHours(23, 59, 59, 999);
+  return d.toISOString();
+};
+
 // ── Dashboard ────────────────────────────────────────────────────────
 router.get('/dashboard', async (req, res, next) => {
   try {
@@ -33,9 +40,7 @@ router.get('/dashboard', async (req, res, next) => {
       queryDisbursed = queryDisbursed.gte('created_at', req.query.from);
     }
     if (req.query.to) {
-      const toDate = new Date(req.query.to);
-      toDate.setUTCHours(23, 59, 59, 999);
-      const toISO = toDate.toISOString();
+      const toISO = getEndOfDay(req.query.to);
       queryAll = queryAll.lte('created_at', toISO);
       queryApproved = queryApproved.lte('created_at', toISO);
       queryDisbursed = queryDisbursed.lte('created_at', toISO);
@@ -58,6 +63,8 @@ router.get('/applications', async (req, res, next) => {
       source: req.query.source,
       assignedStaffId: req.query.assigned_staff_id,
       unassigned: req.query.unassigned === 'true',
+      startDate: req.query.from,
+      endDate: getEndOfDay(req.query.to),
       limit: Number(req.query.limit) || 20, 
       offset: Number(req.query.offset) || 0 
     });
@@ -67,8 +74,8 @@ router.get('/applications', async (req, res, next) => {
 
 router.post('/applications/:id/assign', async (req, res, next) => {
   try {
-    const { staff_id } = req.body;
-    const result = await loanSvc.assignApplication(req.params.id, staff_id);
+    const { staff_ids } = req.body; // now expects an array
+    const result = await loanSvc.assignApplication(req.params.id, staff_ids, req.user?.profileId);
     sendSuccess(res, result);
   } catch (err) { next(err); }
 });
@@ -153,7 +160,12 @@ router.get('/lenders/:id/rules', async (req, res, next) => {
 // ── Dealers ───────────────────────────────────────────────────────────
 router.get('/dealers', async (req, res, next) => {
   try {
-    const { data, error } = await supabase.from('dealers').select('*, profiles!profile_id(full_name, phone, email, is_active)').order('created_at', { ascending: false });
+    const { from, to } = req.query;
+    let query = supabase.from('dealers').select('*, profiles!profile_id(full_name, phone, email, is_active)').order('created_at', { ascending: false });
+    if (from) query = query.gte('created_at', from);
+    if (to) query = query.lte('created_at', getEndOfDay(to));
+    
+    const { data, error } = await query;
     if (error) throw error;
     sendSuccess(res, data);
   } catch (err) { next(err); }
@@ -326,7 +338,12 @@ router.delete('/staff/:id', async (req, res, next) => {
 // ── Customers ──────────────────────────────────────────────────────────
 router.get('/customers', async (req, res, next) => {
   try {
-    const { data, error } = await supabase.from('customers').select('*, profiles(full_name, phone, email, is_active)').order('created_at', { ascending: false });
+    const { from, to } = req.query;
+    let query = supabase.from('customers').select('*, profiles(full_name, phone, email, is_active)').order('created_at', { ascending: false });
+    if (from) query = query.gte('created_at', from);
+    if (to) query = query.lte('created_at', getEndOfDay(to));
+    
+    const { data, error } = await query;
     if (error) throw error;
     sendSuccess(res, data);
   } catch (err) { next(err); }
@@ -402,14 +419,14 @@ router.delete('/customers/:id', async (req, res, next) => {
 // ── Commissions & Payouts ─────────────────────────────────────────────
 router.get('/commissions', async (req, res, next) => {
   try {
-    const commissions = await walletSvc.listAllCommissions();
+    const commissions = await walletSvc.listAllCommissions({ startDate: req.query.from, endDate: getEndOfDay(req.query.to) });
     sendSuccess(res, commissions);
   } catch (err) { next(err); }
 });
 
 router.get('/withdrawal-requests', async (req, res, next) => {
   try {
-    const wrs = await walletSvc.listAllWithdrawals();
+    const wrs = await walletSvc.listAllWithdrawals({ status: req.query.status, startDate: req.query.from, endDate: getEndOfDay(req.query.to) });
     sendSuccess(res, wrs);
   } catch (err) { next(err); }
 });
@@ -512,7 +529,8 @@ router.get('/dealer-onboarding', async (req, res, next) => {
     const limit = parseInt(req.query.limit, 10) || 20;
     const offset = parseInt(req.query.offset, 10) || 0;
 
-    const { data: dealers, error, count } = await supabase
+    const { from, to } = req.query;
+    let query = supabase
       .from('dealers')
       .select(`
         id, onboarding_status, onboarding_submitted_at, onboarding_rejection_reason,
@@ -521,8 +539,12 @@ router.get('/dealer-onboarding', async (req, res, next) => {
         profiles!profile_id!inner(full_name, phone, email, created_at)
       `, { count: 'exact' })
       .eq('onboarding_status', status)
-      .order('onboarding_submitted_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+      .order('onboarding_submitted_at', { ascending: false });
+      
+    if (from) query = query.gte('onboarding_submitted_at', from);
+    if (to) query = query.lte('onboarding_submitted_at', getEndOfDay(to));
+    
+    const { data: dealers, error, count } = await query.range(offset, offset + limit - 1);
 
     if (error) throw error;
 

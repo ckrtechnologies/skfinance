@@ -221,6 +221,15 @@ ALTER TABLE eligibility_evaluations
   ADD CONSTRAINT fk_eligibility_loan_application
   FOREIGN KEY (loan_application_id) REFERENCES loan_applications(id) ON DELETE RESTRICT;
 
+-- loan_application_assignees — Multiple staff assignment join table
+CREATE TABLE loan_application_assignees (
+  loan_application_id UUID NOT NULL REFERENCES loan_applications(id) ON DELETE CASCADE,
+  staff_id UUID NOT NULL REFERENCES staff(id) ON DELETE CASCADE,
+  assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  assigned_by_profile_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  PRIMARY KEY (loan_application_id, staff_id)
+);
+
 -- loan_stage_entries — APPEND-ONLY stage ledger per loan file
 CREATE TABLE loan_stage_entries (
   id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),

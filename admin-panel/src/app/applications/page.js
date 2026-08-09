@@ -173,8 +173,11 @@ function ApplicationsPageContent() {
                     <td style={{ textTransform: 'capitalize' }} className="font-semibold">{app.current_stage?.replace(/_/g, ' ')}</td>
                     <td><StatusBadge status={app.status} /></td>
                     <td>
-                      {app.assigned_staff ? (
-                        <span className="text-sm font-medium">{app.assigned_staff.profiles?.full_name}</span>
+                      {app.assignees && app.assignees.length > 0 ? (
+                        <span className="text-sm font-medium">
+                          {app.assignees[0].staff?.profiles?.full_name}
+                          {app.assignees.length > 1 && <span className="text-xs text-muted-foreground ml-1">(+{app.assignees.length - 1})</span>}
+                        </span>
                       ) : (
                         <span className="text-xs text-muted-foreground italic">Unassigned</span>
                       )}
