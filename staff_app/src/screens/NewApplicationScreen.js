@@ -85,6 +85,7 @@ export default function NewApplicationScreen({ navigation }) {
             if (parsed.digilockerReady) setDigilockerReady(parsed.digilockerReady);
             if (parsed.eligibilityResults) setEligibilityResults(parsed.eligibilityResults);
             if (parsed.requiredDocs) setRequiredDocs(parsed.requiredDocs);
+            if (parsed.digilockerData) setDigilockerData(parsed.digilockerData);
             setHasRestoredDraft(true);
           }
         }
@@ -104,6 +105,7 @@ export default function NewApplicationScreen({ navigation }) {
             formData,
             step,
             digilockerReady,
+            digilockerData,
             eligibilityResults,
             requiredDocs
           }));
@@ -113,7 +115,24 @@ export default function NewApplicationScreen({ navigation }) {
       }
     };
     saveDraft();
-  }, [formData, step, digilockerReady, eligibilityResults, requiredDocs]);
+  }, [formData, step, digilockerReady, digilockerData, eligibilityResults, requiredDocs]);
+
+  const handlePreviewLink = async (url) => {
+    try {
+      if (await InAppBrowser.isAvailable()) {
+        await InAppBrowser.open(url, {
+          showTitle: true,
+          enableUrlBarHiding: true,
+          enableDefaultShare: true,
+          forceCloseOnRedirection: false,
+        });
+      } else {
+        await Linking.openURL(url);
+      }
+    } catch (e) {
+      showAlert('Error', 'Could not open preview link');
+    }
+  };
 
   const handleClearDraft = async (silent = false) => {
     try {
@@ -342,8 +361,6 @@ export default function NewApplicationScreen({ navigation }) {
         [key]: [...currentList, { id: fileId, status: 'pending', name: fileName, fileUri, fileType, doc_party: doc.party, doc_type: doc.doc_type }] 
       };
     });
-    
-    setShowDocPicker(false);
   };
 
   const handleFinalSubmit = async () => {
@@ -482,35 +499,46 @@ export default function NewApplicationScreen({ navigation }) {
 
   const handleCameraPickModal = async () => {
     if (!activeDocRequirement) return;
+    setShowDocPicker(false);
     try {
       const result = await launchCamera({ mediaType: 'photo', cameraType: 'back', quality: 0.8 });
       if (result.assets?.length) {
         const asset = result.assets[0];
         uploadFile({ uri: asset.uri, type: asset.type, name: asset.fileName || 'photo.jpg' }, activeDocRequirement);
+      } else if (result.errorMessage) {
+        showAlert('Camera Error', result.errorMessage);
       }
-    } catch (err) { console.log(err); }
+    } catch (err) { showAlert('Error', 'Could not open camera'); }
   };
 
   const handleGalleryPickModal = async () => {
     if (!activeDocRequirement) return;
+    setShowDocPicker(false);
     try {
       const result = await launchImageLibrary({ mediaType: 'photo', quality: 0.8 });
       if (result.assets?.length) {
         const asset = result.assets[0];
         uploadFile({ uri: asset.uri, type: asset.type, name: asset.fileName || 'photo.jpg' }, activeDocRequirement);
+      } else if (result.errorMessage) {
+        showAlert('Gallery Error', result.errorMessage);
       }
-    } catch (err) { console.log(err); }
+    } catch (err) { showAlert('Error', 'Could not open gallery'); }
   };
 
   const handleDocumentPickModal = async () => {
     if (!activeDocRequirement) return;
+    setShowDocPicker(false);
     try {
       const results = await pick({ type: [types.pdf, types.images], copyTo: 'cachesDirectory' });
       if (results && results[0]) {
         const file = results[0];
         uploadFile({ uri: file.fileCopyUri || file.uri, type: file.type, name: file.name }, activeDocRequirement);
       }
-    } catch (err) { console.log(err); }
+    } catch (err) { 
+      if (!err.message?.includes('cancel')) {
+        showAlert('Error', 'Could not open document picker'); 
+      }
+    }
   };
 
   const handleStartDigilocker = async () => {
@@ -977,7 +1005,7 @@ export default function NewApplicationScreen({ navigation }) {
                 {/* Document Previews */}
                 <XStack space="$2" flexWrap="wrap">
                   {digilockerData.aadhar_filename && (
-                    <TouchableOpacity onPress={() => Linking.openURL(digilockerData.aadhar_filename)}>
+                    <TouchableOpacity onPress={() => handlePreviewLink(digilockerData.aadhar_filename)}>
                       <XStack backgroundColor="#E0F2FE" px="$2" py="$1" borderRadius="$2" ai="center">
                         <FileText size={12} color="#0284C7" />
                         <SizableText fontSize={11} color="#0284C7" ml="$1" fontWeight="bold">Aadhaar PDF</SizableText>
@@ -985,7 +1013,7 @@ export default function NewApplicationScreen({ navigation }) {
                     </TouchableOpacity>
                   )}
                   {digilockerData.pan_image_path && (
-                    <TouchableOpacity onPress={() => Linking.openURL(digilockerData.pan_image_path)}>
+                    <TouchableOpacity onPress={() => handlePreviewLink(digilockerData.pan_image_path)}>
                       <XStack backgroundColor="#E0F2FE" px="$2" py="$1" borderRadius="$2" ai="center">
                         <FileText size={12} color="#0284C7" />
                         <SizableText fontSize={11} color="#0284C7" ml="$1" fontWeight="bold">PAN PDF</SizableText>
@@ -993,7 +1021,7 @@ export default function NewApplicationScreen({ navigation }) {
                     </TouchableOpacity>
                   )}
                   {digilockerData.aadhar_img_filename && (
-                    <TouchableOpacity onPress={() => Linking.openURL(digilockerData.aadhar_img_filename)}>
+                    <TouchableOpacity onPress={() => handlePreviewLink(digilockerData.aadhar_img_filename)}>
                       <XStack backgroundColor="#E0F2FE" px="$2" py="$1" borderRadius="$2" ai="center">
                         <User size={12} color="#0284C7" />
                         <SizableText fontSize={11} color="#0284C7" ml="$1" fontWeight="bold">Photo</SizableText>

@@ -89,22 +89,6 @@ export const verifyOtpUser = createAsyncThunk(
   }
 );
 
-export const fetchOnboardingStatus = createAsyncThunk(
-  'auth/fetchOnboardingStatus',
-  async (_, { getState, rejectWithValue }) => {
-    try {
-      const { token } = getState().auth;
-      const response = await fetch(`${getApiUrl()}/dealer/onboarding/status`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-      if (!response.ok) return rejectWithValue('Failed to fetch onboarding status');
-      return data.data || data;
-    } catch (error) {
-      return rejectWithValue(error.message);
-    }
-  }
-);
 
 export const logoutUser = createAsyncThunk(
   'auth/logoutUser',
@@ -129,7 +113,6 @@ const initialState = {
   user: null,
   token: null,
   isAuthenticated: false,
-  onboarding_status: null,  // 'pending' | 'under_review' | 'approved' | 'rejected'
   loading: true,
   isInitialized: false,
   error: null,
@@ -164,10 +147,6 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.token = action.payload.token;
         state.user = action.payload.user;
-        state.onboarding_status = action.payload.user?.onboarding_status || null;
-      })
-      .addCase(fetchOnboardingStatus.fulfilled, (state, action) => {
-        state.onboarding_status = action.payload.onboarding_status || state.onboarding_status;
       })
       .addCase(verifyOtpUser.rejected, (state, action) => {
         state.loading = false;

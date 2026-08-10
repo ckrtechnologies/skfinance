@@ -184,6 +184,7 @@ export default function ApplicationDetailsScreen({ route, navigation }) {
   };
 
   const handleCameraPick = async () => {
+    setShowUploadModal(false);
     try {
       const result = await launchCamera({ mediaType: 'photo', cameraType: 'back', quality: 0.8 });
       if (result.assets?.length) {
@@ -194,6 +195,7 @@ export default function ApplicationDetailsScreen({ route, navigation }) {
   };
 
   const handleGalleryPick = async () => {
+    setShowUploadModal(false);
     try {
       const result = await launchImageLibrary({ mediaType: 'photo', quality: 0.8 });
       if (result.assets?.length) {
@@ -204,6 +206,7 @@ export default function ApplicationDetailsScreen({ route, navigation }) {
   };
 
   const handleFilePick = async () => {
+    setShowUploadModal(false);
     try {
       const results = await pick({ type: [types.pdf, types.images] });
       if (results && results[0]) {

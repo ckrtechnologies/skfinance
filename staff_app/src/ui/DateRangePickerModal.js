@@ -20,14 +20,14 @@ export const DATE_PRESETS = [
 ];
 
 export function getFormattedDateRangeText(activePreset, dateRange) {
+  if (activePreset && activePreset !== 'Custom') {
+    return activePreset;
+  }
   if (dateRange?.start && dateRange?.end) {
     const dStart = new Date(dateRange.start);
     const dEnd = new Date(dateRange.end);
     const opt = { day: 'numeric', month: 'short' };
     return `${dStart.toLocaleDateString('en-US', opt)} - ${dEnd.toLocaleDateString('en-US', opt)}`;
-  }
-  if (activePreset && activePreset !== 'All Time') {
-    return activePreset;
   }
   return activePreset || 'Filter Date';
 }

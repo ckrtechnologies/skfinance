@@ -20,41 +20,19 @@ import ApplicationsScreen from './src/screens/ApplicationsScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import NewApplicationScreen from './src/screens/NewApplicationScreen';
 import ApplicationDetailsScreen from './src/screens/ApplicationDetailsScreen';
-import WalletScreen from './src/screens/WalletScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
-import OnboardingScreen from './src/screens/OnboardingScreen';
-import OnboardingPendingScreen from './src/screens/OnboardingPendingScreen';
-import OnboardingRejectedScreen from './src/screens/OnboardingRejectedScreen';
-
 const Stack = createNativeStackNavigator();
 import DrawerNavigator from './src/navigation/DrawerNavigator';
-import OnboardingWelcomeScreen from './src/screens/OnboardingWelcomeScreen';
-import AnimatedSplash from './src/ui/AnimatedSplash';
 
 function RootNavigator() {
   const dispatch = useDispatch();
-  const { isAuthenticated, loading, onboarding_status, isInitialized } = useSelector(state => state.auth);
-  const [showOnboardingForm, setShowOnboardingForm] = React.useState(false);
-  const [hasSeenWelcome, setHasSeenWelcome] = React.useState(false);
-  const [isSplashComplete, setIsSplashComplete] = React.useState(false);
+  const { isAuthenticated, loading, isInitialized } = useSelector(state => state.auth);
 
   useEffect(() => {
     dispatch(checkAuthStatus());
   }, [dispatch]);
 
-  // Once authenticated, mark welcome as seen so it doesn't show on logout
-  useEffect(() => {
-    if (isAuthenticated) {
-      setHasSeenWelcome(true);
-    }
-  }, [isAuthenticated]);
-
-  // Keep splash active until the cinematic animation finishes AND auth is initialized
-  const splash = (!isSplashComplete || !isInitialized) ? (
-    <AnimatedSplash onFinish={() => setIsSplashComplete(true)} />
-  ) : null;
-
-  if (!isInitialized) return splash;
+  if (!isInitialized) return null;
 
   const brandHeaderOptions = {
     headerShown: true,
@@ -75,21 +53,7 @@ function RootNavigator() {
     <>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
-          !hasSeenWelcome ? (
-            <Stack.Screen name="Welcome">
-              {props => <OnboardingWelcomeScreen {...props} onFinish={() => setHasSeenWelcome(true)} />}
-            </Stack.Screen>
-          ) : (
             <Stack.Screen name="Login" component={LoginScreen} />
-          )
-        ) : onboarding_status !== 'approved' && onboarding_status !== null ? (
-          <Stack.Screen name="Onboarding">
-            {props => {
-              if (onboarding_status === 'under_review') return <OnboardingPendingScreen {...props} />;
-              if (onboarding_status === 'rejected' && !showOnboardingForm) return <OnboardingRejectedScreen {...props} onResubmit={() => setShowOnboardingForm(true)} />;
-              return <OnboardingScreen {...props} onSuccess={() => setShowOnboardingForm(false)} />;
-            }}
-          </Stack.Screen>
         ) : (
           <>
             <Stack.Screen name="Main" component={DrawerNavigator} />
@@ -99,7 +63,6 @@ function RootNavigator() {
           </>
         )}
       </Stack.Navigator>
-      {splash}
     </>
   );
 }

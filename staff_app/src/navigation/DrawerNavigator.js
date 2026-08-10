@@ -13,7 +13,7 @@ import DashboardScreen from '../screens/DashboardScreen';
 import { useAppAlert } from '../context/AlertContext';
 import ApplicationsScreen from '../screens/ApplicationsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import WalletScreen from '../screens/WalletScreen';
+
 
 const Drawer = createDrawerNavigator();
 const Tab = createBottomTabNavigator();
@@ -45,11 +45,6 @@ function MainTabs() {
         name="ApplicationsTab" 
         component={ApplicationsScreen} 
         options={{ title: 'Applications', tabBarIcon: ({ color, size }) => <FileText color={color} size={size} /> }}
-      />
-      <Tab.Screen 
-        name="WalletTab" 
-        component={WalletScreen} 
-        options={{ title: 'Wallet', tabBarIcon: ({ color, size }) => <Wallet color={color} size={size} /> }}
       />
       <Tab.Screen 
         name="ProfileTab" 
@@ -131,13 +126,6 @@ function CustomDrawerContent(props) {
             <Home color="#3B82F6" size={20} />
           </View>
           <Text style={{ flex: 1, color: isDarkMode ? '#FFF' : '#1E293B', fontWeight: '600', fontSize: 14 }}>Dashboard</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => navigateAndClose('MainTabs', { screen: 'WalletTab' })} style={{ paddingHorizontal: 16, paddingVertical: 8, flexDirection: 'row', alignItems: 'center' }}>
-          <View style={{ width: 28, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-            <Wallet color="#10B981" size={20} />
-          </View>
-          <Text style={{ flex: 1, color: isDarkMode ? '#FFF' : '#1E293B', fontWeight: '600', fontSize: 14 }}>Wallet & Earnings</Text>
         </TouchableOpacity>
 
         <Separator marginVertical="$1" borderColor={isDarkMode ? '#333' : '#EEE'} />

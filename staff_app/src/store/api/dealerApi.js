@@ -15,8 +15,8 @@ const getApiUrl = () => {
 const BASE_URL = getApiUrl();
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: `${BASE_URL}/dealer`,
-  prepareHeaders: async (headers) => {
+  baseUrl: `${BASE_URL}/staff-app`,
+  prepareHeaders: async (headers, { getState }) => {
     try {
       const credentials = await Keychain.getGenericPassword();
       if (credentials) {
@@ -43,7 +43,7 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
 export const dealerApi = createApi({
   reducerPath: 'dealerApi',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Profile', 'Wallet', 'Commissions', 'Applications'],
+  tagTypes: ['Profile', 'Applications'],
   endpoints: (builder) => ({
     getProfile: builder.query({
       query: () => '/profile',
@@ -72,41 +72,7 @@ export const dealerApi = createApi({
         method: 'DELETE',
       }),
     }),
-    getWallet: builder.query({
-      query: (params) => {
-        let qs = '';
-        if (params?.startDate) qs += `?startDate=${params.startDate}`;
-        if (params?.endDate) qs += `${qs ? '&' : '?'}endDate=${params.endDate}`;
-        return `/wallet${qs}`;
-      },
-      providesTags: ['Wallet'],
-    }),
-    getCommissions: builder.query({
-      query: (params) => {
-        let qs = '';
-        if (params?.startDate) qs += `?startDate=${params.startDate}`;
-        if (params?.endDate) qs += `${qs ? '&' : '?'}endDate=${params.endDate}`;
-        return `/commissions${qs}`;
-      },
-      providesTags: ['Commissions'],
-    }),
-    requestWithdrawal: builder.mutation({
-      query: (body) => ({
-        url: '/withdrawal-requests',
-        method: 'POST',
-        body,
-      }),
-      invalidatesTags: ['Wallet', 'Commissions'],
-    }),
-    getWithdrawalRequests: builder.query({
-      query: (params) => {
-        let qs = '';
-        if (params?.startDate) qs += `?startDate=${params.startDate}`;
-        if (params?.endDate) qs += `${qs ? '&' : '?'}endDate=${params.endDate}`;
-        return `/withdrawal-requests${qs}`;
-      },
-      providesTags: ['Wallet'],
-    }),
+
     getNotifications: builder.query({
       query: () => '/notifications',
     }),
@@ -132,10 +98,10 @@ export const dealerApi = createApi({
       },
       merge: (currentCache, newItems, { arg }) => {
         if (!arg || arg.page === 1 || arg.page === undefined) return newItems;
-        if (newItems && Array.isArray(newItems.data)) {
-          if (!currentCache.data) currentCache.data = [];
-          currentCache.data.push(...newItems.data);
-          currentCache.count = newItems.count;
+        if (newItems && newItems.data && Array.isArray(newItems.data.data)) {
+          if (!currentCache.data) currentCache.data = { data: [], count: 0 };
+          currentCache.data.data.push(...newItems.data.data);
+          currentCache.data.count = newItems.data.count;
         }
       },
       forceRefetch({ currentArg, previousArg }) {
@@ -204,16 +170,12 @@ export const dealerApi = createApi({
 export const {
   useGetProfileQuery,
   useUpdateProfileMutation,
-  useGetWalletQuery,
   useGetBannersQuery,
-  useGetCommissionsQuery,
-  useRequestWithdrawalMutation,
   useGetApplicationsQuery,
   useGetApplicationDetailsQuery,
   useGetStageEntriesQuery,
   useSubmitApplicationMutation,
   useResubmitClarificationMutation,
-  useGetWithdrawalRequestsQuery,
   useGetNotificationsQuery,
   useCheckEligibilityMutation,
   useFetchCibilMutation,

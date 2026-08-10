@@ -1,6 +1,6 @@
 'use client';
 
-import { useGetApplicationQuery, useGetStageEntriesQuery, useAddStageEntryMutation, useVerifyDocumentMutation, useGetLendersQuery } from '@/store/api/staffApi';
+import { useGetApplicationQuery, useGetStageEntriesQuery, useAddStageEntryMutation, useVerifyDocumentMutation, useGetLendersQuery, useDisburseMutation } from '@/store/api/staffApi';
 import { StatusBadge, AmountCell, LoadingRows } from '@/components/ui/Primitives';
 import { useState, useEffect, use } from 'react';
 import { useDispatch } from 'react-redux';
@@ -43,6 +43,7 @@ export default function ApplicationDetailsPage({ params }) {
   const [verifyDocument, { isLoading: verifyingDoc }] = useVerifyDocumentMutation();
   const { data: lendersRes } = useGetLendersQuery();
   const activeLenders = lendersRes?.data?.filter(l => l.is_active) || [];
+  const [disburse, { isLoading: disbursing }] = useDisburseMutation();
 
   const [modal, setModal] = useState(null); // 'stage', 'disburse', 'reapprove'
   const [stageNotes, setStageNotes] = useState('');
@@ -51,6 +52,7 @@ export default function ApplicationDetailsPage({ params }) {
   const [stageAction, setStageAction] = useState('advance'); // 'advance', 'clarification', 'reject'
   const [targetStage, setTargetStage] = useState('');
   const [utr, setUtr] = useState('');
+  const [disbursedAmount, setDisbursedAmount] = useState('');
 
   // Active Tab View State: 'docs', 'financial', 'customer'
   const [activeTab, setActiveTab] = useState('docs');
@@ -174,9 +176,10 @@ export default function ApplicationDetailsPage({ params }) {
   }
 
   async function handleDisburse() {
-    await disburse({ id, utr_number: utr });
+    await disburse({ id, utr_number: utr, disbursed_amount: parseFloat(disbursedAmount) });
     setModal(null);
     setUtr('');
+    setDisbursedAmount('');
   }
 
   async function handleReApprove() {
@@ -886,13 +889,19 @@ export default function ApplicationDetailsPage({ params }) {
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <h3 className="text-base font-bold mb-3">Mark Loan as Disbursed</h3>
             <p className="text-xs text-muted mb-4">This will finalize the loan and credit any applicable dealer commissions.</p>
-            <div className="field mb-4">
-              <label className="text-xs font-semibold mb-1 block">Bank UTR Number *</label>
-              <input className="input w-full" value={utr} onChange={e => setUtr(e.target.value)} placeholder="e.g. HDFC123456789" />
+            <div className="space-y-4 mb-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">Final Disbursed Amount (₹)</label>
+                <input type="number" className="input" placeholder="e.g. 50000" value={disbursedAmount} onChange={e => setDisbursedAmount(e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">Transaction UTR / Ref Number</label>
+                <input type="text" className="input" placeholder="e.g. UTR123456789" value={utr} onChange={e => setUtr(e.target.value)} />
+              </div>
             </div>
             <div className="flex justify-end gap-2 mt-5">
               <button className="btn btn-secondary btn-sm" onClick={() => setModal(null)}>Cancel</button>
-              <button className="btn btn-primary btn-sm" onClick={handleDisburse} disabled={disbursing || !utr}>{disbursing ? 'Processing...' : 'Confirm Disbursement'}</button>
+              <button className="btn btn-primary btn-sm" onClick={handleDisburse} disabled={disbursing || !utr || !disbursedAmount}>{disbursing ? 'Processing...' : 'Confirm Disbursement'}</button>
             </div>
           </div>
         </div>

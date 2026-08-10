@@ -175,8 +175,14 @@ async function listApplications({ status, stage, dealerId, staffId, customerId, 
     }
   }
   if (customerId) query = query.eq('customer_id', customerId);
-  if (startDate) query = query.gte('created_at', startDate);
-  if (endDate) query = query.lte('created_at', endDate);
+  if (startDate) {
+    const parsedStart = startDate.includes('T') ? startDate.split('T')[0] : startDate;
+    query = query.gte('created_at', `${parsedStart}T00:00:00.000Z`);
+  }
+  if (endDate) {
+    const parsedEnd = endDate.includes('T') ? endDate.split('T')[0] : endDate;
+    query = query.lte('created_at', `${parsedEnd}T23:59:59.999Z`);
+  }
 
   if (searchQuery) {
     const [{ data: c1 }, { data: c2 }] = await Promise.all([

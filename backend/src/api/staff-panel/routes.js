@@ -146,6 +146,20 @@ router.patch('/documents/:doc_id/verify', authenticate, requireRole(['staff', 'a
   } catch (err) { next(err); }
 });
 
+router.post('/applications/:id/disburse', authenticate, requireRole(['staff', 'admin']), async (req, res, next) => {
+  try {
+    const result = await loanSvc.disburseLoan({ 
+      loanApplicationId: req.params.id, 
+      adminProfileId: req.user.profileId, 
+      disbursedAmount: req.body.disbursed_amount, 
+      remarks: req.body.utr_number ? `UTR: ${req.body.utr_number}` : '', 
+      stageData: { utr: req.body.utr_number }, 
+      ninetyDayDays: 90 
+    });
+    sendSuccess(res, result);
+  } catch (err) { next(err); }
+});
+
 
 router.get('/lenders', authenticate, requireRole(['staff', 'admin']), async (req, res, next) => {
   try {

@@ -99,6 +99,7 @@ export default function ProfileScreen() {
   };
 
   const handleCameraLaunch = async () => {
+    setIsAvatarModalOpen(false);
     try {
       const result = await launchCamera({ mediaType: 'photo', quality: 0.8 });
       if (result.didCancel || result.errorCode) return;
@@ -109,6 +110,7 @@ export default function ProfileScreen() {
   };
 
   const handleLibraryLaunch = async () => {
+    setIsAvatarModalOpen(false);
     try {
       const result = await launchImageLibrary({ mediaType: 'photo', quality: 0.8 });
       if (result.didCancel || result.errorCode) return;

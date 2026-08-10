@@ -54,7 +54,7 @@ export default function LoginScreen() {
             style={{ width: 80, height: 80, borderRadius: 18, marginBottom: 12 }} 
             resizeMode="cover" 
           />
-          <H2 color={colors.brandBlue} fontWeight="bold">Shreeja Dealers</H2>
+          <H2 color={colors.brandBlue} fontWeight="bold">Shreeja Staff</H2>
           <Paragraph color={colors.textMutedLight || '#64748B'}>
             {step === 'request' ? 'Sign in with your phone or email' : 'Enter the 6-digit OTP sent to you'}
           </Paragraph>

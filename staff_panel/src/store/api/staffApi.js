@@ -85,5 +85,6 @@ export const {
   useVerifyDocumentMutation,
   useGetProfileQuery,
   useChangePasswordMutation,
+  useDisburseMutation,
   useGetLendersQuery,
 } = staffApi;
