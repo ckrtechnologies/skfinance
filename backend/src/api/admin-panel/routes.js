@@ -141,6 +141,20 @@ router.get('/applications/:id/export-documents', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.patch('/documents/:doc_id/verify', async (req, res, next) => {
+  try {
+    const { data, error } = await supabase
+      .from('documents')
+      .update({ verified: true, updated_at: new Date().toISOString() })
+      .eq('id', req.params.doc_id)
+      .select()
+      .single();
+    if (error) throw error;
+    sendSuccess(res, data);
+  } catch (err) { next(err); }
+});
+
+
 // ── Lenders (A5, A6, A7) ─────────────────────────────────────────────
 router.get('/lenders', async (req, res, next) => {
   try {
@@ -711,4 +725,48 @@ router.delete('/banners/:id', async (req, res, next) => {
     sendSuccess(res, { deleted: true });
   } catch (err) { next(err); }
 });
+// ── Leads ────────────────────────────────────────────────────────
+router.get('/leads', async (req, res, next) => {
+  try {
+    let query = supabase.from('leads').select('*').order('created_at', { ascending: false });
+    
+    if (req.query.from) query = query.gte('created_at', req.query.from);
+    if (req.query.to) query = query.lte('created_at', getEndOfDay(req.query.to));
+    
+    // Default limit/offset for pagination (if needed)
+    const limit = parseInt(req.query.limit, 10) || 1000;
+    const offset = parseInt(req.query.offset, 10) || 0;
+    query = query.range(offset, offset + limit - 1);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    
+    sendSuccess(res, data);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.patch('/leads/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    
+    if (!status) return res.status(400).json({ error: 'Status is required' });
+
+    const { data, error } = await supabase
+      .from('leads')
+      .update({ status })
+      .eq('id', id)
+      .select();
+      
+    if (error) throw error;
+    if (data.length === 0) return res.status(404).json({ error: 'Lead not found' });
+    
+    sendSuccess(res, { message: 'Lead updated', lead: data[0] });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

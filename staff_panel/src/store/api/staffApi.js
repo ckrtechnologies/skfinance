@@ -44,6 +44,13 @@ export const staffApi = createApi({
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'Applications', id }, 'Applications'],
     }),
+    verifyDocument: builder.mutation({
+      query: (doc_id) => ({
+        url: `/documents/${doc_id}/verify`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: ['Applications'],
+    }),
     getProfile: builder.query({
       query: () => '/auth/me',
       providesTags: ['Profile'],
@@ -54,6 +61,14 @@ export const staffApi = createApi({
         method: 'POST',
         body,
       }),
+    }),
+    disburse: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `/applications/${id}/disburse`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: (result, error, { id }) => [{ type: 'Applications', id }, 'Applications'],
     }),
     getLenders: builder.query({
       query: () => '/lenders',
@@ -67,6 +82,7 @@ export const {
   useGetApplicationQuery,
   useGetStageEntriesQuery,
   useAddStageEntryMutation,
+  useVerifyDocumentMutation,
   useGetProfileQuery,
   useChangePasswordMutation,
   useGetLendersQuery,

@@ -20,6 +20,7 @@ import {
   IconUserCheck,
   IconPhoto,
   IconBrandWhatsapp,
+  IconAddressBook,
 } from '@tabler/icons-react';
 
 const NAV = [
@@ -38,6 +39,7 @@ const NAV = [
       { href: '/dealer-onboarding', label: 'Dealer Onboarding', icon: IconUserCheck,     color: '#f97316', badge: true },
       { href: '/staff',             label: 'Staff',             icon: IconUsers,         color: '#ec4899' },
       { href: '/customers',         label: 'Customers',         icon: IconUsers,         color: '#14b8a6' },
+      { href: '/leads',             label: 'Leads',             icon: IconAddressBook,   color: '#8b5cf6' },
       { href: '/whatsapp',          label: 'WhatsApp Campaigns',icon: IconBrandWhatsapp, color: '#25D366' },
     ],
   },

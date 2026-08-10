@@ -232,7 +232,7 @@ async function addStageEntry({ loanApplicationId, stage, enteredByProfileId, out
     mergedData = { ...mergedData, query_id: crypto.randomUUID(), resolved: false };
   }
 
-  // Block advancement if there are unresolved queries
+  // Block advancement if there are unresolved queries or unverified documents
   if (dbOutcome === 'pass') {
     const { data: unresolvedQueries } = await supabase.from('loan_stage_entries')
       .select('id')
@@ -242,6 +242,15 @@ async function addStageEntry({ loanApplicationId, stage, enteredByProfileId, out
 
     if (unresolvedQueries && unresolvedQueries.length > 0) {
       throw new Error('Cannot advance stage: There are unresolved clarification queries.');
+    }
+
+    const { data: unverifiedDocs } = await supabase.from('documents')
+      .select('id')
+      .eq('application_id', loanApplicationId)
+      .eq('verified', false);
+
+    if (unverifiedDocs && unverifiedDocs.length > 0) {
+      throw new Error('Cannot advance stage: Not all uploaded documents have been verified.');
     }
   }
 

@@ -8,7 +8,8 @@ import {
   useReApproveMutation, 
   useGetLendersQuery,
   useGetStaffQuery,
-  useAssignApplicationMutation
+  useAssignApplicationMutation,
+  useVerifyDocumentMutation
 } from '@/store/api/adminApi';
 import { StatusBadge, AmountCell, LoadingRows } from '@/components/ui/Primitives';
 import { useState, useEffect, use } from 'react';
@@ -53,6 +54,7 @@ export default function ApplicationDetailsPage({ params }) {
   const [disburse, { isLoading: disbursing }] = useDisburseMutation();
   const [reApprove, { isLoading: reApproving }] = useReApproveMutation();
   const [assignApplication, { isLoading: assigning }] = useAssignApplicationMutation();
+  const [verifyDocument, { isLoading: verifyingDoc }] = useVerifyDocumentMutation();
   const { data: lendersRes } = useGetLendersQuery();
   const activeLenders = lendersRes?.data?.filter(l => l.is_active) || [];
 
@@ -526,16 +528,30 @@ export default function ApplicationDetailsPage({ params }) {
                                   <span style={{ fontSize: '10px', fontWeight: 700, color: doc.verified ? '#10B981' : '#F59E0B' }}>
                                     {doc.verified ? '✓ Verified' : '⏳ Pending Review'}
                                   </span>
-                                  {doc.cdn_url ? (
-                                    <a
-                                      href={doc.cdn_url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      style={{ fontSize: '11px', fontWeight: 700, color: '#2563EB', textDecoration: 'none', background: 'rgba(37,99,235,0.1)', padding: '3px 8px', borderRadius: '6px' }}
-                                    >
-                                      View File ↗
-                                    </a>
-                                  ) : null}
+                                  <div style={{ display: 'flex', gap: '8px' }}>
+                                    {!doc.verified && (
+                                      <button
+                                        onClick={() => verifyDocument(doc.id)}
+                                        disabled={verifyingDoc}
+                                        style={{
+                                          fontSize: '11px', fontWeight: 700, color: '#059669', background: 'rgba(16, 185, 129, 0.1)',
+                                          padding: '3px 8px', borderRadius: '6px', border: 'none', cursor: 'pointer'
+                                        }}
+                                      >
+                                        {verifyingDoc ? 'Verifying...' : 'Verify'}
+                                      </button>
+                                    )}
+                                    {doc.cdn_url ? (
+                                      <a
+                                        href={doc.cdn_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{ fontSize: '11px', fontWeight: 700, color: '#2563EB', textDecoration: 'none', background: 'rgba(37,99,235,0.1)', padding: '3px 8px', borderRadius: '6px' }}
+                                      >
+                                        View File ↗
+                                      </a>
+                                    ) : null}
+                                  </div>
                                 </div>
                               </div>
                             );
@@ -829,9 +845,9 @@ export default function ApplicationDetailsPage({ params }) {
                       ) : null}
                       
                       {/* Render nested responses if any */}
-                      {responseMap[stg.id] && (
+                      {responseMap[stg.data?.query_id || stg.id] && (
                         <div>
-                          {responseMap[stg.id].map(renderResponse)}
+                          {responseMap[stg.data?.query_id || stg.id].map(renderResponse)}
                         </div>
                       )}
                       <p style={{ fontSize: '10px', color: 'var(--color-text-3)', marginTop: '6px' }}>— by {stgUser}</p>

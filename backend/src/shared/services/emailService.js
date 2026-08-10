@@ -53,6 +53,62 @@ async function sendOtpEmail({ email, otp, name = 'User' }) {
   }
 }
 
+async function sendLeadEmail({ name, email, phone, city, message }) {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.warn('[EMAIL] SMTP credentials not configured. Skipping email dispatch.');
+    return;
+  }
+
+  const adminEmail = process.env.SMTP_USER; // Send to the owner/admin
+
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 8px;">
+      <h2 style="color: #0A2540; border-bottom: 2px solid #0070F3; padding-bottom: 10px;">New Website Lead Received</h2>
+      <p style="color: #333; font-size: 16px;">A new enquiry has been submitted through the website contact form.</p>
+      
+      <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; width: 120px; color: #555;">Name:</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; color: #111;">${name || 'N/A'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Email:</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; color: #111;">${email || 'N/A'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Phone:</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; color: #111;">${phone || 'N/A'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">City:</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; color: #111;">${city || 'N/A'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Message:</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; color: #111;">${message || 'N/A'}</td>
+        </tr>
+      </table>
+
+      <p style="color: #666; font-size: 14px; margin-top: 30px;">You can view and manage this lead in the database or admin panel.</p>
+    </div>
+  `;
+
+  try {
+    const info = await transporter.sendMail({
+      from: `"Shreeja Finance Website" <${process.env.SMTP_USER}>`,
+      to: adminEmail, // Sending to owner
+      subject: `New Lead: ${name} from ${city || 'Website'}`,
+      html: htmlContent,
+    });
+    console.log(`[EMAIL] Lead notification sent successfully to ${adminEmail}`);
+    return info;
+  } catch (error) {
+    console.error(`[EMAIL] Failed to send lead notification email:`, error);
+    // don't throw to prevent failing the API response
+  }
+}
+
 module.exports = {
   sendOtpEmail,
+  sendLeadEmail,
 };

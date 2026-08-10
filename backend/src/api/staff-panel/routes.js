@@ -133,6 +133,20 @@ router.get('/applications/:id/export-documents', authenticate, requireRole(['sta
   } catch (err) { next(err); }
 });
 
+router.patch('/documents/:doc_id/verify', authenticate, requireRole(['staff', 'admin']), async (req, res, next) => {
+  try {
+    const { data, error } = await supabase
+      .from('documents')
+      .update({ verified: true, updated_at: new Date().toISOString() })
+      .eq('id', req.params.doc_id)
+      .select()
+      .single();
+    if (error) throw error;
+    sendSuccess(res, data);
+  } catch (err) { next(err); }
+});
+
+
 router.get('/lenders', authenticate, requireRole(['staff', 'admin']), async (req, res, next) => {
   try {
     const { data, error } = await supabase

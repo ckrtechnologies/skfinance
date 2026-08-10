@@ -14,7 +14,7 @@ export const adminApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Applications', 'Lenders', 'LenderRules', 'Dealers', 'Staff', 'Commissions', 'Withdrawals', 'Settings', 'AuditLog', 'Customers', 'Banners', 'WhatsApp'],
+  tagTypes: ['Applications', 'Lenders', 'LenderRules', 'Dealers', 'Staff', 'Commissions', 'Withdrawals', 'Settings', 'AuditLog', 'Customers', 'Banners', 'WhatsApp', 'Leads'],
   endpoints: (builder) => ({
     // Dashboard
     getDashboard: builder.query({
@@ -22,6 +22,23 @@ export const adminApi = createApi({
         url: '/dashboard',
         params: { from, to }
       }),
+    }),
+
+    // Leads
+    getLeads: builder.query({
+      query: ({ from, to, limit, offset } = {}) => ({
+        url: '/leads',
+        params: { from, to, limit, offset }
+      }),
+      providesTags: ['Leads'],
+    }),
+    updateLead: builder.mutation({
+      query: ({ id, status }) => ({
+        url: `/leads/${id}`,
+        method: 'PATCH',
+        body: { status }
+      }),
+      invalidatesTags: ['Leads'],
     }),
 
     // Banners
@@ -98,6 +115,13 @@ export const adminApi = createApi({
         body,
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'Applications', id }, 'Applications'],
+    }),
+    verifyDocument: builder.mutation({
+      query: (doc_id) => ({
+        url: `/documents/${doc_id}/verify`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: ['Applications'],
     }),
     disburse: builder.mutation({
       query: ({ id, ...body }) => ({
@@ -301,12 +325,15 @@ export const adminApi = createApi({
 
 export const {
   useGetDashboardQuery,
+  useGetLeadsQuery,
+  useUpdateLeadMutation,
   useGetApplicationsQuery,
   useGetApplicationQuery,
   useAssignApplicationMutation,
   useBulkAssignApplicationsMutation,
   useGetStageEntriesQuery,
   useAddStageEntryMutation,
+  useVerifyDocumentMutation,
   useDisburseMutation,
   useReApproveMutation,
   useGetLendersQuery,

@@ -32,6 +32,8 @@ app.use('/cdn', express.static(path.resolve(CDN_LOCAL_PATH)));
 // ── Health check ──────────────────────────────────────────────────────
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
 
+const websiteRoutes       = require('./api/website/routes');
+
 // ── Routes ────────────────────────────────────────────────────────────
 app.use('/auth',              authRoutes);
 app.use('/customer',          customerRoutes);
@@ -41,6 +43,7 @@ app.use('/staff-app',         staffAppRoutes);
 app.use('/staff-panel',       staffPanelRoutes);
 app.use('/admin',             adminRoutes);
 app.use('/digilocker',        digilockerRoutes);
+app.use('/api',               websiteRoutes);
 
 // ── Global error handler ──────────────────────────────────────────────
 app.use(errorHandler);
