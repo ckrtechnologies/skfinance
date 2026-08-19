@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-surfaceAlt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shreeja Staff Panel - Disbursement</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../tailwind-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="text-textPrimary flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-surface border-r border-border flex flex-col z-20">
+        <div class="h-16 flex items-center px-6 border-b border-border">
+            <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white mr-3 shadow-md">
+                <i data-lucide="building-2" class="w-5 h-5"></i>
+            </div>
+            <span class="font-bold text-bodyLarge text-primary">Shreeja</span>
+            <span class="text-caption text-textSecondary ml-2 font-mono mt-1">STAFF</span>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+            <a href="./SP2-Dashboard.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-textSecondary hover:bg-surfaceAlt hover:text-textPrimary font-medium transition-colors">
+                <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard
+            </a>
+            <a href="./SP3-LeadManagement.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-textSecondary hover:bg-surfaceAlt hover:text-textPrimary font-medium transition-colors">
+                <i data-lucide="users" class="w-5 h-5"></i> Leads & Prospects
+            </a>
+            <a href="./SP5-CreditDecision.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-textSecondary hover:bg-surfaceAlt hover:text-textPrimary font-medium transition-colors">
+                <i data-lucide="shield-alert" class="w-5 h-5"></i> Credit Review
+            </a>
+            <a href="./SP6-DisbursementApproval.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary font-bold">
+                <i data-lucide="banknote" class="w-5 h-5"></i> Disbursements
+            </a>
+            <a href="./SP7-Reports.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-textSecondary hover:bg-surfaceAlt hover:text-textPrimary font-medium transition-colors">
+                <i data-lucide="pie-chart" class="w-5 h-5"></i> MIS Reports
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        
+        <!-- Topbar -->
+        <header class="h-16 bg-surface border-b border-border flex items-center justify-between px-8 shrink-0 z-10">
+            <h1 class="text-h2 font-bold flex items-center gap-3">
+                Disbursement Queue
+            </h1>
+        </header>
+
+        <!-- Content -->
+        <div class="flex-1 flex flex-col p-8 overflow-hidden">
+            
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3 items-start mb-6 shrink-0">
+                <i data-lucide="info" class="w-5 h-5 text-primary shrink-0 mt-0.5"></i>
+                <div>
+                    <p class="text-body text-primary font-medium">These files have been credit approved. Verify final agreement signing and initiate bank transfer.</p>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="bg-surface rounded-xl border border-border shadow-sm flex-1 flex flex-col overflow-hidden">
+                <div class="overflow-auto flex-1">
+                    <table class="w-full text-left border-collapse min-w-[1000px]">
+                        <thead class="sticky top-0 bg-surfaceAlt z-10 shadow-sm border-b border-border">
+                            <tr class="text-caption font-bold text-textSecondary uppercase tracking-wider">
+                                <th class="p-4 pl-6 font-medium">App ID</th>
+                                <th class="p-4 font-medium">Customer / Dealer</th>
+                                <th class="p-4 font-medium">Disbursal Amt.</th>
+                                <th class="p-4 font-medium">Agreement Status</th>
+                                <th class="p-4 font-medium">Bank Details</th>
+                                <th class="p-4 pr-6 font-medium text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-border">
+                            
+                            <!-- Row 1 -->
+                            <tr class="hover:bg-background transition-colors">
+                                <td class="p-4 pl-6 font-mono text-body text-textSecondary">APP-84920</td>
+                                <td class="p-4">
+                                    <p class="text-bodyBold font-bold">Ramesh Kumar</p>
+                                    <p class="text-caption text-textSecondary mt-0.5">Dealer: Wheels Auto</p>
+                                </td>
+                                <td class="p-4">
+                                    <p class="text-bodyBold font-bold text-primary">₹4,50,000</p>
+                                </td>
+                                <td class="p-4">
+                                    <span class="inline-flex items-center gap-1 bg-success/10 text-success text-caption font-bold px-2 py-1 rounded">
+                                        <i data-lucide="check" class="w-3 h-3"></i> eSigned
+                                    </span>
+                                </td>
+                                <td class="p-4">
+                                    <p class="text-caption text-textPrimary">HDFC Bank</p>
+                                    <p class="text-caption text-textSecondary font-mono mt-0.5">A/c: **** 5543</p>
+                                </td>
+                                <td class="p-4 pr-6 text-right">
+                                    <button class="bg-success text-white hover:bg-green-600 px-4 py-2 rounded-lg text-caption font-bold transition-colors">
+                                        Release Funds
+                                    </button>
+                                </td>
+                            </tr>
+
+                            <!-- Row 2 -->
+                            <tr class="hover:bg-background transition-colors">
+                                <td class="p-4 pl-6 font-mono text-body text-textSecondary">APP-84910</td>
+                                <td class="p-4">
+                                    <p class="text-bodyBold font-bold">Vikram Singh</p>
+                                    <p class="text-caption text-textSecondary mt-0.5">Direct</p>
+                                </td>
+                                <td class="p-4">
+                                    <p class="text-bodyBold font-bold text-primary">₹6,20,000</p>
+                                </td>
+                                <td class="p-4">
+                                    <span class="inline-flex items-center gap-1 bg-warning/10 text-warning text-caption font-bold px-2 py-1 rounded">
+                                        <i data-lucide="clock" class="w-3 h-3"></i> Pending eSign
+                                    </span>
+                                </td>
+                                <td class="p-4">
+                                    <p class="text-caption text-textPrimary">ICICI Bank</p>
+                                    <p class="text-caption text-textSecondary font-mono mt-0.5">A/c: **** 1120</p>
+                                </td>
+                                <td class="p-4 pr-6 text-right">
+                                    <button class="bg-background border border-border text-textSecondary px-4 py-2 rounded-lg text-caption font-bold" disabled>
+                                        Awaiting Sign
+                                    </button>
+                                </td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+                
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black/90">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shreeja Customer - Application Verification</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../tailwind-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .loading-overlay { display: flex; }
+        .result-content { display: none; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Mobile Frame -->
+    <div class="max-w-[390px] w-full h-[844px] bg-primary text-white relative overflow-hidden sm:rounded-[40px] flex flex-col shadow-2xl ring-1 ring-border">
+        
+        <!-- Loading State -->
+        <div class="loading-overlay flex-1 flex flex-col items-center justify-center p-6 text-center z-20 absolute inset-0 bg-primary top-0" id="loadingState">
+            
+            <div class="relative w-32 h-32 mb-8">
+                <!-- Outer spinning dashed ring -->
+                <div class="absolute inset-0 rounded-full border-4 border-dashed border-white/30 animate-[spin_10s_linear_infinite]"></div>
+                <!-- Inner fast spinner -->
+                <div class="absolute inset-2 rounded-full border-4 border-white/10 border-t-white animate-spin"></div>
+                <!-- Center icon -->
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <i data-lucide="shield-check" class="w-10 h-10 text-white"></i>
+                </div>
+            </div>
+            
+            <h2 class="text-h1 font-bold mb-3">Verifying Details</h2>
+            <div class="text-blue-100 text-body space-y-2 h-16" id="loadingText">
+                <p class="animate-pulse">Checking CIBIL Score...</p>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="w-64 h-2 bg-white/20 rounded-full mt-8 overflow-hidden">
+                <div class="h-full bg-white rounded-full w-0 transition-all duration-[3000ms] ease-out" id="progressBar"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+        
+        // Simulating the verification steps
+        setTimeout(() => { document.getElementById('progressBar').style.width = '30%'; }, 100);
+        
+        setTimeout(() => {
+            document.getElementById('loadingText').innerHTML = '<p class="animate-pulse">Validating Documents...</p>';
+            document.getElementById('progressBar').style.width = '60%';
+        }, 1500);
+        
+        setTimeout(() => {
+            document.getElementById('loadingText').innerHTML = '<p class="animate-pulse">Running SK Finance Rules Engine...</p>';
+            document.getElementById('progressBar').style.width = '90%';
+        }, 3000);
+        
+        setTimeout(() => {
+            document.getElementById('progressBar').style.width = '100%';
+            // Redirect to the success screen
+            setTimeout(() => {
+                window.location.href = './C10-ApplicationSubmitted.html';
+            }, 500);
+        }, 4500);
+    </script>
+</body>
+</html>

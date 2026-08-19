@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black/90">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shreeja Customer - Upload Documents</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../tailwind-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Mobile Frame -->
+    <div class="max-w-[390px] w-full h-[844px] bg-background text-textPrimary relative overflow-hidden sm:rounded-[40px] flex flex-col shadow-2xl ring-1 ring-border">
+        
+        <!-- Header -->
+        <header class="h-16 flex items-center justify-between px-4 border-b border-border bg-surface shrink-0 pt-2 z-10">
+            <a href="./C7-LoanApplicationForm.html" class="w-10 h-10 flex items-center justify-center text-textPrimary">
+                <i data-lucide="arrow-left" class="w-6 h-6"></i>
+            </a>
+            <h1 class="text-bodyLarge font-bold">Upload Documents</h1>
+            <div class="w-10 text-caption font-bold text-primary">2/2</div>
+        </header>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-background h-1">
+            <div class="bg-primary h-1 w-full rounded-r"></div>
+        </div>
+
+        <!-- Form Content -->
+        <div class="flex-1 overflow-y-auto p-6 pb-32 no-scrollbar">
+            
+            <p class="text-body text-textSecondary mb-6">Please upload clear photos or PDFs of the required documents for Final Approval.</p>
+            
+            <form id="uploadForm" class="flex flex-col gap-4">
+                
+                <!-- PAN Card -->
+                <div class="bg-surface border border-border rounded-xl p-4">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h4 class="text-bodyBold font-bold text-textPrimary flex items-center gap-2">
+                                PAN Card <span class="text-danger">*</span>
+                            </h4>
+                            <p class="text-caption text-textSecondary mt-1">Front side clearly visible</p>
+                        </div>
+                        <div class="w-6 h-6 rounded-full bg-success/20 text-success flex items-center justify-center shrink-0">
+                            <i data-lucide="check" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Uploaded State -->
+                    <div class="bg-background border border-border rounded-lg p-3 flex justify-between items-center">
+                        <div class="flex items-center gap-3 overflow-hidden">
+                            <i data-lucide="image" class="w-5 h-5 text-primary shrink-0"></i>
+                            <span class="text-caption text-textPrimary truncate font-medium">IMG_PAN_2026.jpg</span>
+                        </div>
+                        <button type="button" class="text-textSecondary hover:text-danger p-1">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Aadhaar Card -->
+                <div class="bg-surface border border-border rounded-xl p-4">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h4 class="text-bodyBold font-bold text-textPrimary flex items-center gap-2">
+                                Aadhaar Card <span class="text-danger">*</span>
+                            </h4>
+                            <p class="text-caption text-textSecondary mt-1">Front & Back sides</p>
+                        </div>
+                        <div class="w-6 h-6 rounded-full bg-background border border-border text-transparent flex items-center justify-center shrink-0">
+                            <i data-lucide="check" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Upload Button State -->
+                    <button type="button" class="w-full bg-background border border-dashed border-primary/50 hover:bg-primary/5 rounded-lg p-4 flex flex-col items-center justify-center gap-2 transition-colors">
+                        <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-1">
+                            <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-caption font-bold text-primary">Tap to Upload</span>
+                    </button>
+                </div>
+                
+                <!-- Bank Statement -->
+                <div class="bg-surface border border-border rounded-xl p-4">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h4 class="text-bodyBold font-bold text-textPrimary flex items-center gap-2">
+                                6 Months Bank Statement <span class="text-danger">*</span>
+                            </h4>
+                            <p class="text-caption text-textSecondary mt-1">PDF format preferred</p>
+                        </div>
+                        <div class="w-6 h-6 rounded-full bg-background border border-border text-transparent flex items-center justify-center shrink-0">
+                            <i data-lucide="check" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Upload Button State -->
+                    <button type="button" class="w-full bg-background border border-dashed border-primary/50 hover:bg-primary/5 rounded-lg p-4 flex flex-col items-center justify-center gap-2 transition-colors">
+                        <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-1">
+                            <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-caption font-bold text-primary">Tap to Upload</span>
+                    </button>
+                </div>
+                
+                <!-- ITR (Optional) -->
+                <div class="bg-surface border border-border rounded-xl p-4 opacity-75">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h4 class="text-bodyBold font-bold text-textPrimary flex items-center gap-2">
+                                Latest ITR
+                            </h4>
+                            <p class="text-caption text-textSecondary mt-1">Optional, improves chances</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Upload Button State -->
+                    <button type="button" class="w-full bg-background border border-dashed border-border hover:bg-surfaceAlt rounded-lg p-3 flex items-center justify-center gap-2 transition-colors text-textSecondary">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span class="text-caption font-bold">Add Document</span>
+                    </button>
+                </div>
+
+            </form>
+        </div>
+
+        <!-- Sticky Footer -->
+        <div class="absolute bottom-0 w-full bg-surface border-t border-border p-6 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] z-20 pb-10 flex gap-3">
+            <button class="flex-1 bg-surfaceAlt hover:bg-border text-textPrimary font-bold py-4 rounded-xl transition-colors text-center text-bodyLarge border border-border">
+                Save Draft
+            </button>
+            <a href="./C9-FullEligibilityResult.html" class="flex-1 bg-primary hover:bg-primaryHover text-white font-bold py-4 rounded-xl transition-colors text-center block text-bodyLarge shadow-lg shadow-primary/30">
+                Submit File
+            </a>
+        </div>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

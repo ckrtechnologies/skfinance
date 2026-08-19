@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black/90">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shreeja Customer - Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../tailwind-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Mobile Frame -->
+    <div class="max-w-[390px] w-full h-[844px] bg-surface text-textPrimary relative overflow-hidden sm:rounded-[40px] flex flex-col shadow-2xl ring-1 ring-border">
+        
+        <!-- Header -->
+        <div class="pt-16 px-6 pb-6">
+            <a href="./C2-Onboarding.html" class="w-10 h-10 bg-background rounded-full flex items-center justify-center text-textPrimary mb-8 hover:bg-border transition-colors">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            </a>
+            <h1 class="text-display font-bold mb-2">Welcome</h1>
+            <p class="text-body text-textSecondary">Enter your mobile number to login or register.</p>
+        </div>
+
+        <!-- Form Area -->
+        <div class="flex-1 px-6 mt-4">
+            
+            <div id="step-phone" class="block">
+                <label class="block text-bodyBold text-textPrimary mb-2">Mobile Number</label>
+                <div class="flex gap-3 mb-6">
+                    <div class="w-20 bg-background border border-border rounded-xl flex items-center justify-center text-bodyBold">
+                        +91
+                    </div>
+                    <input type="tel" class="flex-1 bg-background border border-border rounded-xl px-4 py-4 text-bodyLarge focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-medium" placeholder="98765 43210" value="9876543210" id="phoneInput">
+                </div>
+                
+                <button onclick="showOtpStep()" class="w-full bg-primary hover:bg-primaryHover text-white font-bold py-4 rounded-xl transition-colors text-center block text-bodyLarge shadow-lg shadow-primary/30">
+                    Send OTP
+                </button>
+            </div>
+            
+            <div id="step-otp" class="hidden">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="block text-bodyBold text-textPrimary">Enter OTP</label>
+                    <button onclick="showPhoneStep()" class="text-caption text-primary font-semibold hover:underline">Change Number</button>
+                </div>
+                <p class="text-caption text-textSecondary mb-6">We've sent a 4-digit code to +91 98765 43210</p>
+                
+                <div class="flex gap-3 mb-8 justify-between">
+                    <input type="text" maxlength="1" class="w-16 h-16 text-center text-h1 font-bold bg-background border border-border rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" value="1">
+                    <input type="text" maxlength="1" class="w-16 h-16 text-center text-h1 font-bold bg-background border border-border rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" value="4">
+                    <input type="text" maxlength="1" class="w-16 h-16 text-center text-h1 font-bold bg-background border border-border rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" value="2">
+                    <input type="text" maxlength="1" class="w-16 h-16 text-center text-h1 font-bold bg-background border border-border rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" value="8">
+                </div>
+                
+                <a href="./C4-Home.html" class="w-full bg-primary hover:bg-primaryHover text-white font-bold py-4 rounded-xl transition-colors text-center block text-bodyLarge shadow-lg shadow-primary/30">
+                    Verify & Login
+                </a>
+                
+                <div class="mt-6 text-center">
+                    <p class="text-body text-textSecondary">Didn't receive code? <span class="text-primary font-semibold cursor-pointer">Resend in 0:45</span></p>
+                </div>
+            </div>
+
+        </div>
+        
+        <!-- Terms -->
+        <div class="p-6 text-center pb-10">
+            <p class="text-caption text-textSecondary">By continuing, you agree to our <br><a href="#" class="font-semibold text-primary">Terms of Service</a> and <a href="#" class="font-semibold text-primary">Privacy Policy</a></p>
+        </div>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+        
+        function showOtpStep() {
+            document.getElementById('step-phone').classList.add('hidden');
+            document.getElementById('step-otp').classList.remove('hidden');
+        }
+        
+        function showPhoneStep() {
+            document.getElementById('step-otp').classList.add('hidden');
+            document.getElementById('step-phone').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

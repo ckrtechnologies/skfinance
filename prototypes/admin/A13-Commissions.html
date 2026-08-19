@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-background">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shreeja Finance - Commissions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../tailwind-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar-item { @apply flex items-center gap-3 px-4 py-3 rounded-lg text-textSecondary hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer font-medium text-body; }
+        .sidebar-item.active { @apply bg-primary text-white hover:bg-primary hover:text-white; }
+        
+        /* Table Styles */
+        th { @apply px-6 py-3 text-left text-xs font-bold text-textSecondary uppercase tracking-wider border-b border-border bg-surfaceAlt; }
+        td { @apply px-6 py-4 whitespace-nowrap text-body text-textPrimary border-b border-border; }
+        tr:hover td { @apply bg-surfaceAlt; }
+    </style>
+</head>
+<body class="min-h-screen flex text-textPrimary">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-surface border-r border-border flex flex-col fixed h-full z-20">
+        <div class="h-16 flex items-center px-6 border-b border-border bg-primary">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+                    <i data-lucide="building-2" class="w-4 h-4 text-primary"></i>
+                </div>
+                <span class="text-white font-bold text-h2 tracking-tight">Shreeja Admin</span>
+            </div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
+            <div class="text-xs font-bold text-textSecondary uppercase tracking-wider px-4 mb-2 mt-2">Core</div>
+            <a href="./A2-Dashboard.html" class="sidebar-item"><i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard</a>
+            <a href="./A3-LoanFilesList.html" class="sidebar-item"><i data-lucide="files" class="w-5 h-5"></i> Loan Files</a>
+            
+            <div class="text-xs font-bold text-textSecondary uppercase tracking-wider px-4 mb-2 mt-4">Network</div>
+            <a href="./A5-LendersList.html" class="sidebar-item"><i data-lucide="landmark" class="w-5 h-5"></i> Lenders</a>
+            <a href="./A11-Dealers.html" class="sidebar-item"><i data-lucide="store" class="w-5 h-5"></i> Dealers</a>
+            <a href="./A12-Staff.html" class="sidebar-item"><i data-lucide="users" class="w-5 h-5"></i> Staff</a>
+            
+            <div class="text-xs font-bold text-textSecondary uppercase tracking-wider px-4 mb-2 mt-4">Finance</div>
+            <a href="./A13-Commissions.html" class="sidebar-item active"><i data-lucide="indian-rupee" class="w-5 h-5"></i> Commissions</a>
+            <a href="./A14-Payouts.html" class="sidebar-item"><i data-lucide="banknote" class="w-5 h-5"></i> Payout Queue</a>
+            
+            <div class="text-xs font-bold text-textSecondary uppercase tracking-wider px-4 mb-2 mt-4">System</div>
+            <a href="./A15-Settings.html" class="sidebar-item"><i data-lucide="settings" class="w-5 h-5"></i> Settings</a>
+            <a href="./A16-AuditLog.html" class="sidebar-item"><i data-lucide="clipboard-list" class="w-5 h-5"></i> Audit Log</a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 ml-64 flex flex-col min-h-screen">
+        
+        <!-- Topbar -->
+        <header class="h-16 bg-surface border-b border-border flex items-center justify-between px-8 sticky top-0 z-10">
+            <h1 class="text-h2 font-bold">Commission Ledger</h1>
+            <div class="flex items-center gap-4">
+                <button class="bg-surface border border-border px-4 py-2 rounded-lg text-bodyBold hover:bg-surfaceAlt transition-colors flex items-center gap-2">
+                    <i data-lucide="download" class="w-4 h-4"></i> Export CSV
+                </button>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="p-8 flex-1 overflow-y-auto">
+            
+            <!-- KPI Row -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-surface p-6 rounded-xl border border-border shadow-sm">
+                    <p class="text-caption text-textSecondary font-semibold uppercase tracking-wider mb-1">Total Generated (MTD)</p>
+                    <h3 class="text-h1 font-bold text-primary">₹3,45,000</h3>
+                </div>
+                <div class="bg-surface p-6 rounded-xl border border-border shadow-sm">
+                    <p class="text-caption text-textSecondary font-semibold uppercase tracking-wider mb-1">Pending Payouts</p>
+                    <h3 class="text-h1 font-bold text-warning">₹4,20,000</h3>
+                </div>
+                <div class="bg-surface p-6 rounded-xl border border-border shadow-sm">
+                    <p class="text-caption text-textSecondary font-semibold uppercase tracking-wider mb-1">Paid (MTD)</p>
+                    <h3 class="text-h1 font-bold text-success">₹1,80,000</h3>
+                </div>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="bg-surface p-4 rounded-xl border border-border shadow-sm mb-6 flex flex-wrap gap-4 items-center">
+                <div class="relative flex-1 min-w-[200px]">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-textSecondary"></i>
+                    <input type="text" placeholder="Search by Dealer, App ID..." class="w-full pl-9 pr-4 py-2 bg-background border border-border rounded-lg text-body focus:outline-none focus:border-primary">
+                </div>
+                <select class="bg-background border border-border rounded-lg px-3 py-2 text-body text-textPrimary outline-none min-w-[140px]">
+                    <option value="">All Statuses</option>
+                    <option value="earned">Earned (Wallet)</option>
+                    <option value="pending">Payout Requested</option>
+                    <option value="paid">Paid Out</option>
+                </select>
+                <input type="date" class="bg-background border border-border rounded-lg px-3 py-2 text-body text-textPrimary outline-none">
+            </div>
+
+            <!-- Table Card -->
+            <div class="bg-surface border border-border rounded-xl shadow-sm overflow-hidden flex flex-col">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr>
+                                <th>Generated Date</th>
+                                <th>Dealer</th>
+                                <th>Loan File Ref</th>
+                                <th>Disbursed Amt</th>
+                                <th>Commission (1.5%)</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Row 1 -->
+                            <tr>
+                                <td>
+                                    <div class="font-medium text-textPrimary">14 Aug 2026</div>
+                                    <div class="text-caption text-textSecondary mt-1">10:30 AM</div>
+                                </td>
+                                <td>
+                                    <div class="font-medium">Wheels Auto</div>
+                                    <div class="text-caption text-textSecondary mt-1">DLR-001</div>
+                                </td>
+                                <td>
+                                    <a href="./A4-FileDetail.html" class="font-mono font-semibold text-primary hover:underline">#APP-84920</a>
+                                    <div class="text-caption text-textSecondary mt-1">SK Finance</div>
+                                </td>
+                                <td>
+                                    <div class="font-medium">₹4,50,000</div>
+                                </td>
+                                <td>
+                                    <div class="font-bold text-success">+ ₹6,750</div>
+                                </td>
+                                <td>
+                                    <span class="inline-flex items-center gap-1 text-success text-caption font-bold bg-success/10 px-2 py-1 rounded">
+                                        Earned
+                                    </span>
+                                </td>
+                            </tr>
+
+                            <!-- Row 2 -->
+                            <tr>
+                                <td>
+                                    <div class="font-medium text-textPrimary">12 Aug 2026</div>
+                                    <div class="text-caption text-textSecondary mt-1">04:15 PM</div>
+                                </td>
+                                <td>
+                                    <div class="font-medium">Sunrise Motors</div>
+                                    <div class="text-caption text-textSecondary mt-1">DLR-024</div>
+                                </td>
+                                <td>
+                                    <a href="./A4-FileDetail.html" class="font-mono font-semibold text-primary hover:underline">#APP-84880</a>
+                                    <div class="text-caption text-textSecondary mt-1">ITI Finance</div>
+                                </td>
+                                <td>
+                                    <div class="font-medium">₹8,00,000</div>
+                                </td>
+                                <td>
+                                    <div class="font-bold text-success">+ ₹12,000</div>
+                                </td>
+                                <td>
+                                    <span class="inline-flex items-center gap-1 text-warning text-caption font-bold bg-warning/10 px-2 py-1 rounded">
+                                        Payout Requested
+                                    </span>
+                                </td>
+                            </tr>
+                            
+                            <!-- Row 3 -->
+                            <tr>
+                                <td>
+                                    <div class="font-medium text-textPrimary">05 Aug 2026</div>
+                                    <div class="text-caption text-textSecondary mt-1">11:00 AM</div>
+                                </td>
+                                <td>
+                                    <div class="font-medium">Sunrise Motors</div>
+                                    <div class="text-caption text-textSecondary mt-1">DLR-024</div>
+                                </td>
+                                <td>
+                                    <a href="./A4-FileDetail.html" class="font-mono font-semibold text-primary hover:underline">#APP-84110</a>
+                                    <div class="text-caption text-textSecondary mt-1">SK Finance</div>
+                                </td>
+                                <td>
+                                    <div class="font-medium">₹5,00,000</div>
+                                </td>
+                                <td>
+                                    <div class="font-bold text-textPrimary">+ ₹7,500</div>
+                                </td>
+                                <td>
+                                    <span class="inline-flex items-center gap-1 text-textSecondary text-caption font-bold bg-background border border-border px-2 py-1 rounded">
+                                        Paid Out (06 Aug)
+                                    </span>
+                                </td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

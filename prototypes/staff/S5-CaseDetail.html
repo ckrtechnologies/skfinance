@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black/90">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shreeja Staff - Case Detail</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../tailwind-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Mobile Frame -->
+    <div class="max-w-[390px] w-full h-[844px] bg-background text-textPrimary relative overflow-hidden sm:rounded-[40px] flex flex-col shadow-2xl ring-1 ring-border pb-[80px]">
+        
+        <!-- Header -->
+        <header class="h-16 flex items-center justify-between px-4 border-b border-border bg-surface shrink-0 pt-2 z-10">
+            <a href="./S4-TaskQueue.html" class="w-10 h-10 flex items-center justify-center text-textPrimary">
+                <i data-lucide="arrow-left" class="w-6 h-6"></i>
+            </a>
+            <h1 class="text-bodyLarge font-bold">Case #APP-84915</h1>
+            <div class="w-10"></div> <!-- Spacer -->
+        </header>
+
+        <!-- Page Content -->
+        <div class="flex-1 overflow-y-auto p-4 no-scrollbar">
+            
+            <!-- Map Mock -->
+            <div class="w-full h-48 bg-blue-100 rounded-xl mb-4 relative overflow-hidden flex items-center justify-center border border-border">
+                <i data-lucide="map" class="w-12 h-12 text-primary opacity-50 absolute"></i>
+                <div class="w-full h-full bg-[url('https://maps.gstatic.com/mapfiles/api-3/images/mapcnt6.png')] bg-cover opacity-30 mix-blend-multiply"></div>
+                <div class="absolute bottom-4 right-4 bg-white p-2 rounded-lg shadow font-bold text-caption text-primary flex gap-1 items-center">
+                    <i data-lucide="navigation" class="w-4 h-4"></i> Start Nav
+                </div>
+                <!-- Pin -->
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-danger text-white rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                    <i data-lucide="home" class="w-5 h-5"></i>
+                </div>
+            </div>
+
+            <div class="bg-surface border border-border rounded-xl p-4 shadow-sm mb-4">
+                <div class="flex justify-between items-start border-b border-border pb-3 mb-3">
+                    <div>
+                        <h2 class="text-h2 font-bold">Suresh Patel</h2>
+                        <p class="text-body text-textSecondary mt-0.5">Applicant (Residence Verification)</p>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="flex items-start gap-3">
+                        <i data-lucide="phone" class="w-5 h-5 text-textSecondary shrink-0"></i>
+                        <div>
+                            <p class="text-body font-bold">+91 98765 00001</p>
+                            <a href="#" class="text-caption font-bold text-primary mt-1 inline-block">Call Customer</a>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <i data-lucide="map-pin" class="w-5 h-5 text-textSecondary shrink-0"></i>
+                        <p class="text-body text-textPrimary">123 Main St, Apartment 4B<br>Borivali West, Mumbai 400092</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="text-bodyBold font-bold mb-3 mt-6 px-1">Verification Task Checklist</h3>
+            
+            <div class="bg-surface border border-border rounded-xl shadow-sm p-4">
+                
+                <label class="flex items-center gap-3 mb-4 cursor-pointer">
+                    <input type="checkbox" class="w-5 h-5 rounded border-border text-primary focus:ring-primary">
+                    <span class="text-body font-medium text-textPrimary">Verify Address Matches Aadhaar</span>
+                </label>
+                
+                <label class="flex items-center gap-3 mb-4 cursor-pointer">
+                    <input type="checkbox" class="w-5 h-5 rounded border-border text-primary focus:ring-primary">
+                    <span class="text-body font-medium text-textPrimary">Confirm Years at Residence (>2 yrs)</span>
+                </label>
+                
+                <label class="flex items-center gap-3 mb-4 cursor-pointer">
+                    <input type="checkbox" class="w-5 h-5 rounded border-border text-primary focus:ring-primary">
+                    <span class="text-body font-medium text-textPrimary">Ownership Type (Owned/Rented)</span>
+                </label>
+
+                <div class="mt-4">
+                    <label class="block text-caption text-textSecondary mb-2 font-bold uppercase">Executive Remarks</label>
+                    <textarea class="w-full bg-background border border-border rounded-lg p-3 text-body focus:outline-none focus:border-primary" rows="3" placeholder="Enter notes from visit..."></textarea>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Sticky Footer -->
+        <div class="absolute bottom-[80px] w-full bg-surface border-t border-border p-4 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] z-20">
+            <a href="./S6-UploadVerificationDocs.html" class="w-full bg-primary hover:bg-primaryHover text-white font-bold py-4 rounded-xl transition-colors text-center block text-bodyLarge shadow-lg shadow-primary/30">
+                Proceed to Photo Upload
+            </a>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="absolute bottom-0 w-full h-[80px] bg-surface border-t border-border flex justify-around items-center px-2 z-20 pb-4">
+            <a href="./S3-Dashboard.html" class="flex flex-col items-center gap-1 p-2 text-textSecondary hover:text-primary transition-colors">
+                <i data-lucide="home" class="w-6 h-6"></i>
+                <span class="text-[10px] font-medium">Home</span>
+            </a>
+            <a href="./S4-TaskQueue.html" class="flex flex-col items-center gap-1 p-2 text-primary">
+                <i data-lucide="clipboard-list" class="w-6 h-6"></i>
+                <span class="text-[10px] font-semibold">Tasks</span>
+            </a>
+            <a href="./S8-PipelineOverview.html" class="flex flex-col items-center gap-1 p-2 text-textSecondary hover:text-primary transition-colors">
+                <i data-lucide="files" class="w-6 h-6"></i>
+                <span class="text-[10px] font-medium">Pipeline</span>
+            </a>
+            <a href="./S10-Profile.html" class="flex flex-col items-center gap-1 p-2 text-textSecondary hover:text-primary transition-colors">
+                <i data-lucide="user" class="w-6 h-6"></i>
+                <span class="text-[10px] font-medium">Profile</span>
+            </a>
+        </nav>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

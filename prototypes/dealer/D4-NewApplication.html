@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black/90">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shreeja Dealer - New Application</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../tailwind-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Mobile Frame -->
+    <div class="max-w-[390px] w-full h-[844px] bg-background text-textPrimary relative overflow-hidden sm:rounded-[40px] flex flex-col shadow-2xl ring-1 ring-border">
+        
+        <!-- Header -->
+        <header class="h-16 flex items-center justify-between px-4 border-b border-border bg-surface shrink-0 pt-2 z-10">
+            <a href="./D3-Dashboard.html" class="w-10 h-10 flex items-center justify-center text-textPrimary">
+                <i data-lucide="arrow-left" class="w-6 h-6"></i>
+            </a>
+            <h1 class="text-bodyLarge font-bold">New File (Step 1)</h1>
+            <div class="w-10"></div> <!-- Spacer -->
+        </header>
+
+        <!-- Progress -->
+        <div class="flex items-center justify-between px-8 py-4 bg-surface border-b border-border">
+            <div class="flex flex-col items-center">
+                <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-caption font-bold mb-1">1</div>
+                <span class="text-[10px] font-bold text-primary">Customer</span>
+            </div>
+            <div class="h-0.5 flex-1 bg-border mx-2 mb-4"></div>
+            <div class="flex flex-col items-center opacity-50">
+                <div class="w-8 h-8 rounded-full bg-surfaceAlt border border-border text-textSecondary flex items-center justify-center text-caption font-bold mb-1">2</div>
+                <span class="text-[10px] font-bold text-textSecondary">Vehicle</span>
+            </div>
+            <div class="h-0.5 flex-1 bg-border mx-2 mb-4"></div>
+            <div class="flex flex-col items-center opacity-50">
+                <div class="w-8 h-8 rounded-full bg-surfaceAlt border border-border text-textSecondary flex items-center justify-center text-caption font-bold mb-1">3</div>
+                <span class="text-[10px] font-bold text-textSecondary">Quote</span>
+            </div>
+        </div>
+
+        <!-- Form Content -->
+        <div class="flex-1 overflow-y-auto p-6 pb-32 no-scrollbar">
+            
+            <form>
+                
+                <h3 class="text-h2 font-bold mb-4">Customer Basic Info</h3>
+                
+                <div class="mb-5">
+                    <label class="block text-bodyBold text-textPrimary mb-2">Customer Mobile <span class="text-danger">*</span></label>
+                    <div class="flex gap-3">
+                        <div class="w-20 bg-surface border border-border rounded-xl flex items-center justify-center text-bodyBold">
+                            +91
+                        </div>
+                        <input type="tel" class="flex-1 bg-surface border border-border rounded-xl px-4 py-3 text-body focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" placeholder="Enter number">
+                    </div>
+                </div>
+
+                <div class="mb-5">
+                    <label class="block text-bodyBold text-textPrimary mb-2">Full Name (As per PAN) <span class="text-danger">*</span></label>
+                    <input type="text" class="w-full bg-surface border border-border rounded-xl px-4 py-3 text-body focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" placeholder="e.g. Rahul Sharma">
+                </div>
+                
+                <div class="mb-5">
+                    <label class="block text-bodyBold text-textPrimary mb-2">PAN Number <span class="text-danger">*</span></label>
+                    <div class="relative">
+                        <input type="text" class="w-full bg-surface border border-border rounded-xl pl-4 pr-12 py-3 text-body font-mono uppercase focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" placeholder="ABCDE1234F">
+                        <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-primary hover:bg-primary/10 p-1.5 rounded">
+                            <i data-lucide="scan" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-5">
+                    <label class="block text-bodyBold text-textPrimary mb-2">Employment Type <span class="text-danger">*</span></label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="empType" class="peer sr-only" checked>
+                            <div class="w-full text-center p-3 rounded-xl border border-border bg-surface peer-checked:border-primary peer-checked:bg-blue-50 peer-checked:text-primary font-medium text-body transition-colors">
+                                Salaried
+                            </div>
+                        </label>
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="empType" class="peer sr-only">
+                            <div class="w-full text-center p-3 rounded-xl border border-border bg-surface peer-checked:border-primary peer-checked:bg-blue-50 peer-checked:text-primary font-medium text-body transition-colors">
+                                Self-Employed
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mb-5">
+                    <label class="block text-bodyBold text-textPrimary mb-2">Monthly Net Income</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-body font-medium text-textSecondary">₹</span>
+                        <input type="number" class="w-full bg-surface border border-border rounded-xl pl-10 pr-4 py-3 text-body focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" placeholder="e.g. 45000">
+                    </div>
+                </div>
+
+            </form>
+        </div>
+
+        <!-- Sticky Footer -->
+        <div class="absolute bottom-0 w-full bg-surface border-t border-border p-6 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] z-20 pb-10">
+            <a href="./D5-VehicleSelection.html" class="w-full bg-primary hover:bg-primaryHover text-white font-bold py-4 rounded-xl transition-colors text-center block text-bodyLarge shadow-lg shadow-primary/30 flex items-center justify-center gap-2">
+                Continue to Vehicle <i data-lucide="arrow-right" class="w-5 h-5"></i>
+            </a>
+        </div>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

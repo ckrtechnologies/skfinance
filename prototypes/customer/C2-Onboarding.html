@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black/90">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shreeja Customer - Onboarding</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../tailwind-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Simple carousel dots */
+        .dot { @apply w-2 h-2 rounded-full bg-border transition-colors duration-300; }
+        .dot.active { @apply w-6 bg-primary; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Mobile Frame -->
+    <div class="max-w-[390px] w-full h-[844px] bg-background text-textPrimary relative overflow-hidden sm:rounded-[40px] flex flex-col shadow-2xl ring-1 ring-border">
+        
+        <!-- Skip Button -->
+        <div class="absolute top-12 right-6 z-20">
+            <a href="./C3-Login.html" class="text-bodyBold text-textSecondary hover:text-primary transition-colors">Skip</a>
+        </div>
+
+        <!-- Carousel Content Area -->
+        <div class="flex-1 flex flex-col">
+            <!-- Image Area (Mocked with gradient) -->
+            <div class="h-3/5 w-full bg-gradient-to-br from-blue-100 to-blue-50 flex flex-col items-center justify-end pb-8 relative rounded-b-[40px] shadow-sm">
+                <i data-lucide="car" class="w-32 h-32 text-primary mb-12"></i>
+            </div>
+            
+            <!-- Text Area -->
+            <div class="h-2/5 px-8 pt-10 flex flex-col items-center text-center">
+                <h2 class="text-h1 font-bold text-textPrimary mb-4 leading-tight">Your dream vehicle,<br>approved faster.</h2>
+                <p class="text-body text-textSecondary mb-8">Compare loan offers from multiple top-tier NBFCs instantly and get the best rate.</p>
+                
+                <!-- Dots -->
+                <div class="flex gap-2 mb-auto">
+                    <div class="dot active"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Area -->
+        <div class="p-6 bg-surface pb-10">
+            <a href="./C3-Login.html" class="w-full bg-primary hover:bg-primaryHover text-white font-bold py-4 rounded-xl transition-colors text-center block text-bodyLarge shadow-lg shadow-primary/30">
+                Get Started
+            </a>
+            <div class="mt-4 text-center">
+                <p class="text-body text-textSecondary">Already have an application? <a href="./C3-Login.html" class="text-primary font-semibold">Login</a></p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

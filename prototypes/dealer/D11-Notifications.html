@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black/90">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shreeja Dealer - Notifications</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../tailwind-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Mobile Frame -->
+    <div class="max-w-[390px] w-full h-[844px] bg-background text-textPrimary relative overflow-hidden sm:rounded-[40px] flex flex-col shadow-2xl ring-1 ring-border pb-[80px]">
+        
+        <!-- Header -->
+        <header class="h-16 flex items-center justify-between px-4 border-b border-border bg-surface shrink-0 pt-2 z-10">
+            <a href="./D3-Dashboard.html" class="w-10 h-10 flex items-center justify-center text-textPrimary">
+                <i data-lucide="arrow-left" class="w-6 h-6"></i>
+            </a>
+            <h1 class="text-bodyLarge font-bold">Notifications</h1>
+            <div class="w-10"></div> <!-- Spacer -->
+        </header>
+
+        <!-- Page Content -->
+        <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-3 no-scrollbar">
+            
+            <!-- Unread -->
+            <div class="bg-surface border-l-4 border-l-success border border-border rounded-xl p-4 shadow-sm">
+                <div class="flex gap-3">
+                    <div class="w-10 h-10 bg-success/10 rounded-full flex items-center justify-center text-success shrink-0 mt-1">
+                        <i data-lucide="banknote" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-start mb-1">
+                            <h4 class="text-bodyBold font-bold">Disbursement Done</h4>
+                            <span class="text-caption text-textSecondary">10m ago</span>
+                        </div>
+                        <p class="text-body text-textSecondary">Amount ₹4,50,000 for Ramesh Kumar (APP-84920) has been disbursed.</p>
+                        <a href="./D9-DisbursementStatus.html" class="text-caption font-bold text-primary hover:underline mt-2 inline-block">View Details</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Read -->
+            <div class="bg-surface border border-border rounded-xl p-4 shadow-sm opacity-70">
+                <div class="flex gap-3">
+                    <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-textSecondary shrink-0 mt-1">
+                        <i data-lucide="file-check" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-start mb-1">
+                            <h4 class="text-bodyBold font-bold">File Approved</h4>
+                            <span class="text-caption text-textSecondary">Yesterday</span>
+                        </div>
+                        <p class="text-body text-textSecondary">SK Finance has approved the application for APP-84110.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Warning -->
+            <div class="bg-surface border-l-4 border-l-danger border border-border rounded-xl p-4 shadow-sm opacity-90">
+                <div class="flex gap-3">
+                    <div class="w-10 h-10 bg-danger/10 rounded-full flex items-center justify-center text-danger shrink-0 mt-1">
+                        <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-start mb-1">
+                            <h4 class="text-bodyBold font-bold">Action Required</h4>
+                            <span class="text-caption text-textSecondary">2 Days Ago</span>
+                        </div>
+                        <p class="text-body text-textSecondary">Bank statement missing for APP-84880. Please upload to resume processing.</p>
+                        <a href="./D6-CustomerKYC.html" class="text-caption font-bold text-primary hover:underline mt-2 inline-block">Upload Doc</a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="absolute bottom-0 w-full h-[80px] bg-surface border-t border-border flex justify-around items-center px-2 z-20 pb-4">
+            <a href="./D3-Dashboard.html" class="flex flex-col items-center gap-1 p-2 text-primary">
+                <i data-lucide="home" class="w-6 h-6"></i>
+                <span class="text-[10px] font-semibold">Home</span>
+            </a>
+            <a href="./D8-ApplicationTracking.html" class="flex flex-col items-center gap-1 p-2 text-textSecondary hover:text-primary transition-colors">
+                <i data-lucide="files" class="w-6 h-6"></i>
+                <span class="text-[10px] font-medium">Pipeline</span>
+            </a>
+            <a href="./D10-CommissionWallet.html" class="flex flex-col items-center gap-1 p-2 text-textSecondary hover:text-primary transition-colors">
+                <i data-lucide="wallet" class="w-6 h-6"></i>
+                <span class="text-[10px] font-medium">Wallet</span>
+            </a>
+            <a href="./D12-Profile.html" class="flex flex-col items-center gap-1 p-2 text-textSecondary hover:text-primary transition-colors">
+                <i data-lucide="user" class="w-6 h-6"></i>
+                <span class="text-[10px] font-medium">Profile</span>
+            </a>
+        </nav>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

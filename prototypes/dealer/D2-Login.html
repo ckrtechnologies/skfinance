@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black/90">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shreeja Dealer - Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../tailwind-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Mobile Frame -->
+    <div class="max-w-[390px] w-full h-[844px] bg-surface text-textPrimary relative overflow-hidden sm:rounded-[40px] flex flex-col shadow-2xl ring-1 ring-border">
+        
+        <!-- Header Image Area -->
+        <div class="h-1/3 bg-primary rounded-b-[40px] flex items-center justify-center shadow-md relative z-10">
+            <div class="text-center text-white">
+                <i data-lucide="store" class="w-16 h-16 mx-auto mb-4 opacity-90"></i>
+                <h1 class="text-h1 font-bold">Dealer Login</h1>
+            </div>
+        </div>
+
+        <!-- Form Area -->
+        <div class="flex-1 px-6 pt-10">
+            
+            <form action="./D3-Dashboard.html">
+                
+                <div class="mb-5">
+                    <label class="block text-bodyBold text-textPrimary mb-2">Dealer ID</label>
+                    <div class="relative">
+                        <i data-lucide="hash" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-textSecondary"></i>
+                        <input type="text" class="w-full bg-background border border-border rounded-xl pl-12 pr-4 py-4 text-body font-mono uppercase focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" placeholder="DLR-XXXX" value="DLR-001">
+                    </div>
+                </div>
+                
+                <div class="mb-8">
+                    <label class="block text-bodyBold text-textPrimary mb-2">Password / PIN</label>
+                    <div class="relative">
+                        <i data-lucide="lock" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-textSecondary"></i>
+                        <input type="password" class="w-full bg-background border border-border rounded-xl pl-12 pr-4 py-4 text-body focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" value="••••••••">
+                    </div>
+                    <div class="text-right mt-2">
+                        <a href="#" class="text-caption font-semibold text-primary hover:underline">Forgot PIN?</a>
+                    </div>
+                </div>
+
+                <a href="./D3-Dashboard.html" class="w-full bg-primary hover:bg-primaryHover text-white font-bold py-4 rounded-xl transition-colors text-center block text-bodyLarge shadow-lg shadow-primary/30">
+                    Secure Login
+                </a>
+                
+            </form>
+
+        </div>
+        
+        <!-- Support -->
+        <div class="p-6 text-center pb-10">
+            <p class="text-caption text-textSecondary">Need help? Contact Dealer Support at<br><strong class="text-textPrimary">1800-123-4567</strong></p>
+        </div>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

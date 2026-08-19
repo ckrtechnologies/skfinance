@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-background">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shreeja Finance - Lenders</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../tailwind-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar-item { @apply flex items-center gap-3 px-4 py-3 rounded-lg text-textSecondary hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer font-medium text-body; }
+        .sidebar-item.active { @apply bg-primary text-white hover:bg-primary hover:text-white; }
+    </style>
+</head>
+<body class="min-h-screen flex text-textPrimary">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-surface border-r border-border flex flex-col fixed h-full z-20">
+        <div class="h-16 flex items-center px-6 border-b border-border bg-primary">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+                    <i data-lucide="building-2" class="w-4 h-4 text-primary"></i>
+                </div>
+                <span class="text-white font-bold text-h2 tracking-tight">Shreeja Admin</span>
+            </div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
+            <div class="text-xs font-bold text-textSecondary uppercase tracking-wider px-4 mb-2 mt-2">Core</div>
+            <a href="./A2-Dashboard.html" class="sidebar-item"><i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard</a>
+            <a href="./A3-LoanFilesList.html" class="sidebar-item"><i data-lucide="files" class="w-5 h-5"></i> Loan Files</a>
+            
+            <div class="text-xs font-bold text-textSecondary uppercase tracking-wider px-4 mb-2 mt-4">Network</div>
+            <a href="./A5-LendersList.html" class="sidebar-item active"><i data-lucide="landmark" class="w-5 h-5"></i> Lenders</a>
+            <a href="./A11-Dealers.html" class="sidebar-item"><i data-lucide="store" class="w-5 h-5"></i> Dealers</a>
+            <a href="./A12-Staff.html" class="sidebar-item"><i data-lucide="users" class="w-5 h-5"></i> Staff</a>
+            
+            <div class="text-xs font-bold text-textSecondary uppercase tracking-wider px-4 mb-2 mt-4">Finance</div>
+            <a href="./A13-Commissions.html" class="sidebar-item"><i data-lucide="indian-rupee" class="w-5 h-5"></i> Commissions</a>
+            <a href="./A14-Payouts.html" class="sidebar-item"><i data-lucide="banknote" class="w-5 h-5"></i> Payout Queue</a>
+            
+            <div class="text-xs font-bold text-textSecondary uppercase tracking-wider px-4 mb-2 mt-4">System</div>
+            <a href="./A15-Settings.html" class="sidebar-item"><i data-lucide="settings" class="w-5 h-5"></i> Settings</a>
+            <a href="./A16-AuditLog.html" class="sidebar-item"><i data-lucide="clipboard-list" class="w-5 h-5"></i> Audit Log</a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 ml-64 flex flex-col min-h-screen">
+        
+        <!-- Topbar -->
+        <header class="h-16 bg-surface border-b border-border flex items-center justify-between px-8 sticky top-0 z-10">
+            <h1 class="text-h2 font-bold">Lending Partners</h1>
+            <div class="flex items-center gap-4">
+                <a href="./A7-LenderSettings.html" class="bg-primary hover:bg-primaryHover text-white px-4 py-2 rounded-lg text-bodyBold transition-colors flex items-center gap-2">
+                    <i data-lucide="sliders-horizontal" class="w-4 h-4"></i> Global Lender Settings
+                </a>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="p-8 flex-1 overflow-y-auto">
+            
+            <div class="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-xl mb-6 flex gap-3 shadow-sm">
+                <i data-lucide="info" class="w-5 h-5 mt-0.5 shrink-0"></i>
+                <div class="text-body">
+                    <strong class="block mb-1">v3.0 Architecture Notice</strong>
+                    Lender eligibility rules are now hardcoded in the backend. You can toggle their active status and re-order their priority here. To view a lender's active rules, click "View Rules". Policy editing requires a code deployment.
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                <!-- Lender 1 -->
+                <div class="bg-surface rounded-xl border border-border shadow-sm overflow-hidden flex flex-col relative">
+                    <div class="absolute top-4 right-4 bg-primary text-white text-caption font-bold w-6 h-6 flex items-center justify-center rounded-full shadow" title="Priority 1">1</div>
+                    <div class="p-6 border-b border-border flex flex-col items-center justify-center gap-4 h-40">
+                        <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center text-blue-700">
+                            <i data-lucide="building" class="w-10 h-10"></i>
+                        </div>
+                        <h2 class="text-h2 font-bold">SK Finance</h2>
+                    </div>
+                    
+                    <div class="p-4 flex-1 flex flex-col gap-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-body text-textSecondary">Status</span>
+                            <span class="inline-flex items-center gap-1 text-success text-caption font-bold bg-success/10 px-2 py-1 rounded">
+                                <div class="w-2 h-2 rounded-full bg-success"></div> Active
+                            </span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-body text-textSecondary">Code Module</span>
+                            <span class="text-body font-mono text-textPrimary text-sm">sk-finance</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-body text-textSecondary">Rules Version</span>
+                            <span class="text-body font-mono text-textPrimary text-sm">v1.0.4</span>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 border-t border-border grid grid-cols-2 gap-3 bg-surfaceAlt">
+                        <a href="./A6-LenderRulesReference.html" class="w-full text-center bg-white border border-border px-3 py-2 rounded-lg text-bodyBold text-textPrimary hover:bg-background transition-colors flex items-center justify-center gap-2">
+                            <i data-lucide="file-search" class="w-4 h-4"></i> View Rules
+                        </a>
+                        <a href="./A7-LenderSettings.html" class="w-full text-center bg-surface border border-border px-3 py-2 rounded-lg text-bodyBold text-textPrimary hover:bg-background transition-colors flex items-center justify-center gap-2">
+                            <i data-lucide="settings" class="w-4 h-4"></i> Settings
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Lender 2 -->
+                <div class="bg-surface rounded-xl border border-border shadow-sm overflow-hidden flex flex-col relative">
+                    <div class="absolute top-4 right-4 bg-primary text-white text-caption font-bold w-6 h-6 flex items-center justify-center rounded-full shadow" title="Priority 2">2</div>
+                    <div class="p-6 border-b border-border flex flex-col items-center justify-center gap-4 h-40">
+                        <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center text-purple-700">
+                            <i data-lucide="building-2" class="w-10 h-10"></i>
+                        </div>
+                        <h2 class="text-h2 font-bold">ITI Finance</h2>
+                    </div>
+                    
+                    <div class="p-4 flex-1 flex flex-col gap-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-body text-textSecondary">Status</span>
+                            <span class="inline-flex items-center gap-1 text-success text-caption font-bold bg-success/10 px-2 py-1 rounded">
+                                <div class="w-2 h-2 rounded-full bg-success"></div> Active
+                            </span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-body text-textSecondary">Code Module</span>
+                            <span class="text-body font-mono text-textPrimary text-sm">iti-finance</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-body text-textSecondary">Rules Version</span>
+                            <span class="text-body font-mono text-textPrimary text-sm">v1.0.1</span>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 border-t border-border grid grid-cols-2 gap-3 bg-surfaceAlt">
+                        <a href="./A6-LenderRulesReference.html" class="w-full text-center bg-white border border-border px-3 py-2 rounded-lg text-bodyBold text-textPrimary hover:bg-background transition-colors flex items-center justify-center gap-2">
+                            <i data-lucide="file-search" class="w-4 h-4"></i> View Rules
+                        </a>
+                        <a href="./A7-LenderSettings.html" class="w-full text-center bg-surface border border-border px-3 py-2 rounded-lg text-bodyBold text-textPrimary hover:bg-background transition-colors flex items-center justify-center gap-2">
+                            <i data-lucide="settings" class="w-4 h-4"></i> Settings
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Lender Placeholder 1 -->
+                <div class="bg-surface rounded-xl border border-dashed border-border shadow-sm overflow-hidden flex flex-col relative opacity-60">
+                    <div class="absolute top-4 right-4 bg-textSecondary text-white text-caption font-bold w-6 h-6 flex items-center justify-center rounded-full shadow" title="Priority 3">3</div>
+                    <div class="p-6 border-b border-border flex flex-col items-center justify-center gap-4 h-40">
+                        <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center text-textSecondary">
+                            <i data-lucide="banknote" class="w-10 h-10"></i>
+                        </div>
+                        <h2 class="text-h2 font-bold">Bajaj Finserv</h2>
+                    </div>
+                    
+                    <div class="p-4 flex-1 flex flex-col gap-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-body text-textSecondary">Status</span>
+                            <span class="inline-flex items-center gap-1 text-textSecondary text-caption font-bold bg-background px-2 py-1 rounded border border-border">
+                                <div class="w-2 h-2 rounded-full bg-textSecondary"></div> Inactive
+                            </span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-body text-textSecondary">Code Module</span>
+                            <span class="text-body font-mono text-textSecondary text-sm">N/A</span>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 border-t border-border bg-surfaceAlt">
+                        <button class="w-full bg-surface border border-border px-4 py-2 rounded-lg text-bodyBold text-textSecondary hover:bg-background transition-colors flex items-center justify-center gap-2 cursor-not-allowed">
+                            Code deploy required
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Lender Placeholder 2 -->
+                <div class="bg-surface rounded-xl border border-dashed border-border shadow-sm overflow-hidden flex flex-col relative opacity-60">
+                    <div class="absolute top-4 right-4 bg-textSecondary text-white text-caption font-bold w-6 h-6 flex items-center justify-center rounded-full shadow" title="Priority 4">4</div>
+                    <div class="p-6 border-b border-border flex flex-col items-center justify-center gap-4 h-40">
+                        <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center text-textSecondary">
+                            <i data-lucide="banknote" class="w-10 h-10"></i>
+                        </div>
+                        <h2 class="text-h2 font-bold">Mahindra Finance</h2>
+                    </div>
+                    
+                    <div class="p-4 flex-1 flex flex-col gap-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-body text-textSecondary">Status</span>
+                            <span class="inline-flex items-center gap-1 text-textSecondary text-caption font-bold bg-background px-2 py-1 rounded border border-border">
+                                <div class="w-2 h-2 rounded-full bg-textSecondary"></div> Inactive
+                            </span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-body text-textSecondary">Code Module</span>
+                            <span class="text-body font-mono text-textSecondary text-sm">N/A</span>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 border-t border-border bg-surfaceAlt">
+                        <button class="w-full bg-surface border border-border px-4 py-2 rounded-lg text-bodyBold text-textSecondary hover:bg-background transition-colors flex items-center justify-center gap-2 cursor-not-allowed">
+                            Code deploy required
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

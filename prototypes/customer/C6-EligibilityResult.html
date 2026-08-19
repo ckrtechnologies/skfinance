@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black/90">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shreeja Customer - Eligibility Result</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../tailwind-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .loading-overlay { display: flex; }
+        .result-content { display: none; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Mobile Frame -->
+    <div class="max-w-[390px] w-full h-[844px] bg-background text-textPrimary relative overflow-hidden sm:rounded-[40px] flex flex-col shadow-2xl ring-1 ring-border">
+        
+        <!-- Header -->
+        <header class="h-16 flex items-center justify-between px-4 border-b border-border bg-surface shrink-0 pt-2 z-10">
+            <a href="./C5-QuickEligibilityCheck.html" class="w-10 h-10 flex items-center justify-center text-textPrimary" id="backBtn">
+                <i data-lucide="arrow-left" class="w-6 h-6"></i>
+            </a>
+            <h1 class="text-bodyLarge font-bold">Lender Offers</h1>
+            <div class="w-10"></div> <!-- Spacer -->
+        </header>
+
+        <!-- Loading State -->
+        <div class="loading-overlay flex-1 flex flex-col items-center justify-center p-6 text-center z-20 absolute inset-0 bg-background top-16" id="loadingState">
+            <div class="w-16 h-16 border-4 border-border border-t-primary rounded-full animate-spin mb-6"></div>
+            <h2 class="text-h2 font-bold mb-2">Analyzing Profiles...</h2>
+            <p class="text-body text-textSecondary">We are checking your details against hardcoded lender policies.</p>
+        </div>
+
+        <!-- Results Content -->
+        <div class="result-content flex-1 overflow-y-auto px-4 py-6 pb-10 no-scrollbar" id="resultContent">
+            
+            <div class="bg-success/10 border border-success/30 rounded-xl p-4 mb-6 text-center">
+                <div class="w-12 h-12 bg-success text-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-md">
+                    <i data-lucide="check" class="w-6 h-6"></i>
+                </div>
+                <h2 class="text-h2 font-bold text-success mb-1">Great News!</h2>
+                <p class="text-body text-textPrimary">Based on your pre-check, you are eligible for 1 offer.</p>
+            </div>
+
+            <h3 class="text-bodyBold font-bold mb-4 px-2">Available Offers (1)</h3>
+
+            <!-- Eligible Lender Card -->
+            <div class="bg-surface border border-primary rounded-xl p-5 shadow-sm mb-4 relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wide">
+                    Best Match
+                </div>
+                
+                <div class="flex items-center gap-4 mb-4 mt-2">
+                    <div class="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 shrink-0 border border-blue-200">
+                        <i data-lucide="building" class="w-7 h-7"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-bodyLarge font-bold">SK Finance</h3>
+                        <p class="text-caption text-textSecondary mt-0.5">Used Car Loan</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 mb-5 border-t border-b border-border py-4">
+                    <div>
+                        <p class="text-caption text-textSecondary mb-1">Max Amount</p>
+                        <p class="text-bodyBold text-primary">₹5,00,000</p>
+                    </div>
+                    <div>
+                        <p class="text-caption text-textSecondary mb-1">Tenure</p>
+                        <p class="text-bodyBold">Up to 60 mos</p>
+                    </div>
+                </div>
+
+                <a href="./C7-LoanApplicationForm.html" class="w-full bg-primary hover:bg-primaryHover text-white font-bold py-3 rounded-lg transition-colors text-center block text-body shadow">
+                    Apply with SK Finance
+                </a>
+            </div>
+
+            <h3 class="text-bodyBold font-bold mt-8 mb-4 px-2">Other Lenders (1)</h3>
+
+            <!-- Ineligible Lender Card -->
+            <div class="bg-surface border border-border rounded-xl p-5 shadow-sm opacity-75 grayscale hover:grayscale-0 transition-all">
+                
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-14 h-14 bg-purple-100 rounded-full flex items-center justify-center text-purple-700 shrink-0 border border-purple-200">
+                        <i data-lucide="building-2" class="w-7 h-7"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-bodyLarge font-bold">ITI Finance</h3>
+                        <span class="inline-flex items-center gap-1 text-danger text-[10px] font-bold bg-danger/10 px-2 py-0.5 rounded mt-1 uppercase">
+                            Not Eligible
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="bg-background rounded-lg p-3 text-caption text-textSecondary border border-border flex gap-2">
+                    <i data-lucide="info" class="w-4 h-4 shrink-0 text-textSecondary"></i>
+                    Your requested loan amount exceeds their maximum limits for used cars.
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+        
+        // Simulate network delay for rule evaluation
+        setTimeout(() => {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('resultContent').style.display = 'block';
+        }, 2000);
+    </script>
+</body>
+</html>

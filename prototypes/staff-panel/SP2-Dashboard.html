@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-surfaceAlt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shreeja Staff Panel - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../tailwind-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="text-textPrimary flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-surface border-r border-border flex flex-col z-20">
+        <div class="h-16 flex items-center px-6 border-b border-border">
+            <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white mr-3 shadow-md">
+                <i data-lucide="building-2" class="w-5 h-5"></i>
+            </div>
+            <span class="font-bold text-bodyLarge text-primary">Shreeja</span>
+            <span class="text-caption text-textSecondary ml-2 font-mono mt-1">STAFF</span>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+            <a href="./SP2-Dashboard.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary font-bold">
+                <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard
+            </a>
+            <a href="./SP3-LeadManagement.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-textSecondary hover:bg-surfaceAlt hover:text-textPrimary font-medium transition-colors">
+                <i data-lucide="users" class="w-5 h-5"></i> Leads & Prospects
+            </a>
+            <a href="./SP4-ApplicationReview.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-textSecondary hover:bg-surfaceAlt hover:text-textPrimary font-medium transition-colors">
+                <i data-lucide="file-check" class="w-5 h-5"></i> Applications (FI)
+            </a>
+            <a href="./SP5-CreditDecision.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-textSecondary hover:bg-surfaceAlt hover:text-textPrimary font-medium transition-colors flex justify-between">
+                <div class="flex items-center gap-3"><i data-lucide="shield-alert" class="w-5 h-5"></i> Credit Review</div>
+                <span class="bg-danger text-white text-[10px] font-bold px-2 py-0.5 rounded-full">5</span>
+            </a>
+            <a href="./SP6-DisbursementApproval.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-textSecondary hover:bg-surfaceAlt hover:text-textPrimary font-medium transition-colors">
+                <i data-lucide="banknote" class="w-5 h-5"></i> Disbursements
+            </a>
+            <a href="./SP7-Reports.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-textSecondary hover:bg-surfaceAlt hover:text-textPrimary font-medium transition-colors">
+                <i data-lucide="pie-chart" class="w-5 h-5"></i> MIS Reports
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-border">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold">
+                    PM
+                </div>
+                <div>
+                    <p class="text-bodyBold text-textPrimary">Priya M.</p>
+                    <p class="text-caption text-textSecondary">Branch Manager</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        
+        <!-- Topbar -->
+        <header class="h-16 bg-surface border-b border-border flex items-center justify-between px-8 shrink-0 z-10">
+            <h1 class="text-h2 font-bold">Branch Overview - Andheri East</h1>
+            <div class="flex items-center gap-4">
+                <div class="relative text-textSecondary">
+                    <i data-lucide="search" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                    <input type="text" placeholder="Search APP ID, Customer..." class="pl-10 pr-4 py-2 border border-border rounded-lg bg-background focus:outline-none focus:border-primary text-body w-64">
+                </div>
+                <button class="w-10 h-10 rounded-full bg-background border border-border flex items-center justify-center text-textSecondary hover:text-primary transition-colors">
+                    <i data-lucide="bell" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Dashboard Content -->
+        <div class="flex-1 overflow-y-auto p-8 bg-background">
+            
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                
+                <div class="bg-surface rounded-2xl p-6 shadow-sm border border-border flex items-start gap-4">
+                    <div class="w-12 h-12 bg-blue-50 text-primary rounded-xl flex items-center justify-center shrink-0">
+                        <i data-lucide="users" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-caption text-textSecondary font-bold uppercase tracking-wide">New Leads</p>
+                        <p class="text-h1 font-bold mt-1">42</p>
+                        <p class="text-caption text-success font-semibold flex items-center gap-1 mt-1"><i data-lucide="trending-up" class="w-3 h-3"></i> +12% this week</p>
+                    </div>
+                </div>
+                
+                <div class="bg-surface rounded-2xl p-6 shadow-sm border border-border flex items-start gap-4">
+                    <div class="w-12 h-12 bg-orange-50 text-warning rounded-xl flex items-center justify-center shrink-0">
+                        <i data-lucide="file-search" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-caption text-textSecondary font-bold uppercase tracking-wide">In FI Pipeline</p>
+                        <p class="text-h1 font-bold mt-1">18</p>
+                        <p class="text-caption text-textSecondary font-semibold mt-1">Pending verification</p>
+                    </div>
+                </div>
+                
+                <div class="bg-surface rounded-2xl p-6 shadow-sm border border-border flex items-start gap-4 relative overflow-hidden">
+                    <div class="absolute right-0 top-0 w-2 h-full bg-danger"></div>
+                    <div class="w-12 h-12 bg-red-50 text-danger rounded-xl flex items-center justify-center shrink-0">
+                        <i data-lucide="shield-alert" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-caption text-textSecondary font-bold uppercase tracking-wide">Credit Review</p>
+                        <p class="text-h1 font-bold mt-1">5</p>
+                        <p class="text-caption text-danger font-semibold mt-1">Requires attention</p>
+                    </div>
+                </div>
+                
+                <div class="bg-surface rounded-2xl p-6 shadow-sm border border-border flex items-start gap-4">
+                    <div class="w-12 h-12 bg-green-50 text-success rounded-xl flex items-center justify-center shrink-0">
+                        <i data-lucide="banknote" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-caption text-textSecondary font-bold uppercase tracking-wide">MTD Disbursals</p>
+                        <p class="text-h1 font-bold mt-1">₹4.2 Cr</p>
+                        <p class="text-caption text-success font-semibold flex items-center gap-1 mt-1"><i data-lucide="trending-up" class="w-3 h-3"></i> On Track</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Two Column Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Left Col: Actionable Pipeline -->
+                <div class="lg:col-span-2 space-y-8">
+                    
+                    <div class="bg-surface rounded-2xl border border-border shadow-sm overflow-hidden">
+                        <div class="px-6 py-5 border-b border-border flex justify-between items-center bg-background/50">
+                            <h3 class="text-bodyLarge font-bold">Applications Awaiting Credit Decision</h3>
+                            <a href="./SP5-CreditDecision.html" class="text-caption font-bold text-primary hover:underline">View All</a>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-surfaceAlt text-caption font-bold text-textSecondary uppercase tracking-wider">
+                                        <th class="p-4 pl-6 font-medium">App ID</th>
+                                        <th class="p-4 font-medium">Customer</th>
+                                        <th class="p-4 font-medium">Amount</th>
+                                        <th class="p-4 font-medium">Source</th>
+                                        <th class="p-4 font-medium">LTV Status</th>
+                                        <th class="p-4 pr-6 font-medium text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-border">
+                                    <tr class="hover:bg-background transition-colors">
+                                        <td class="p-4 pl-6 font-mono text-body text-textSecondary">APP-84920</td>
+                                        <td class="p-4">
+                                            <p class="text-bodyBold font-bold">Ramesh Kumar</p>
+                                        </td>
+                                        <td class="p-4 font-bold">₹4,50,000</td>
+                                        <td class="p-4 text-body text-textSecondary">Dealer (Wheels Auto)</td>
+                                        <td class="p-4">
+                                            <span class="inline-flex items-center gap-1 bg-success/10 text-success text-caption font-bold px-2 py-1 rounded">
+                                                <i data-lucide="check" class="w-3 h-3"></i> Safe (70%)
+                                            </span>
+                                        </td>
+                                        <td class="p-4 pr-6 text-right">
+                                            <a href="./SP5-CreditDecision.html" class="bg-background border border-border hover:bg-primary/5 hover:text-primary hover:border-primary text-textPrimary px-4 py-2 rounded-lg text-caption font-bold transition-colors inline-block">Review</a>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-background transition-colors">
+                                        <td class="p-4 pl-6 font-mono text-body text-textSecondary">APP-84915</td>
+                                        <td class="p-4">
+                                            <p class="text-bodyBold font-bold">Amit Patel</p>
+                                        </td>
+                                        <td class="p-4 font-bold">₹8,00,000</td>
+                                        <td class="p-4 text-body text-textSecondary">Direct Lead</td>
+                                        <td class="p-4">
+                                            <span class="inline-flex items-center gap-1 bg-warning/10 text-warning text-caption font-bold px-2 py-1 rounded">
+                                                <i data-lucide="alert-triangle" class="w-3 h-3"></i> Borderline (85%)
+                                            </span>
+                                        </td>
+                                        <td class="p-4 pr-6 text-right">
+                                            <a href="./SP5-CreditDecision.html" class="bg-background border border-border hover:bg-primary/5 hover:text-primary hover:border-primary text-textPrimary px-4 py-2 rounded-lg text-caption font-bold transition-colors inline-block">Review</a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                </div>
+
+                <!-- Right Col: Field Staff & Notifications -->
+                <div class="space-y-8">
+                    
+                    <div class="bg-surface rounded-2xl border border-border shadow-sm p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-bodyLarge font-bold">Field Staff Status</h3>
+                            <button class="text-textSecondary hover:text-primary"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between border-b border-border pb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-caption">AK</div>
+                                    <div>
+                                        <p class="text-bodyBold font-bold">Amit Kumar</p>
+                                        <p class="text-caption text-textSecondary">Active on Field</p>
+                                    </div>
+                                </div>
+                                <span class="bg-blue-50 text-primary px-2 py-1 rounded text-caption font-bold">2/4 Tasks</span>
+                            </div>
+                            
+                            <div class="flex items-center justify-between border-b border-border pb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-caption">RS</div>
+                                    <div>
+                                        <p class="text-bodyBold font-bold">Raj Sharma</p>
+                                        <p class="text-caption text-textSecondary">At Branch</p>
+                                    </div>
+                                </div>
+                                <span class="bg-gray-100 text-textSecondary px-2 py-1 rounded text-caption font-bold">0/2 Tasks</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+            
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

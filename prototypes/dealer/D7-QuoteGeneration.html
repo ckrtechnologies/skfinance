@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black/90">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shreeja Dealer - Quote Generation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../tailwind-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Mobile Frame -->
+    <div class="max-w-[390px] w-full h-[844px] bg-background text-textPrimary relative overflow-hidden sm:rounded-[40px] flex flex-col shadow-2xl ring-1 ring-border">
+        
+        <!-- Header -->
+        <header class="h-16 flex items-center justify-between px-4 border-b border-border bg-surface shrink-0 pt-2 z-10">
+            <a href="./D5-VehicleSelection.html" class="w-10 h-10 flex items-center justify-center text-textPrimary">
+                <i data-lucide="arrow-left" class="w-6 h-6"></i>
+            </a>
+            <h1 class="text-bodyLarge font-bold">Generated Quotes</h1>
+            <div class="w-10"></div> <!-- Spacer -->
+        </header>
+
+        <!-- Progress -->
+        <div class="flex items-center justify-between px-8 py-4 bg-surface border-b border-border">
+            <div class="flex flex-col items-center">
+                <div class="w-8 h-8 rounded-full bg-success text-white flex items-center justify-center text-caption font-bold mb-1"><i data-lucide="check" class="w-4 h-4"></i></div>
+            </div>
+            <div class="h-0.5 flex-1 bg-success mx-2 mb-4"></div>
+            <div class="flex flex-col items-center">
+                <div class="w-8 h-8 rounded-full bg-success text-white flex items-center justify-center text-caption font-bold mb-1"><i data-lucide="check" class="w-4 h-4"></i></div>
+            </div>
+            <div class="h-0.5 flex-1 bg-success mx-2 mb-4"></div>
+            <div class="flex flex-col items-center">
+                <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-caption font-bold mb-1">3</div>
+                <span class="text-[10px] font-bold text-primary">Quote</span>
+            </div>
+        </div>
+
+        <!-- Results Content -->
+        <div class="flex-1 overflow-y-auto px-4 py-6 pb-32 no-scrollbar">
+            
+            <div class="mb-4 text-center">
+                <p class="text-body text-textSecondary">Vehicle Valuation</p>
+                <h2 class="text-h1 font-bold">₹6,50,000</h2>
+            </div>
+
+            <h3 class="text-bodyBold font-bold mb-4 px-2">Top Lenders for this profile</h3>
+
+            <!-- Eligible Lender Card -->
+            <div class="bg-surface border border-primary rounded-xl p-5 shadow-sm mb-4 relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wide">
+                    Highest LTV
+                </div>
+                
+                <div class="flex items-center gap-4 mb-4 mt-2">
+                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 shrink-0">
+                        <i data-lucide="building" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-bodyLarge font-bold">SK Finance</h3>
+                        <p class="text-caption text-textSecondary mt-0.5">Processing Fee: 1.5%</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 mb-5 border-t border-b border-border py-4">
+                    <div>
+                        <p class="text-caption text-textSecondary mb-1">Max Loan (85% LTV)</p>
+                        <p class="text-bodyBold text-primary">₹5,52,500</p>
+                    </div>
+                    <div>
+                        <p class="text-caption text-textSecondary mb-1">Interest Rate</p>
+                        <p class="text-bodyBold">12.5% p.a.</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <button class="flex-1 bg-surfaceAlt hover:bg-border text-textPrimary font-bold py-3 rounded-lg transition-colors border border-border text-body">
+                        Share Link
+                    </button>
+                    <a href="./D8-ApplicationTracking.html" class="flex-[2] bg-primary hover:bg-primaryHover text-white font-bold py-3 rounded-lg transition-colors text-center text-body shadow">
+                        Send to SK
+                    </a>
+                </div>
+            </div>
+
+            <!-- Lender Card 2 -->
+            <div class="bg-surface border border-border rounded-xl p-5 shadow-sm mb-4">
+                
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center text-purple-700 shrink-0">
+                        <i data-lucide="building-2" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-bodyLarge font-bold">ITI Finance</h3>
+                        <p class="text-caption text-textSecondary mt-0.5">Processing Fee: 2.0%</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 mb-5 border-t border-b border-border py-4">
+                    <div>
+                        <p class="text-caption text-textSecondary mb-1">Max Loan (75% LTV)</p>
+                        <p class="text-bodyBold text-textPrimary">₹4,87,500</p>
+                    </div>
+                    <div>
+                        <p class="text-caption text-textSecondary mb-1">Interest Rate</p>
+                        <p class="text-bodyBold">14.0% p.a.</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <button class="flex-1 bg-surfaceAlt hover:bg-border text-textPrimary font-bold py-3 rounded-lg transition-colors border border-border text-body">
+                        Share Link
+                    </button>
+                    <a href="./D8-ApplicationTracking.html" class="flex-[2] bg-background border border-border hover:bg-surface text-textPrimary font-bold py-3 rounded-lg transition-colors text-center text-body shadow-sm">
+                        Send to ITI
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

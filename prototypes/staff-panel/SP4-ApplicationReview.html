@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-surfaceAlt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shreeja Staff Panel - Application Review</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../tailwind-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="text-textPrimary flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-surface border-r border-border flex flex-col z-20">
+        <div class="h-16 flex items-center px-6 border-b border-border">
+            <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white mr-3 shadow-md">
+                <i data-lucide="building-2" class="w-5 h-5"></i>
+            </div>
+            <span class="font-bold text-bodyLarge text-primary">Shreeja</span>
+            <span class="text-caption text-textSecondary ml-2 font-mono mt-1">STAFF</span>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+            <a href="./SP2-Dashboard.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-textSecondary hover:bg-surfaceAlt hover:text-textPrimary font-medium transition-colors">
+                <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard
+            </a>
+            <a href="./SP3-LeadManagement.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-textSecondary hover:bg-surfaceAlt hover:text-textPrimary font-medium transition-colors">
+                <i data-lucide="users" class="w-5 h-5"></i> Leads & Prospects
+            </a>
+            <a href="./SP4-ApplicationReview.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary font-bold">
+                <i data-lucide="file-check" class="w-5 h-5"></i> Applications (FI)
+            </a>
+            <a href="./SP5-CreditDecision.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-textSecondary hover:bg-surfaceAlt hover:text-textPrimary font-medium transition-colors">
+                <i data-lucide="shield-alert" class="w-5 h-5"></i> Credit Review
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        
+        <!-- Topbar -->
+        <header class="h-16 bg-surface border-b border-border flex items-center justify-between px-8 shrink-0 z-10">
+            <div class="flex items-center gap-4">
+                <h1 class="text-h2 font-bold flex items-center gap-3">
+                    Application Details
+                </h1>
+                <span class="bg-orange-50 text-warning text-caption font-bold px-3 py-1 rounded-full uppercase tracking-wide border border-orange-100">FI Review Pending</span>
+            </div>
+            <div class="flex gap-3">
+                <button class="bg-background border border-border hover:bg-surface text-textPrimary px-4 py-2 rounded-lg font-bold text-body transition-colors">
+                    Reject / Hold
+                </button>
+                <button class="bg-primary hover:bg-primaryHover text-white px-4 py-2 rounded-lg font-bold text-body transition-colors shadow">
+                    Approve FI & Send to Credit
+                </button>
+            </div>
+        </header>
+
+        <!-- Content Layout (2 Cols) -->
+        <div class="flex-1 flex overflow-hidden">
+            
+            <!-- Center Column (App Details) -->
+            <div class="flex-1 overflow-y-auto p-8 border-r border-border bg-background no-scrollbar">
+                
+                <div class="flex justify-between items-start mb-8">
+                    <div>
+                        <h2 class="text-display font-bold">Ramesh Kumar</h2>
+                        <p class="text-body font-mono text-textSecondary mt-1">#APP-84920 • Applied: 12 Aug 2023</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-caption text-textSecondary font-bold uppercase tracking-wide">Loan Requested</p>
+                        <p class="text-h1 font-bold text-primary mt-1">₹4,50,000</p>
+                    </div>
+                </div>
+
+                <div class="bg-surface rounded-xl border border-border shadow-sm p-6 mb-8">
+                    <h3 class="text-bodyLarge font-bold mb-4 border-b border-border pb-2">Customer Profile</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+                        <div>
+                            <p class="text-caption text-textSecondary mb-1">Mobile Number</p>
+                            <p class="text-bodyBold">+91 98765 00001</p>
+                        </div>
+                        <div>
+                            <p class="text-caption text-textSecondary mb-1">PAN Number</p>
+                            <p class="text-bodyBold font-mono uppercase">ABCD1234F</p>
+                        </div>
+                        <div>
+                            <p class="text-caption text-textSecondary mb-1">Employment</p>
+                            <p class="text-bodyBold">Salaried (TCS Ltd)</p>
+                        </div>
+                        <div class="col-span-3">
+                            <p class="text-caption text-textSecondary mb-1">Residence Address</p>
+                            <p class="text-bodyBold">123 Main St, Apartment 4B, Borivali West, Mumbai 400092</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-surface rounded-xl border border-border shadow-sm p-6">
+                    <h3 class="text-bodyLarge font-bold mb-4 border-b border-border pb-2">Vehicle Details</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+                        <div>
+                            <p class="text-caption text-textSecondary mb-1">Category</p>
+                            <p class="text-bodyBold">Used Car</p>
+                        </div>
+                        <div>
+                            <p class="text-caption text-textSecondary mb-1">Make / Model</p>
+                            <p class="text-bodyBold">Maruti Suzuki Swift VXi</p>
+                        </div>
+                        <div>
+                            <p class="text-caption text-textSecondary mb-1">Registration</p>
+                            <p class="text-bodyBold font-mono">MH 01 AB 1234</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Column (FI Report & Docs) -->
+            <div class="w-[450px] bg-surface flex flex-col shrink-0 overflow-y-auto">
+                <div class="p-6 border-b border-border bg-background/50">
+                    <h3 class="text-bodyLarge font-bold">Field Investigation Report</h3>
+                    <p class="text-caption text-textSecondary mt-1">Submitted by Amit Kumar (EMP-104)</p>
+                </div>
+                
+                <div class="p-6">
+                    
+                    <!-- Checklist Results -->
+                    <div class="space-y-4 mb-8">
+                        <div class="flex items-center gap-3 text-success">
+                            <i data-lucide="check-circle" class="w-5 h-5 shrink-0"></i>
+                            <span class="text-body font-medium text-textPrimary">Address matches Aadhaar</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-success">
+                            <i data-lucide="check-circle" class="w-5 h-5 shrink-0"></i>
+                            <span class="text-body font-medium text-textPrimary">Customer presence verified</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-warning">
+                            <i data-lucide="alert-circle" class="w-5 h-5 shrink-0"></i>
+                            <span class="text-body font-medium text-textPrimary">House is rented (Not owned)</span>
+                        </div>
+                    </div>
+
+                    <!-- Field Notes -->
+                    <div class="bg-background rounded-lg border border-border p-4 mb-8">
+                        <h4 class="text-caption font-bold text-textSecondary uppercase mb-2">Executive Remarks</h4>
+                        <p class="text-body">Met the applicant at residence. Provided electricity bill as proof. Neighborhood is standard residential. Recommend proceeding.</p>
+                    </div>
+
+                    <!-- Photo Evidence -->
+                    <h4 class="text-bodyBold font-bold mb-3">Geotagged Photos</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="aspect-square bg-background rounded-lg border border-border overflow-hidden relative group cursor-pointer">
+                            <div class="absolute inset-0 flex items-center justify-center text-textSecondary">
+                                <i data-lucide="image" class="w-8 h-8 opacity-20"></i>
+                            </div>
+                            <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=400&q=80" alt="House Front" class="w-full h-full object-cover">
+                            <div class="absolute bottom-0 inset-x-0 bg-black/60 p-2 text-[10px] text-white">House Exterior</div>
+                        </div>
+                        
+                        <div class="aspect-square bg-background rounded-lg border border-border overflow-hidden relative group cursor-pointer">
+                            <div class="absolute inset-0 flex items-center justify-center text-textSecondary">
+                                <i data-lucide="image" class="w-8 h-8 opacity-20"></i>
+                            </div>
+                            <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=400&q=80" alt="House Inside" class="w-full h-full object-cover">
+                            <div class="absolute bottom-0 inset-x-0 bg-black/60 p-2 text-[10px] text-white">Interior / Applicant</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

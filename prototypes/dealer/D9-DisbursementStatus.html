@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black/90">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shreeja Dealer - Disbursement</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../tailwind-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Mobile Frame -->
+    <div class="max-w-[390px] w-full h-[844px] bg-background text-textPrimary relative overflow-hidden sm:rounded-[40px] flex flex-col items-center shadow-2xl ring-1 ring-border p-6 pt-24 text-center">
+        
+        <div class="w-24 h-24 bg-success/10 text-success rounded-full flex items-center justify-center mb-8 relative">
+            <div class="absolute inset-0 bg-success/20 rounded-full animate-ping"></div>
+            <i data-lucide="banknote" class="w-12 h-12 relative z-10"></i>
+        </div>
+        
+        <h1 class="text-h1 font-bold text-success mb-2 leading-tight">Disbursal Successful!</h1>
+        <p class="text-body text-textSecondary mb-8">Funds have been initiated to your registered bank account for APP-84920.</p>
+
+        <div class="w-full bg-surface border border-border rounded-xl p-5 text-left mb-auto shadow-sm">
+            <h4 class="text-caption text-textSecondary uppercase tracking-wide font-bold mb-3 border-b border-border pb-2">Disbursement Details</h4>
+            
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-body font-medium text-textSecondary">Customer</span>
+                <span class="text-bodyBold text-textPrimary">Ramesh Kumar</span>
+            </div>
+            
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-body font-medium text-textSecondary">Amount</span>
+                <span class="text-h2 font-bold text-textPrimary">₹4,50,000</span>
+            </div>
+
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-body font-medium text-textSecondary">UTR Ref</span>
+                <span class="text-body font-mono text-textPrimary">SKF99201994</span>
+            </div>
+
+            <div class="flex justify-between items-center bg-blue-50 -mx-5 px-5 py-3 border-t border-blue-100 rounded-b-xl mt-4">
+                <span class="text-body font-bold text-primary">Your Commission</span>
+                <span class="text-h2 font-bold text-success">+ ₹6,750</span>
+            </div>
+        </div>
+        
+        <!-- Action Area -->
+        <div class="w-full mt-8">
+            <a href="./D10-CommissionWallet.html" class="w-full bg-primary hover:bg-primaryHover text-white font-bold py-4 rounded-xl transition-colors text-center block text-bodyLarge shadow-lg shadow-primary/30">
+                View Wallet
+            </a>
+            <a href="./D3-Dashboard.html" class="w-full bg-background hover:bg-surface border border-border text-textPrimary font-bold py-4 rounded-xl transition-colors text-center block text-body mt-3">
+                Back to Dashboard
+            </a>
+        </div>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-background">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shreeja Finance - File Detail</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../tailwind-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar-item { @apply flex items-center gap-3 px-4 py-3 rounded-lg text-textSecondary hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer font-medium text-body; }
+        .sidebar-item.active { @apply bg-primary text-white hover:bg-primary hover:text-white; }
+        .timeline-dot::before { content: ''; position: absolute; left: 15px; top: 32px; bottom: -24px; width: 2px; background-color: #E5E7EB; z-index: 0; }
+        .timeline-item:last-child .timeline-dot::before { display: none; }
+    </style>
+</head>
+<body class="min-h-screen flex text-textPrimary">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-surface border-r border-border flex flex-col fixed h-full z-20">
+        <div class="h-16 flex items-center px-6 border-b border-border bg-primary">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+                    <i data-lucide="building-2" class="w-4 h-4 text-primary"></i>
+                </div>
+                <span class="text-white font-bold text-h2 tracking-tight">Shreeja Admin</span>
+            </div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
+            <div class="text-xs font-bold text-textSecondary uppercase tracking-wider px-4 mb-2 mt-2">Core</div>
+            <a href="./A2-Dashboard.html" class="sidebar-item"><i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard</a>
+            <a href="./A3-LoanFilesList.html" class="sidebar-item active"><i data-lucide="files" class="w-5 h-5"></i> Loan Files</a>
+            
+            <div class="text-xs font-bold text-textSecondary uppercase tracking-wider px-4 mb-2 mt-4">Network</div>
+            <a href="./A5-LendersList.html" class="sidebar-item"><i data-lucide="landmark" class="w-5 h-5"></i> Lenders</a>
+            <a href="./A11-Dealers.html" class="sidebar-item"><i data-lucide="store" class="w-5 h-5"></i> Dealers</a>
+            <a href="./A12-Staff.html" class="sidebar-item"><i data-lucide="users" class="w-5 h-5"></i> Staff</a>
+            
+            <div class="text-xs font-bold text-textSecondary uppercase tracking-wider px-4 mb-2 mt-4">Finance</div>
+            <a href="./A13-Commissions.html" class="sidebar-item"><i data-lucide="indian-rupee" class="w-5 h-5"></i> Commissions</a>
+            <a href="./A14-Payouts.html" class="sidebar-item"><i data-lucide="banknote" class="w-5 h-5"></i> Payout Queue</a>
+            
+            <div class="text-xs font-bold text-textSecondary uppercase tracking-wider px-4 mb-2 mt-4">System</div>
+            <a href="./A15-Settings.html" class="sidebar-item"><i data-lucide="settings" class="w-5 h-5"></i> Settings</a>
+            <a href="./A16-AuditLog.html" class="sidebar-item"><i data-lucide="clipboard-list" class="w-5 h-5"></i> Audit Log</a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 ml-64 flex flex-col min-h-screen">
+        
+        <!-- Topbar -->
+        <header class="h-16 bg-surface border-b border-border flex items-center justify-between px-8 sticky top-0 z-10">
+            <div class="flex items-center gap-4">
+                <a href="./A3-LoanFilesList.html" class="p-2 text-textSecondary hover:bg-surfaceAlt rounded-lg transition-colors">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                </a>
+                <h1 class="text-h2 font-bold flex items-center gap-3">
+                    #APP-84920
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-blue-50 text-blue-700 border border-blue-200">SK Finance</span>
+                </h1>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <button class="bg-surface border border-border px-4 py-2 rounded-lg text-bodyBold hover:bg-surfaceAlt transition-colors flex items-center gap-2">
+                    <i data-lucide="download" class="w-4 h-4"></i> Download Zip
+                </button>
+                <button class="bg-success hover:bg-green-600 text-white px-4 py-2 rounded-lg text-bodyBold transition-colors flex items-center gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i> Mark Disbursed
+                </button>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="p-8 flex-1 overflow-y-auto">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Left Column (Data + Docs) -->
+                <div class="lg:col-span-2 flex flex-col gap-6">
+                    
+                    <!-- Applicant Info -->
+                    <div class="bg-surface rounded-xl border border-border shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-border bg-surfaceAlt flex justify-between items-center">
+                            <h3 class="text-bodyLarge font-bold flex items-center gap-2"><i data-lucide="user" class="w-5 h-5 text-primary"></i> Applicant Details</h3>
+                        </div>
+                        <div class="p-6 grid grid-cols-2 md:grid-cols-3 gap-6">
+                            <div>
+                                <p class="text-caption text-textSecondary mb-1">Full Name</p>
+                                <p class="text-bodyBold">Ramesh Kumar</p>
+                            </div>
+                            <div>
+                                <p class="text-caption text-textSecondary mb-1">Phone Number</p>
+                                <p class="text-bodyBold">+91 98765 43210</p>
+                            </div>
+                            <div>
+                                <p class="text-caption text-textSecondary mb-1">Age</p>
+                                <p class="text-bodyBold">34 Years</p>
+                            </div>
+                            <div>
+                                <p class="text-caption text-textSecondary mb-1">Residence</p>
+                                <p class="text-bodyBold">Owned (Self)</p>
+                            </div>
+                            <div>
+                                <p class="text-caption text-textSecondary mb-1">Income Type</p>
+                                <p class="text-bodyBold">Salaried</p>
+                            </div>
+                            <div>
+                                <p class="text-caption text-textSecondary mb-1">CIBIL Score</p>
+                                <p class="text-bodyBold text-success">742</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vehicle Info -->
+                    <div class="bg-surface rounded-xl border border-border shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-border bg-surfaceAlt flex justify-between items-center">
+                            <h3 class="text-bodyLarge font-bold flex items-center gap-2"><i data-lucide="car" class="w-5 h-5 text-primary"></i> Vehicle & Loan Request</h3>
+                        </div>
+                        <div class="p-6 grid grid-cols-2 gap-6">
+                            <div>
+                                <p class="text-caption text-textSecondary mb-1">Vehicle Type</p>
+                                <p class="text-bodyBold">Used Car (Hatchback)</p>
+                            </div>
+                            <div>
+                                <p class="text-caption text-textSecondary mb-1">Requested Amount</p>
+                                <p class="text-bodyBold">₹4,50,000</p>
+                            </div>
+                            <div>
+                                <p class="text-caption text-textSecondary mb-1">Asset Value (Estimated)</p>
+                                <p class="text-bodyBold">₹5,20,000</p>
+                            </div>
+                            <div>
+                                <p class="text-caption text-textSecondary mb-1">LTV (Loan to Value)</p>
+                                <p class="text-bodyBold">86.5%</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Documents -->
+                    <div class="bg-surface rounded-xl border border-border shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-border bg-surfaceAlt flex justify-between items-center">
+                            <h3 class="text-bodyLarge font-bold flex items-center gap-2"><i data-lucide="file-text" class="w-5 h-5 text-primary"></i> Documents</h3>
+                        </div>
+                        <div class="p-4">
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <!-- Doc 1 -->
+                                <div class="border border-border rounded-lg p-3 flex flex-col gap-2 hover:bg-surfaceAlt cursor-pointer group">
+                                    <div class="w-full h-24 bg-gray-200 rounded flex items-center justify-center relative overflow-hidden">
+                                        <img src="https://images.unsplash.com/photo-1633409361618-c73427e4e206?auto=format&fit=crop&q=80&w=200&h=150" class="object-cover w-full h-full opacity-60">
+                                        <i data-lucide="eye" class="absolute w-6 h-6 text-white drop-shadow-md opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                                    </div>
+                                    <span class="text-caption font-semibold truncate">Aadhaar Front</span>
+                                </div>
+                                <!-- Doc 2 -->
+                                <div class="border border-border rounded-lg p-3 flex flex-col gap-2 hover:bg-surfaceAlt cursor-pointer group">
+                                    <div class="w-full h-24 bg-gray-200 rounded flex items-center justify-center relative overflow-hidden">
+                                        <img src="https://images.unsplash.com/photo-1633409361618-c73427e4e206?auto=format&fit=crop&q=80&w=200&h=150" class="object-cover w-full h-full opacity-60">
+                                        <i data-lucide="eye" class="absolute w-6 h-6 text-white drop-shadow-md opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                                    </div>
+                                    <span class="text-caption font-semibold truncate">Aadhaar Back</span>
+                                </div>
+                                <!-- Doc 3 -->
+                                <div class="border border-border rounded-lg p-3 flex flex-col gap-2 hover:bg-surfaceAlt cursor-pointer group">
+                                    <div class="w-full h-24 bg-gray-200 rounded flex items-center justify-center relative overflow-hidden">
+                                        <i data-lucide="file-text" class="w-8 h-8 text-textSecondary"></i>
+                                        <i data-lucide="eye" class="absolute w-6 h-6 text-textPrimary drop-shadow-md opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                                    </div>
+                                    <span class="text-caption font-semibold truncate">PAN Card</span>
+                                </div>
+                                <!-- Doc 4 -->
+                                <div class="border border-border rounded-lg p-3 flex flex-col gap-2 hover:bg-surfaceAlt cursor-pointer group">
+                                    <div class="w-full h-24 bg-gray-200 rounded flex items-center justify-center relative overflow-hidden">
+                                        <i data-lucide="file-text" class="w-8 h-8 text-textSecondary"></i>
+                                        <i data-lucide="eye" class="absolute w-6 h-6 text-textPrimary drop-shadow-md opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                                    </div>
+                                    <span class="text-caption font-semibold truncate">Bank Statement</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right Column (Evaluations + Timeline) -->
+                <div class="flex flex-col gap-6">
+                    
+                    <!-- Lender Evaluation (Hardcoded rules output) -->
+                    <div class="bg-surface rounded-xl border border-border shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-border bg-surfaceAlt flex justify-between items-center">
+                            <h3 class="text-bodyLarge font-bold flex items-center gap-2"><i data-lucide="check-square" class="w-5 h-5 text-primary"></i> Lender Verdict</h3>
+                        </div>
+                        
+                        <div class="p-4 border-b border-border">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-bold text-textPrimary">SK Finance</span>
+                                <span class="inline-flex items-center gap-1 text-success text-caption font-bold bg-success/10 px-2 py-1 rounded">
+                                    <i data-lucide="check" class="w-3 h-3"></i> ELIGIBLE
+                                </span>
+                            </div>
+                            <p class="text-caption text-textSecondary mb-2">Matched all hardcoded conditions for Used Car.</p>
+                            <div class="text-[10px] text-textSecondary font-mono bg-background p-2 rounded border border-border">
+                                EVAL_VER: v1.0.4<br>
+                                TIMESTAMP: 12 Aug 2026 10:15AM
+                            </div>
+                        </div>
+
+                        <div class="p-4 opacity-50">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-bold text-textPrimary">ITI Finance</span>
+                                <span class="inline-flex items-center gap-1 text-danger text-caption font-bold bg-danger/10 px-2 py-1 rounded">
+                                    <i data-lucide="x" class="w-3 h-3"></i> NOT ELIGIBLE
+                                </span>
+                            </div>
+                            <p class="text-caption text-textSecondary">Failed rule: Max LTV for Used Car is 80%. (Requested: 86.5%)</p>
+                        </div>
+                    </div>
+
+                    <!-- Stage Timeline (Append Only) -->
+                    <div class="bg-surface rounded-xl border border-border shadow-sm overflow-hidden flex-1">
+                        <div class="p-4 border-b border-border bg-surfaceAlt flex justify-between items-center">
+                            <h3 class="text-bodyLarge font-bold flex items-center gap-2"><i data-lucide="git-commit" class="w-5 h-5 text-primary"></i> Pipeline Stages</h3>
+                        </div>
+                        
+                        <div class="p-6 relative pl-10">
+                            
+                            <!-- Step 1 -->
+                            <div class="timeline-item relative mb-6">
+                                <div class="timeline-dot absolute -left-8 top-1 w-4 h-4 rounded-full bg-success ring-4 ring-success/20 z-10 flex items-center justify-center"></div>
+                                <h4 class="text-bodyBold text-textPrimary">CIBIL Check</h4>
+                                <p class="text-caption text-textSecondary mt-1">Verified score 742.</p>
+                                <p class="text-[10px] text-textSecondary font-mono mt-1">By: Staff Amit K. • 12 Aug, 11:00 AM</p>
+                            </div>
+
+                            <!-- Step 2 -->
+                            <div class="timeline-item relative mb-6">
+                                <div class="timeline-dot absolute -left-8 top-1 w-4 h-4 rounded-full bg-success ring-4 ring-success/20 z-10"></div>
+                                <h4 class="text-bodyBold text-textPrimary">Bank Statement</h4>
+                                <p class="text-caption text-textSecondary mt-1">6 months uploaded. Income matched.</p>
+                                <p class="text-[10px] text-textSecondary font-mono mt-1">By: Staff Amit K. • 12 Aug, 11:30 AM</p>
+                            </div>
+
+                            <!-- Step 3 -->
+                            <div class="timeline-item relative mb-6">
+                                <div class="timeline-dot absolute -left-8 top-1 w-4 h-4 rounded-full bg-success ring-4 ring-success/20 z-10"></div>
+                                <h4 class="text-bodyBold text-textPrimary">Valuation</h4>
+                                <p class="text-caption text-textSecondary mt-1">Asset valued at ₹5.2L by agency.</p>
+                                <p class="text-[10px] text-textSecondary font-mono mt-1">By: Staff Amit K. • 13 Aug, 09:15 AM</p>
+                            </div>
+
+                            <!-- Step 4 -->
+                            <div class="timeline-item relative mb-6">
+                                <div class="timeline-dot absolute -left-8 top-1 w-4 h-4 rounded-full bg-success ring-4 ring-success/20 z-10"></div>
+                                <h4 class="text-bodyBold text-textPrimary">Field Investigation</h4>
+                                <p class="text-caption text-textSecondary mt-1">Residence owned and verified physically.</p>
+                                <p class="text-[10px] text-textSecondary font-mono mt-1">By: Staff Amit K. • 14 Aug, 04:00 PM</p>
+                            </div>
+
+                            <!-- Step 5 -->
+                            <div class="timeline-item relative mb-6">
+                                <div class="timeline-dot absolute -left-8 top-1 w-4 h-4 rounded-full bg-success ring-4 ring-success/20 z-10"></div>
+                                <h4 class="text-bodyBold text-textPrimary">Final Approval</h4>
+                                <p class="text-caption text-textSecondary mt-1">Approved by SK Finance credit team.</p>
+                                <p class="text-[10px] text-textSecondary font-mono mt-1">By: Admin User • 14 Aug, 05:45 PM</p>
+                            </div>
+
+                            <!-- Step 6 -->
+                            <div class="timeline-item relative">
+                                <div class="timeline-dot absolute -left-8 top-1 w-4 h-4 rounded-full bg-border ring-4 ring-background z-10"></div>
+                                <h4 class="text-bodyBold text-textSecondary">Disbursement</h4>
+                                <p class="text-caption text-textSecondary mt-1">Pending action.</p>
+                            </div>
+
+                        </div>
+                        
+                        <div class="p-4 border-t border-border bg-surfaceAlt flex flex-col gap-3">
+                            <h4 class="text-bodyBold">Append Stage Entry</h4>
+                            <select class="w-full bg-background border border-border rounded-lg px-3 py-2 text-body text-textPrimary outline-none">
+                                <option>Select Stage</option>
+                                <option>Disbursement</option>
+                                <option>Note / Remark</option>
+                            </select>
+                            <textarea class="w-full bg-background border border-border rounded-lg px-3 py-2 text-body text-textPrimary outline-none" rows="2" placeholder="Add remarks..."></textarea>
+                            <button class="w-full bg-primary hover:bg-primaryHover text-white font-bold py-2 rounded-lg transition-colors">
+                                Save Entry
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

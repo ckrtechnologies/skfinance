@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-background">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shreeja Finance - Admin Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../tailwind-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Login Container -->
+    <div class="w-full max-w-md bg-surface rounded-xl shadow-xl overflow-hidden border border-border">
+        
+        <!-- Header -->
+        <div class="bg-primary p-8 text-center">
+            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                <i data-lucide="building-2" class="w-8 h-8 text-primary"></i>
+            </div>
+            <h1 class="text-h1 font-bold text-white mb-1">Shreeja Finance</h1>
+            <p class="text-blue-100 text-body">Admin Portal Access</p>
+        </div>
+
+        <!-- Form -->
+        <div class="p-8">
+            <form onsubmit="event.preventDefault(); window.location.href='./A2-Dashboard.html';">
+                
+                <div class="mb-5">
+                    <label class="block text-bodyBold text-textPrimary mb-2" for="email">Email Address</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i data-lucide="mail" class="w-5 h-5 text-textSecondary"></i>
+                        </div>
+                        <input type="email" id="email" class="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-body text-textPrimary" placeholder="admin@shreeja.com" value="admin@shreeja.com" required>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <div class="flex justify-between mb-2">
+                        <label class="block text-bodyBold text-textPrimary" for="password">Password</label>
+                    </div>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i data-lucide="lock" class="w-5 h-5 text-textSecondary"></i>
+                        </div>
+                        <input type="password" id="password" class="w-full pl-10 pr-10 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-body text-textPrimary" placeholder="••••••••" value="password123" required>
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer text-textSecondary hover:text-primary transition-colors">
+                            <i data-lucide="eye" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-between mb-6">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" class="w-4 h-4 text-primary rounded border-border focus:ring-primary">
+                        <span class="ml-2 text-body text-textSecondary">Remember me</span>
+                    </label>
+                    <a href="#" class="text-body font-semibold text-primary hover:text-primaryHover">Forgot password?</a>
+                </div>
+
+                <button type="submit" class="w-full bg-primary hover:bg-primaryHover text-white font-bold py-3 px-4 rounded-lg transition-colors flex justify-center items-center gap-2">
+                    Sign In
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+            </form>
+            
+            <div class="mt-8 text-center border-t border-border pt-6">
+                <p class="text-caption text-textSecondary">
+                    Secure Area. Unauthorized access is strictly prohibited.<br>
+                    &copy; 2026 Shreeja Finance Pvt. Ltd.
+                </p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

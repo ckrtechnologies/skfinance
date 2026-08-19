@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black/90">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shreeja Customer - Home</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../tailwind-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Hide scrollbar for horizontal scroll */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Mobile Frame -->
+    <div class="max-w-[390px] w-full h-[844px] bg-background text-textPrimary relative overflow-hidden sm:rounded-[40px] flex flex-col shadow-2xl ring-1 ring-border pb-[80px]">
+        
+        <!-- Header -->
+        <header class="bg-primary text-white pt-14 pb-6 px-6 rounded-b-[32px] shadow-md relative z-10">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <p class="text-caption text-blue-100">Welcome back,</p>
+                    <h2 class="text-h2 font-bold">Ramesh Kumar</h2>
+                </div>
+                <div class="flex gap-3">
+                    <a href="./C12-Notifications.html" class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center relative">
+                        <i data-lucide="bell" class="w-5 h-5 text-white"></i>
+                        <span class="absolute top-2 right-2 w-2 h-2 bg-danger rounded-full border-2 border-primary"></span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Active Application Card (If any) -->
+            <a href="./C11-ApplicationStatus.html" class="block bg-white text-textPrimary rounded-xl p-4 shadow-sm border border-border/50 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-12 h-12 bg-success/10 rounded-bl-full flex items-start justify-end p-2">
+                    <i data-lucide="clock" class="w-4 h-4 text-success"></i>
+                </div>
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <p class="text-caption font-bold text-primary uppercase tracking-wide">Active Application</p>
+                        <h3 class="text-bodyLarge font-bold mt-1">Used Car Loan</h3>
+                    </div>
+                </div>
+                <div class="flex justify-between items-end">
+                    <div>
+                        <p class="text-h2 font-bold">₹4,50,000</p>
+                        <p class="text-caption text-textSecondary mt-0.5">App ID: #APP-84920</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="inline-flex items-center gap-1 text-caption font-bold text-success bg-success/10 px-2 py-1 rounded">
+                            Approved
+                        </span>
+                    </div>
+                </div>
+            </a>
+        </header>
+
+        <!-- Page Content -->
+        <div class="flex-1 overflow-y-auto pt-6 px-6 no-scrollbar">
+            
+            <h3 class="text-bodyBold font-bold mb-4">New Loan Request</h3>
+            
+            <!-- Products Grid -->
+            <div class="grid grid-cols-2 gap-4 mb-8">
+                <a href="./C5-QuickEligibilityCheck.html" class="bg-surface p-4 rounded-xl border border-border flex flex-col items-center text-center hover:border-primary hover:shadow-sm transition-all group">
+                    <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-primary mb-3 group-hover:scale-110 transition-transform">
+                        <i data-lucide="car" class="w-6 h-6"></i>
+                    </div>
+                    <span class="font-bold text-body">Used Car</span>
+                </a>
+                
+                <a href="./C5-QuickEligibilityCheck.html" class="bg-surface p-4 rounded-xl border border-border flex flex-col items-center text-center hover:border-primary hover:shadow-sm transition-all group">
+                    <div class="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center text-purple-600 mb-3 group-hover:scale-110 transition-transform">
+                        <i data-lucide="car-front" class="w-6 h-6"></i>
+                    </div>
+                    <span class="font-bold text-body">New Car</span>
+                </a>
+                
+                <a href="./C5-QuickEligibilityCheck.html" class="bg-surface p-4 rounded-xl border border-border flex flex-col items-center text-center hover:border-primary hover:shadow-sm transition-all group col-span-2">
+                    <div class="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center text-warning mb-3 group-hover:scale-110 transition-transform">
+                        <i data-lucide="truck" class="w-6 h-6"></i>
+                    </div>
+                    <span class="font-bold text-body">Commercial Vehicle (CV)</span>
+                </a>
+            </div>
+
+            <h3 class="text-bodyBold font-bold mb-4">Our Partners</h3>
+            
+            <!-- Partners Horizontal Scroll -->
+            <div class="flex gap-4 overflow-x-auto pb-4 no-scrollbar -mx-6 px-6">
+                <div class="w-[140px] shrink-0 bg-surface border border-border rounded-xl p-4 flex flex-col items-center justify-center gap-2 h-24">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-700">
+                        <i data-lucide="building" class="w-5 h-5"></i>
+                    </div>
+                    <span class="text-caption font-bold text-center">SK Finance</span>
+                </div>
+                <div class="w-[140px] shrink-0 bg-surface border border-border rounded-xl p-4 flex flex-col items-center justify-center gap-2 h-24">
+                    <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-700">
+                        <i data-lucide="building-2" class="w-5 h-5"></i>
+                    </div>
+                    <span class="text-caption font-bold text-center">ITI Finance</span>
+                </div>
+                <div class="w-[140px] shrink-0 bg-surface border border-border rounded-xl p-4 flex flex-col items-center justify-center gap-2 h-24 opacity-60">
+                    <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-textSecondary">
+                        <i data-lucide="banknote" class="w-5 h-5"></i>
+                    </div>
+                    <span class="text-caption font-bold text-center">Bajaj Finserv</span>
+                </div>
+            </div>
+
+            <!-- Banner -->
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-4 items-center mb-8">
+                <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-primary shrink-0 shadow-sm">
+                    <i data-lucide="headphones" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h4 class="text-bodyBold font-bold text-textPrimary">Need help?</h4>
+                    <p class="text-caption text-textSecondary mt-1">Contact your dealer or our support team.</p>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="absolute bottom-0 w-full h-[80px] bg-surface border-t border-border flex justify-around items-center px-2 z-20 pb-4">
+            <a href="./C4-Home.html" class="flex flex-col items-center gap-1 p-2 text-primary">
+                <i data-lucide="home" class="w-6 h-6"></i>
+                <span class="text-[10px] font-semibold">Home</span>
+            </a>
+            <a href="./C11-ApplicationStatus.html" class="flex flex-col items-center gap-1 p-2 text-textSecondary hover:text-primary transition-colors">
+                <i data-lucide="file-text" class="w-6 h-6"></i>
+                <span class="text-[10px] font-medium">My Loans</span>
+            </a>
+            <a href="./C13-ProfileSettings.html" class="flex flex-col items-center gap-1 p-2 text-textSecondary hover:text-primary transition-colors">
+                <i data-lucide="user" class="w-6 h-6"></i>
+                <span class="text-[10px] font-medium">Profile</span>
+            </a>
+        </nav>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

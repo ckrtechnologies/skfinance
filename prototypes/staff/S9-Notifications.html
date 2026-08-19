@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black/90">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shreeja Staff - Notifications</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../tailwind-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Mobile Frame -->
+    <div class="max-w-[390px] w-full h-[844px] bg-background text-textPrimary relative overflow-hidden sm:rounded-[40px] flex flex-col shadow-2xl ring-1 ring-border pb-[80px]">
+        
+        <!-- Header -->
+        <header class="h-16 flex items-center justify-between px-4 border-b border-border bg-surface shrink-0 pt-2 z-10">
+            <a href="./S3-Dashboard.html" class="w-10 h-10 flex items-center justify-center text-textPrimary">
+                <i data-lucide="arrow-left" class="w-6 h-6"></i>
+            </a>
+            <h1 class="text-bodyLarge font-bold">Notifications</h1>
+            <div class="w-10"></div> <!-- Spacer -->
+        </header>
+
+        <!-- Page Content -->
+        <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-3 no-scrollbar">
+            
+            <!-- Unread -->
+            <div class="bg-surface border-l-4 border-l-danger border border-border rounded-xl p-4 shadow-sm">
+                <div class="flex gap-3">
+                    <div class="w-10 h-10 bg-danger/10 rounded-full flex items-center justify-center text-danger shrink-0 mt-1">
+                        <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-start mb-1">
+                            <h4 class="text-bodyBold font-bold">Urgent Task Assigned</h4>
+                            <span class="text-caption text-textSecondary">10m ago</span>
+                        </div>
+                        <p class="text-body text-textSecondary">Residence Verification for Suresh Patel (APP-84915) is marked high priority.</p>
+                        <a href="./S5-CaseDetail.html" class="text-caption font-bold text-primary hover:underline mt-2 inline-block">View Task</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Read -->
+            <div class="bg-surface border border-border rounded-xl p-4 shadow-sm opacity-70">
+                <div class="flex gap-3">
+                    <div class="w-10 h-10 bg-success/10 rounded-full flex items-center justify-center text-success shrink-0 mt-1">
+                        <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-start mb-1">
+                            <h4 class="text-bodyBold font-bold">FI Report Accepted</h4>
+                            <span class="text-caption text-textSecondary">Yesterday</span>
+                        </div>
+                        <p class="text-body text-textSecondary">Your FI report for APP-84920 has been verified by the Credit team.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Warning -->
+            <div class="bg-surface border border-border rounded-xl p-4 shadow-sm opacity-70">
+                <div class="flex gap-3">
+                    <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-textSecondary shrink-0 mt-1">
+                        <i data-lucide="message-square" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-start mb-1">
+                            <h4 class="text-bodyBold font-bold">Manager Message</h4>
+                            <span class="text-caption text-textSecondary">2 Days Ago</span>
+                        </div>
+                        <p class="text-body text-textSecondary">Please ensure all pending Dealer visits are completed before weekend.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="absolute bottom-0 w-full h-[80px] bg-surface border-t border-border flex justify-around items-center px-2 z-20 pb-4">
+            <a href="./S3-Dashboard.html" class="flex flex-col items-center gap-1 p-2 text-primary">
+                <i data-lucide="home" class="w-6 h-6"></i>
+                <span class="text-[10px] font-semibold">Home</span>
+            </a>
+            <a href="./S4-TaskQueue.html" class="flex flex-col items-center gap-1 p-2 text-textSecondary hover:text-primary transition-colors">
+                <i data-lucide="clipboard-list" class="w-6 h-6"></i>
+                <span class="text-[10px] font-medium">Tasks</span>
+            </a>
+            <a href="./S8-PipelineOverview.html" class="flex flex-col items-center gap-1 p-2 text-textSecondary hover:text-primary transition-colors">
+                <i data-lucide="files" class="w-6 h-6"></i>
+                <span class="text-[10px] font-medium">Pipeline</span>
+            </a>
+            <a href="./S10-Profile.html" class="flex flex-col items-center gap-1 p-2 text-textSecondary hover:text-primary transition-colors">
+                <i data-lucide="user" class="w-6 h-6"></i>
+                <span class="text-[10px] font-medium">Profile</span>
+            </a>
+        </nav>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

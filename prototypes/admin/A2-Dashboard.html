@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-background">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shreeja Finance - Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../tailwind-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js for mocks -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar-item { @apply flex items-center gap-3 px-4 py-3 rounded-lg text-textSecondary hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer font-medium text-body; }
+        .sidebar-item.active { @apply bg-primary text-white hover:bg-primary hover:text-white; }
+    </style>
+</head>
+<body class="min-h-screen flex text-textPrimary">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-surface border-r border-border flex flex-col fixed h-full z-20">
+        <div class="h-16 flex items-center px-6 border-b border-border bg-primary">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+                    <i data-lucide="building-2" class="w-4 h-4 text-primary"></i>
+                </div>
+                <span class="text-white font-bold text-h2 tracking-tight">Shreeja Admin</span>
+            </div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
+            <div class="text-xs font-bold text-textSecondary uppercase tracking-wider px-4 mb-2 mt-2">Core</div>
+            <a href="./A2-Dashboard.html" class="sidebar-item active"><i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard</a>
+            <a href="./A3-LoanFilesList.html" class="sidebar-item"><i data-lucide="files" class="w-5 h-5"></i> Loan Files</a>
+            
+            <div class="text-xs font-bold text-textSecondary uppercase tracking-wider px-4 mb-2 mt-4">Network</div>
+            <a href="./A5-LendersList.html" class="sidebar-item"><i data-lucide="landmark" class="w-5 h-5"></i> Lenders</a>
+            <a href="./A11-Dealers.html" class="sidebar-item"><i data-lucide="store" class="w-5 h-5"></i> Dealers</a>
+            <a href="./A12-Staff.html" class="sidebar-item"><i data-lucide="users" class="w-5 h-5"></i> Staff</a>
+            
+            <div class="text-xs font-bold text-textSecondary uppercase tracking-wider px-4 mb-2 mt-4">Finance</div>
+            <a href="./A13-Commissions.html" class="sidebar-item"><i data-lucide="indian-rupee" class="w-5 h-5"></i> Commissions</a>
+            <a href="./A14-Payouts.html" class="sidebar-item"><i data-lucide="banknote" class="w-5 h-5"></i> Payout Queue</a>
+            
+            <div class="text-xs font-bold text-textSecondary uppercase tracking-wider px-4 mb-2 mt-4">System</div>
+            <a href="./A15-Settings.html" class="sidebar-item"><i data-lucide="settings" class="w-5 h-5"></i> Settings</a>
+            <a href="./A16-AuditLog.html" class="sidebar-item"><i data-lucide="clipboard-list" class="w-5 h-5"></i> Audit Log</a>
+        </div>
+
+        <div class="p-4 border-t border-border">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold">AD</div>
+                <div class="flex-1 overflow-hidden">
+                    <p class="text-bodyBold truncate">Admin User</p>
+                    <a href="./A1-Login.html" class="text-caption text-danger hover:underline">Sign Out</a>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 ml-64 flex flex-col min-h-screen">
+        
+        <!-- Topbar -->
+        <header class="h-16 bg-surface border-b border-border flex items-center justify-between px-8 sticky top-0 z-10">
+            <h1 class="text-h2 font-bold">Network Overview</h1>
+            <div class="flex items-center gap-4">
+                <div class="relative">
+                    <i data-lucide="search" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-textSecondary"></i>
+                    <input type="text" placeholder="Search files, dealers..." class="pl-10 pr-4 py-2 bg-background border border-border rounded-lg text-body focus:outline-none focus:border-primary w-64">
+                </div>
+                <a href="./A17-Notifications.html" class="relative p-2 text-textSecondary hover:text-primary transition-colors bg-background rounded-full border border-border">
+                    <i data-lucide="bell" class="w-5 h-5"></i>
+                    <span class="absolute top-0 right-0 w-2.5 h-2.5 bg-danger rounded-full border-2 border-surface"></span>
+                </a>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="p-8 flex-1 overflow-y-auto">
+            
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                
+                <div class="bg-surface p-6 rounded-xl border border-border shadow-sm flex flex-col">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-caption text-textSecondary font-semibold uppercase tracking-wider mb-1">Active Files</p>
+                            <h3 class="text-display font-bold text-textPrimary">1,248</h3>
+                        </div>
+                        <div class="p-3 bg-blue-50 text-blue-600 rounded-lg">
+                            <i data-lucide="files" class="w-6 h-6"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 text-caption">
+                        <span class="text-success flex items-center"><i data-lucide="trending-up" class="w-3 h-3 mr-1"></i> +12%</span>
+                        <span class="text-textSecondary">vs last month</span>
+                    </div>
+                </div>
+
+                <div class="bg-surface p-6 rounded-xl border border-border shadow-sm flex flex-col">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-caption text-textSecondary font-semibold uppercase tracking-wider mb-1">MTD Disbursals</p>
+                            <h3 class="text-display font-bold text-textPrimary">₹18.4 Cr</h3>
+                        </div>
+                        <div class="p-3 bg-green-50 text-success rounded-lg">
+                            <i data-lucide="indian-rupee" class="w-6 h-6"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 text-caption">
+                        <span class="text-success flex items-center"><i data-lucide="trending-up" class="w-3 h-3 mr-1"></i> +8.4%</span>
+                        <span class="text-textSecondary">vs last month</span>
+                    </div>
+                </div>
+
+                <div class="bg-surface p-6 rounded-xl border border-border shadow-sm flex flex-col">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-caption text-textSecondary font-semibold uppercase tracking-wider mb-1">Pending Payouts</p>
+                            <h3 class="text-display font-bold text-textPrimary">₹4.2 L</h3>
+                        </div>
+                        <div class="p-3 bg-orange-50 text-warning rounded-lg">
+                            <i data-lucide="clock" class="w-6 h-6"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 text-caption">
+                        <span class="text-danger flex items-center">42 requests</span>
+                        <span class="text-textSecondary">awaiting manual clear</span>
+                    </div>
+                </div>
+
+                <div class="bg-surface p-6 rounded-xl border border-border shadow-sm flex flex-col border-danger/30 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-16 h-16 bg-danger/5 rounded-bl-full"></div>
+                    <div class="flex justify-between items-start mb-4 relative z-10">
+                        <div>
+                            <p class="text-caption text-danger font-semibold uppercase tracking-wider mb-1">90-Day Risk Files</p>
+                            <h3 class="text-display font-bold text-danger">37</h3>
+                        </div>
+                        <div class="p-3 bg-danger/10 text-danger rounded-lg">
+                            <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 text-caption relative z-10">
+                        <span class="text-textSecondary">Approaching expiration window</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Chart: Files by Stage -->
+                <div class="lg:col-span-2 bg-surface border border-border rounded-xl shadow-sm p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-h2 font-bold">Pipeline Distribution</h2>
+                        <select class="bg-background border border-border rounded-lg px-3 py-1.5 text-body text-textSecondary outline-none">
+                            <option>This Month</option>
+                            <option>Last Month</option>
+                            <option>All Time</option>
+                        </select>
+                    </div>
+                    <div class="h-[300px] w-full flex items-end justify-between px-4 pb-2 relative">
+                        <!-- Mock Chart using simple divs for visual -->
+                        <div class="w-full absolute bottom-0 left-0 border-b border-border h-full flex flex-col justify-between pb-6 opacity-30 z-0 pointer-events-none">
+                            <div class="border-t border-dashed w-full h-0"></div>
+                            <div class="border-t border-dashed w-full h-0"></div>
+                            <div class="border-t border-dashed w-full h-0"></div>
+                            <div class="border-t border-dashed w-full h-0"></div>
+                            <div class="border-t border-dashed w-full h-0"></div>
+                        </div>
+                        
+                        <div class="flex flex-col items-center gap-2 z-10 w-[12%]">
+                            <div class="bg-blue-200 w-full rounded-t-sm h-[240px] hover:bg-blue-300 transition-colors cursor-pointer relative group">
+                                <div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-textPrimary text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap">450 Files</div>
+                            </div>
+                            <span class="text-[10px] font-semibold text-textSecondary text-center leading-tight">CIBIL</span>
+                        </div>
+                        
+                        <div class="flex flex-col items-center gap-2 z-10 w-[12%]">
+                            <div class="bg-blue-300 w-full rounded-t-sm h-[180px] hover:bg-blue-400 transition-colors cursor-pointer relative group">
+                                <div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-textPrimary text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap">320 Files</div>
+                            </div>
+                            <span class="text-[10px] font-semibold text-textSecondary text-center leading-tight">Bank</span>
+                        </div>
+                        
+                        <div class="flex flex-col items-center gap-2 z-10 w-[12%]">
+                            <div class="bg-blue-400 w-full rounded-t-sm h-[210px] hover:bg-blue-500 transition-colors cursor-pointer relative group">
+                                <div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-textPrimary text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap">380 Files</div>
+                            </div>
+                            <span class="text-[10px] font-semibold text-textSecondary text-center leading-tight">Valuation</span>
+                        </div>
+                        
+                        <div class="flex flex-col items-center gap-2 z-10 w-[12%]">
+                            <div class="bg-primary/70 w-full rounded-t-sm h-[120px] hover:bg-primary/80 transition-colors cursor-pointer relative group">
+                                <div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-textPrimary text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap">150 Files</div>
+                            </div>
+                            <span class="text-[10px] font-semibold text-textSecondary text-center leading-tight">FI</span>
+                        </div>
+
+                        <div class="flex flex-col items-center gap-2 z-10 w-[12%]">
+                            <div class="bg-primary w-full rounded-t-sm h-[80px] hover:bg-primaryHover transition-colors cursor-pointer relative group">
+                                <div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-textPrimary text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap">90 Files</div>
+                            </div>
+                            <span class="text-[10px] font-semibold text-textSecondary text-center leading-tight">Approval</span>
+                        </div>
+
+                        <div class="flex flex-col items-center gap-2 z-10 w-[12%]">
+                            <div class="bg-success w-full rounded-t-sm h-[160px] hover:bg-green-600 transition-colors cursor-pointer relative group">
+                                <div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-textPrimary text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap">280 Files</div>
+                            </div>
+                            <span class="text-[10px] font-semibold text-textSecondary text-center leading-tight">Disbursed</span>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Recent Activity / 90-Day Risks List -->
+                <div class="bg-surface border border-border rounded-xl shadow-sm flex flex-col h-[400px]">
+                    <div class="p-6 border-b border-border flex justify-between items-center shrink-0">
+                        <h2 class="text-bodyBold font-bold flex items-center gap-2 text-danger">
+                            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                            Expiring Approvals (90d)
+                        </h2>
+                        <a href="./A3-LoanFilesList.html" class="text-caption font-semibold text-primary hover:underline">View All</a>
+                    </div>
+                    
+                    <div class="flex-1 overflow-y-auto p-2">
+                        <!-- Item 1 -->
+                        <div class="p-4 hover:bg-surfaceAlt rounded-lg cursor-pointer transition-colors border-b border-border last:border-0 flex justify-between items-center" onclick="window.location.href='./A4-FileDetail.html'">
+                            <div>
+                                <h4 class="text-bodyBold text-textPrimary">Ramesh Kumar</h4>
+                                <p class="text-caption text-textSecondary font-mono mt-1">#APP-84920</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="inline-flex items-center px-2 py-1 rounded bg-danger/10 text-danger text-[10px] font-bold uppercase">88 Days Old</span>
+                                <p class="text-caption text-textSecondary mt-1">SK Finance</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Item 2 -->
+                        <div class="p-4 hover:bg-surfaceAlt rounded-lg cursor-pointer transition-colors border-b border-border last:border-0 flex justify-between items-center" onclick="window.location.href='./A4-FileDetail.html'">
+                            <div>
+                                <h4 class="text-bodyBold text-textPrimary">Sunita Sharma</h4>
+                                <p class="text-caption text-textSecondary font-mono mt-1">#APP-84711</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="inline-flex items-center px-2 py-1 rounded bg-danger/10 text-danger text-[10px] font-bold uppercase">85 Days Old</span>
+                                <p class="text-caption text-textSecondary mt-1">ITI Finance</p>
+                            </div>
+                        </div>
+
+                        <!-- Item 3 -->
+                        <div class="p-4 hover:bg-surfaceAlt rounded-lg cursor-pointer transition-colors border-b border-border last:border-0 flex justify-between items-center" onclick="window.location.href='./A4-FileDetail.html'">
+                            <div>
+                                <h4 class="text-bodyBold text-textPrimary">Vikram Singh</h4>
+                                <p class="text-caption text-textSecondary font-mono mt-1">#APP-85002</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="inline-flex items-center px-2 py-1 rounded bg-warning/10 text-warning text-[10px] font-bold uppercase">72 Days Old</span>
+                                <p class="text-caption text-textSecondary mt-1">SK Finance</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Item 4 -->
+                        <div class="p-4 hover:bg-surfaceAlt rounded-lg cursor-pointer transition-colors border-b border-border last:border-0 flex justify-between items-center" onclick="window.location.href='./A4-FileDetail.html'">
+                            <div>
+                                <h4 class="text-bodyBold text-textPrimary">Anita Desai</h4>
+                                <p class="text-caption text-textSecondary font-mono mt-1">#APP-85219</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="inline-flex items-center px-2 py-1 rounded bg-warning/10 text-warning text-[10px] font-bold uppercase">68 Days Old</span>
+                                <p class="text-caption text-textSecondary mt-1">SK Finance</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

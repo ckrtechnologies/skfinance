@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black/90">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shreeja Customer - Splash</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../tailwind-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Mobile Frame -->
+    <div class="max-w-[390px] w-full h-[844px] bg-primary text-white relative overflow-hidden sm:rounded-[40px] flex flex-col items-center justify-center shadow-2xl ring-1 ring-border">
+        
+        <!-- Animated Logo Container -->
+        <div class="flex flex-col items-center justify-center animate-pulse">
+            <div class="w-24 h-24 rounded-2xl bg-white flex items-center justify-center mb-6 shadow-xl">
+                <i data-lucide="building-2" class="w-12 h-12 text-primary"></i>
+            </div>
+            
+            <h1 class="text-display font-bold tracking-tight">Shreeja</h1>
+            <p class="text-blue-100 text-body tracking-widest mt-1">VEHICLE LOANS</p>
+        </div>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+        // Auto navigate to onboarding after 2.5 seconds
+        setTimeout(() => {
+            window.location.href = './C2-Onboarding.html';
+        }, 2500);
+    </script>
+</body>
+</html>

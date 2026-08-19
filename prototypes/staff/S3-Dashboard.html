@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black/90">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shreeja Staff - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../tailwind-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Mobile Frame -->
+    <div class="max-w-[390px] w-full h-[844px] bg-background text-textPrimary relative overflow-hidden sm:rounded-[40px] flex flex-col shadow-2xl ring-1 ring-border pb-[80px]">
+        
+        <!-- Header -->
+        <header class="bg-primary text-white pt-14 pb-8 px-6 rounded-b-[32px] shadow-md relative z-10">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-h2 font-bold">Amit Kumar</h2>
+                    <p class="text-caption text-blue-100 font-mono mt-0.5">Field Executive (EMP-104)</p>
+                </div>
+                <div class="flex gap-3">
+                    <a href="./S9-Notifications.html" class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center relative">
+                        <i data-lucide="bell" class="w-5 h-5 text-white"></i>
+                        <span class="absolute top-2 right-2 w-2 h-2 bg-danger rounded-full border-2 border-primary"></span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Mini KPI -->
+            <div class="flex items-center justify-between bg-white/10 rounded-xl p-4 border border-white/20">
+                <div>
+                    <p class="text-caption text-blue-100 uppercase tracking-wide">Tasks Today</p>
+                    <p class="text-h1 font-bold mt-1">4</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-caption text-blue-100 uppercase tracking-wide">Completed</p>
+                    <p class="text-h1 font-bold mt-1 text-success">2</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="flex-1 overflow-y-auto pt-6 px-6 no-scrollbar">
+            
+            <h3 class="text-bodyBold font-bold mb-4 flex items-center gap-2">
+                <i data-lucide="map-pin" class="w-5 h-5 text-primary"></i> Upcoming Visits
+            </h3>
+            
+            <!-- Task 1 (High Priority) -->
+            <a href="./S5-CaseDetail.html" class="block bg-surface border border-danger/30 rounded-xl p-4 shadow-sm mb-4 relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-danger text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wide">
+                    Urgent
+                </div>
+                <div class="flex justify-between items-start mb-2 mt-2">
+                    <div>
+                        <h4 class="text-bodyLarge font-bold">Suresh Patel</h4>
+                        <p class="text-caption text-textSecondary font-mono mt-0.5">#APP-84915</p>
+                    </div>
+                </div>
+                <p class="text-body text-textPrimary flex items-center gap-2 mb-3">
+                    <i data-lucide="home" class="w-4 h-4 text-textSecondary"></i> Residence Verification
+                </p>
+                <div class="bg-blue-50 text-primary text-caption font-semibold p-2 rounded-lg flex items-center justify-center gap-2 border border-blue-100">
+                    <i data-lucide="navigation" class="w-4 h-4"></i> Get Directions (2.5 km away)
+                </div>
+            </a>
+
+            <!-- Task 2 -->
+            <a href="./S5-CaseDetail.html" class="block bg-surface border border-border rounded-xl p-4 shadow-sm mb-4">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <h4 class="text-bodyLarge font-bold">Wheels Auto Dealership</h4>
+                        <p class="text-caption text-textSecondary font-mono mt-0.5">DLR-001</p>
+                    </div>
+                </div>
+                <p class="text-body text-textPrimary flex items-center gap-2 mb-3">
+                    <i data-lucide="car" class="w-4 h-4 text-textSecondary"></i> Vehicle Inspection
+                </p>
+                <div class="bg-surfaceAlt text-textPrimary text-caption font-semibold p-2 rounded-lg flex items-center justify-center gap-2 border border-border">
+                    <i data-lucide="navigation" class="w-4 h-4"></i> Get Directions (5.1 km away)
+                </div>
+            </a>
+
+            <!-- Metrics -->
+            <h3 class="text-bodyBold font-bold mb-4 mt-8">My Performance (MTD)</h3>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="bg-surface border border-border rounded-xl p-4 text-center">
+                    <p class="text-h2 font-bold text-success">35</p>
+                    <p class="text-caption text-textSecondary mt-1">FI Completed</p>
+                </div>
+                <div class="bg-surface border border-border rounded-xl p-4 text-center">
+                    <p class="text-h2 font-bold text-primary">₹1.2Cr</p>
+                    <p class="text-caption text-textSecondary mt-1">Disbursed Value</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="absolute bottom-0 w-full h-[80px] bg-surface border-t border-border flex justify-around items-center px-2 z-20 pb-4">
+            <a href="./S3-Dashboard.html" class="flex flex-col items-center gap-1 p-2 text-primary">
+                <i data-lucide="home" class="w-6 h-6"></i>
+                <span class="text-[10px] font-semibold">Home</span>
+            </a>
+            <a href="./S4-TaskQueue.html" class="flex flex-col items-center gap-1 p-2 text-textSecondary hover:text-primary transition-colors">
+                <i data-lucide="clipboard-list" class="w-6 h-6"></i>
+                <span class="text-[10px] font-medium">Tasks</span>
+            </a>
+            <a href="./S8-PipelineOverview.html" class="flex flex-col items-center gap-1 p-2 text-textSecondary hover:text-primary transition-colors">
+                <i data-lucide="files" class="w-6 h-6"></i>
+                <span class="text-[10px] font-medium">Pipeline</span>
+            </a>
+            <a href="./S10-Profile.html" class="flex flex-col items-center gap-1 p-2 text-textSecondary hover:text-primary transition-colors">
+                <i data-lucide="user" class="w-6 h-6"></i>
+                <span class="text-[10px] font-medium">Profile</span>
+            </a>
+        </nav>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
